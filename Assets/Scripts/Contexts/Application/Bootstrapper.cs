@@ -65,7 +65,8 @@ namespace Project.Contexts.Application
 
         private async void Start()
         {
-            var startScene = SceneNames.Home;
+            // A new player (level 1) goes straight into the first level; everyone else lands on Home.
+            var startScene = Services.Get<ProgressService>().Level == 1 ? SceneNames.Game : SceneNames.Home;
 #if UNITY_EDITOR
             // Set by the "Always start from Boot" editor tool: reopen the scene you pressed Play in.
             var requested = UnityEditor.SessionState.GetString(EditorStartSceneKey, string.Empty);
