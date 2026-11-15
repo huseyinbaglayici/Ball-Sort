@@ -216,11 +216,58 @@ Canvas:
   m_OverridePixelPerfect: 0
   m_SortingBucketNormalizedSize: 0
   m_VertexColorAlwaysGammaSpace: 0
-  m_AdditionalShaderChannelsFlag: 0
+  m_AdditionalShaderChannelsFlag: 25
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
   m_SortingOrder: 0
   m_TargetDisplay: 0
+--- !u!1 &346832387
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 346832389}
+  - component: {fileID: 346832388}
+  m_Layer: 0
+  m_Name: Board
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &346832388
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 346832387}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c3d8242d9aa6cc246997242116bb1ec3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Project.Contexts::Project.Contexts.Game.Sort.BoardView
+  _maxWidth: 9.6
+  _maxHeight: 13
+  _center: {x: 0, y: -0.5}
+--- !u!4 &346832389
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 346832387}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1293229490
 GameObject:
   m_ObjectHideFlags: 0
@@ -281,7 +328,7 @@ MonoBehaviour:
   m_spriteAsset: {fileID: 0}
   m_tintAllSprites: 0
   m_StyleSheet: {fileID: 0}
-  m_TextStyleHashCode: 0
+  m_TextStyleHashCode: -1183493901
   m_overrideHtmlColors: 0
   m_faceColor:
     serializedVersion: 2
@@ -386,15 +433,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4473f108d312c3240bdf937523fddbe4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Project.Contexts::Project.Contexts.Game.GameController
-  _collectiblePrefab: {fileID: 9114876023155920741, guid: e62021d84f1adac4eb0570ba9ea9ea42, type: 3}
-  _poolConfig: {fileID: 11400000, guid: 1f6275e1a18dd354ab0f98f68715e076, type: 2}
-  _targetCount: 10
-  _timeLimit: 20
-  _spawnInterval: 0.6
-  _spawnArea: {x: 4, y: 7}
+  _items: {fileID: 11400000, guid: 0624ee3b5e411aa43838efc589b56f77, type: 2}
+  _catalog: {fileID: 11400000, guid: e855708de00440840900aaf271654185, type: 2}
+  _palette: {fileID: 11400000, guid: 40bad824ce468114d8e9a945ca77acc0, type: 2}
   _reward: 25
-  _timerText: {fileID: 1911285589}
-  _progressText: {fileID: 1293229491}
+  _board: {fileID: 346832388}
+  _levelText: {fileID: 1911285589}
+  _movesText: {fileID: 1293229491}
   _resultPopup: {fileID: 4609855016057456323, guid: 75fee59f6b21aeb418ce7179d8564889, type: 3}
 --- !u!4 &1433846298
 Transform:
@@ -498,7 +543,7 @@ MonoBehaviour:
   m_spriteAsset: {fileID: 0}
   m_tintAllSprites: 0
   m_StyleSheet: {fileID: 0}
-  m_TextStyleHashCode: 0
+  m_TextStyleHashCode: -1183493901
   m_overrideHtmlColors: 0
   m_faceColor:
     serializedVersion: 2
@@ -603,3 +648,4 @@ SceneRoots:
   m_Roots:
   - {fileID: 337537690}
   - {fileID: 1433846298}
+  - {fileID: 346832389}
