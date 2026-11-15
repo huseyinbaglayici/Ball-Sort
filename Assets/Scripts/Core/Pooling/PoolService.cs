@@ -51,6 +51,14 @@ namespace Project.Core.Pooling
             }
         }
 
+        /// <summary>Warms one prefab directly, for data that maps types to prefabs (e.g. an item registry).</summary>
+        public void Prewarm(GameObject prefab, int warmCount, int maxCount)
+        {
+            if (prefab == null) return;
+            var pool = GetOrCreate(prefab, maxCount);
+            pool.Warm(warmCount - pool.TotalCreated);
+        }
+
         public T Spawn<T>(T prefab, Vector3 position, Transform parent = null) where T : Component
         {
             var instance = GetOrCreate(prefab.gameObject, DefaultMaxCount).Get();
