@@ -1,0 +1,156 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 811a6fa90f63ef648988caf488ba26b7, type: 3}
+  m_Name: Level_014_v2
+  m_EditorClassIdentifier: Project.Contexts::Project.Contexts.Game.Levels.LevelData
+  _capacity: 4
+  _bottles:
+  - Position: {x: -6, y: 5}
+    Slots:
+    - Color: 6
+      Kind: 1
+      Hidden: 0
+    - Color: 0
+      Kind: 1
+      Hidden: 0
+    - Color: 1
+      Kind: 1
+      Hidden: 0
+    - Color: 0
+      Kind: 0
+      Hidden: 0
+  - Position: {x: -4, y: 5}
+    Slots:
+    - Color: 10
+      Kind: 1
+      Hidden: 0
+    - Color: 3
+      Kind: 1
+      Hidden: 0
+    - Color: 6
+      Kind: 1
+      Hidden: 0
+    - Color: 1
+      Kind: 0
+      Hidden: 0
+  - Position: {x: -2, y: 5}
+    Slots:
+    - Color: 9
+      Kind: 1
+      Hidden: 0
+    - Color: 1
+      Kind: 1
+      Hidden: 0
+    - Color: 3
+      Kind: 1
+      Hidden: 0
+    - Color: 10
+      Kind: 0
+      Hidden: 0
+  - Position: {x: 0, y: 5}
+    Slots:
+    - Color: 0
+      Kind: 1
+      Hidden: 0
+    - Color: 8
+      Kind: 1
+      Hidden: 0
+    - Color: 7
+      Kind: 1
+      Hidden: 0
+    - Color: 3
+      Kind: 0
+      Hidden: 0
+  - Position: {x: 2, y: 5}
+    Slots:
+    - Color: 8
+      Kind: 1
+      Hidden: 0
+    - Color: 9
+      Kind: 1
+      Hidden: 0
+    - Color: 0
+      Kind: 1
+      Hidden: 0
+    - Color: 6
+      Kind: 0
+      Hidden: 0
+  - Position: {x: -6, y: -1}
+    Slots:
+    - Color: 9
+      Kind: 0
+      Hidden: 0
+    - Color: 10
+      Kind: 0
+      Hidden: 0
+    - Color: 9
+      Kind: 0
+      Hidden: 0
+    - Color: 7
+      Kind: 0
+      Hidden: 0
+  - Position: {x: -4, y: -1}
+    Slots:
+    - Color: 6
+      Kind: 0
+      Hidden: 0
+    - Color: 1
+      Kind: 0
+      Hidden: 0
+    - Color: 7
+      Kind: 0
+      Hidden: 0
+    - Color: 7
+      Kind: 0
+      Hidden: 0
+  - Position: {x: -2, y: -1}
+    Slots:
+    - Color: 10
+      Kind: 0
+      Hidden: 0
+    - Color: 8
+      Kind: 0
+      Hidden: 0
+    - Color: 8
+      Kind: 0
+      Hidden: 0
+    - Color: 3
+      Kind: 0
+      Hidden: 0
+  - Position: {x: 0, y: -1}
+    Slots:
+    - Color: -1
+      Kind: 0
+      Hidden: 0
+    - Color: -1
+      Kind: 0
+      Hidden: 0
+    - Color: -1
+      Kind: 0
+      Hidden: 0
+    - Color: -1
+      Kind: 0
+      Hidden: 0
+  - Position: {x: 2, y: -1}
+    Slots:
+    - Color: -1
+      Kind: 0
+      Hidden: 0
+    - Color: -1
+      Kind: 0
+      Hidden: 0
+    - Color: -1
+      Kind: 0
+      Hidden: 0
+    - Color: -1
+      Kind: 0
+      Hidden: 0
