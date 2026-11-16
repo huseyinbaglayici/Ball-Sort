@@ -6,11 +6,13 @@ namespace Project.Contexts.Game.Levels
     [CreateAssetMenu(menuName = "Project/Level Palette", fileName = "LevelPalette")]
     public sealed class LevelPalette : ScriptableObject
     {
+        // 0-7 are the art team's color scale. 8-11 (fuchsia, white, emerald, sky blue) are filled in the same style
+        // until the art team extends the scale; levels use up to 10 colors.
         [SerializeField] private Color[] _colors =
         {
-            new(0.93f, 0.26f, 0.26f), new(0.25f, 0.52f, 0.96f), new(0.30f, 0.80f, 0.35f), new(0.98f, 0.84f, 0.22f),
-            new(0.62f, 0.32f, 0.88f), new(0.98f, 0.55f, 0.15f), new(0.30f, 0.85f, 0.88f), new(0.96f, 0.45f, 0.75f),
-            new(0.55f, 0.35f, 0.20f), new(0.55f, 0.55f, 0.58f), new(0.10f, 0.40f, 0.25f), new(0.15f, 0.15f, 0.45f)
+            new(1f, 0.0706f, 0.051f), new(0.1098f, 0.1216f, 1f), new(0.702f, 1f, 0.051f), new(1f, 0.7686f, 0.051f),
+            new(0.6588f, 0.2118f, 1f), new(1f, 0.4196f, 0.051f), new(0f, 1f, 0.9216f), new(1f, 0.4392f, 0.851f),
+            new(1f, 0.051f, 0.5412f), new(0.949f, 0.949f, 1f), new(0.051f, 1f, 0.3686f), new(0.051f, 0.651f, 1f)
         };
 
         public int Count => _colors.Length;
