@@ -9,12 +9,15 @@ namespace Project.Core.Events
 
     /// <summary>
     /// Typed, synchronous event bus: EventBus&lt;LevelWon&gt;.Raise(new LevelWon(...)).
-    /// Handlers may subscribe or unsubscribe while the event is being raised.
+    /// Handlers may subscribe or unsubscribe while the event is being raised, and may raise it again.
     /// </summary>
     public static class EventBus<T> where T : struct, IEvent
     {
         private static readonly List<Action<T>> Handlers = new();
-        private static readonly List<Action<T>> Snapshot = new();
+        // One handler snapshot per nesting depth, so a handler that raises the same event does not disturb the outer
+        // raise; reused, so raising does not allocate.
+        private static readonly List<List<Action<T>>> Snapshots = new();
+        private static int _depth;
 
         static EventBus() => EventBusReset.Register(() => Handlers.Clear());
 
@@ -27,21 +30,29 @@ namespace Project.Core.Events
 
         public static void Raise(T evt)
         {
-            Snapshot.Clear();
-            Snapshot.AddRange(Handlers);
-            foreach (var handler in Snapshot)
+            if (_depth == Snapshots.Count) Snapshots.Add(new List<Action<T>>());
+            var snapshot = Snapshots[_depth++];
+            snapshot.AddRange(Handlers);
+            try
             {
-                try
+                foreach (var handler in snapshot)
                 {
-                    handler(evt);
-                }
-                catch (Exception e)
-                {
-                    // One faulty listener must not stop the others.
-                    Debug.LogException(e);
+                    try
+                    {
+                        handler(evt);
+                    }
+                    catch (Exception e)
+                    {
+                        // One faulty listener must not stop the others.
+                        Debug.LogException(e);
+                    }
                 }
             }
-            Snapshot.Clear();
+            finally
+            {
+                snapshot.Clear();
+                _depth--;
+            }
         }
     }
 
