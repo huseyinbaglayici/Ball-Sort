@@ -12,16 +12,14 @@ namespace Project.Contexts.Game.Sort
         public readonly int From;
         public readonly int To;
         public readonly int Count;
-        public readonly int Color;
         public readonly int RevealedSlot;
         public readonly bool Completed;
 
-        public BallMove(int from, int to, int count, int color, int revealedSlot, bool completed)
+        public BallMove(int from, int to, int count, int revealedSlot, bool completed)
         {
             From = from;
             To = to;
             Count = count;
-            Color = color;
             RevealedSlot = revealedSlot;
             Completed = completed;
         }
@@ -36,6 +34,7 @@ namespace Project.Contexts.Game.Sort
     /// Completion rule: right after a move into a bottle, that bottle is
     /// completed when it is full of one fully visible color. A completed bottle is locked: it can be neither
     /// the origin nor the target of a move. Only the target of the last move is checked.
+    /// Deadlock rule: see <see cref="HasNoMove"/>.
     /// </summary>
     public sealed class SortBoard
     {
@@ -125,14 +124,13 @@ namespace Project.Contexts.Game.Sort
                 return false;
             }
 
-            var color = TopColor(from);
             var amount = System.Math.Min(TopRun(from), Capacity - _count[to]);
             for (var i = 0; i < amount; i++) Transfer(from, to);
 
             var revealed = RevealTop(from);
             var completed = ShouldComplete(to);
             _completed[to] = completed;
-            move = new BallMove(from, to, amount, color, revealed, completed);
+            move = new BallMove(from, to, amount, revealed, completed);
             _history.Push(move);
             return true;
         }
@@ -155,6 +153,47 @@ namespace Project.Contexts.Game.Sort
         /// <summary>Full of one color with every unit visible. The whole bottle is then one same-color run.</summary>
         private bool ShouldComplete(int bottle) =>
             !_completed[bottle] && _count[bottle] == Capacity && TopRun(bottle) == Capacity;
+
+        /// <summary>
+        /// Deadlock check. The board is stuck unless:
+        /// <list type="number">
+        /// <item>some origin's whole top run fits in the free slots of the bottles it may move to, counted together.
+        /// An empty target does not count when the origin holds nothing below its top run, because that move only
+        /// relocates a single-color bottle; or</item>
+        /// <item>some origin may move to a bottle that is empty, or holds one fully visible color and is not full.</item>
+        /// </list>
+        /// So a board with only legal moves that cannot take a whole run anywhere useful is stuck.
+        /// </summary>
+        public bool HasNoMove()
+        {
+            for (var from = 0; from < BottleCount; from++)
+            {
+                if (!CanSelectAsOrigin(from)) continue;
+                var run = TopRun(from);
+                var below = _count[from] - run;
+                var targets = 0;
+                var free = 0;
+                for (var to = 0; to < BottleCount; to++)
+                {
+                    if (!CanMove(from, to)) continue;
+                    if (IsEmpty(to) && below == 0) continue;
+                    targets++;
+                    free += Capacity - _count[to];
+                }
+                if (targets > 0 && run <= free) return false;
+            }
+
+            for (var to = 0; to < BottleCount; to++)
+            {
+                if (_completed[to] || !(IsEmpty(to) || IsSingleVisibleColorNotFull(to))) continue;
+                for (var from = 0; from < BottleCount; from++)
+                    if (CanMove(from, to)) return false;
+            }
+            return true;
+        }
+
+        private bool IsSingleVisibleColorNotFull(int bottle) =>
+            _count[bottle] > 0 && _count[bottle] < Capacity && TopRun(bottle) == _count[bottle];
 
         /// <summary>Solved when every bottle is empty or full of one known color.</summary>
         public bool IsSolved()
