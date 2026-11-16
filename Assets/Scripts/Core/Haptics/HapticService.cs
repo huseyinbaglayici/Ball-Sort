@@ -10,8 +10,8 @@ namespace Project.Core.Haptics
     }
 
     /// <summary>
-    /// Short vibrations for UI and game feedback. Android 8+ uses VibrationEffect with an amplitude,
-    /// older devices and iOS fall back to Handheld.Vibrate (Heavy only, to avoid long buzzes).
+    /// Short vibrations for UI and game feedback. Android 8+ uses VibrationEffect with an amplitude, older Android
+    /// vibrates for a fixed time, and iOS uses Handheld.Vibrate (Heavy only, to avoid long buzzes).
     /// </summary>
     public sealed class HapticService
     {

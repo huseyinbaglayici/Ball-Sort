@@ -1,22 +1,9 @@
 using System;
-using Project.Core.Events;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
 namespace Project.Core.SceneLoading
 {
-    public readonly struct SceneLoaded : IEvent
-    {
-        public readonly string SceneName;
-        public SceneLoaded(string sceneName) => SceneName = sceneName;
-    }
-
-    public readonly struct SceneUnloading : IEvent
-    {
-        public readonly string SceneName;
-        public SceneUnloading(string sceneName) => SceneName = sceneName;
-    }
-
     /// <summary>
     /// Loads content scenes additively on top of the persistent Boot scene.
     /// Only one content scene is active at a time; the previous one is unloaded first.
@@ -42,7 +29,6 @@ namespace Project.Core.SceneLoading
             {
                 if (!string.IsNullOrEmpty(CurrentScene))
                 {
-                    EventBus<SceneUnloading>.Raise(new SceneUnloading(CurrentScene));
                     await Run(SceneManager.UnloadSceneAsync(CurrentScene), p => progress?.Invoke(p * 0.3f));
                     CurrentScene = null;
                 }
@@ -55,7 +41,6 @@ namespace Project.Core.SceneLoading
                 SceneManager.SetActiveScene(SceneManager.GetSceneByName(sceneName));
                 CurrentScene = sceneName;
                 progress?.Invoke(1f);
-                EventBus<SceneLoaded>.Raise(new SceneLoaded(sceneName));
             }
             finally
             {

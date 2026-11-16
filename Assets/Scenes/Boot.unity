@@ -451,7 +451,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1883977412}
-  - component: {fileID: 1883977411}
   - component: {fileID: 1883977410}
   - component: {fileID: 1883977409}
   - component: {fileID: 1883977408}
@@ -474,7 +473,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ff2616de4fb1263409260a7041df74d3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Project.Contexts::Project.Contexts.Application.Bootstrapper
-  _updater: {fileID: 1883977411}
   _audio: {fileID: 1883977410}
   _loadingOverlay: {fileID: 1998262370}
   _popupRoot: {fileID: 337537690}
@@ -511,18 +509,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Project.Core::Project.Core.Audio.AudioService
   _library: {fileID: 11400000, guid: 02250e4adb56a804ca29d633ccac9e74, type: 2}
   _sfxSourceCount: 8
---- !u!114 &1883977411
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1883977407}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7b6d4d9772c6ce548969c49ab9917b72, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Project.Core::Project.Core.Updater.UpdateDispatcher
 --- !u!4 &1883977412
 Transform:
   m_ObjectHideFlags: 0

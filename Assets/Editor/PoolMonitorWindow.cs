@@ -63,7 +63,7 @@ namespace Project.Editor
 
             if (_stats.Count == 0) EditorGUILayout.HelpBox("No pools created yet.", MessageType.None);
             else if (_stats.Exists(s => s.Grows > 0))
-                EditorGUILayout.HelpBox("A pool grew past its MaxCount. Raise MaxCount in the PoolConfig.", MessageType.Warning);
+                EditorGUILayout.HelpBox("A pool grew past its MaxCount. Raise MaxCount in the ItemRegistry.", MessageType.Warning);
         }
     }
 }

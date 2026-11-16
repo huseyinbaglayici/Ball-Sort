@@ -24,8 +24,8 @@ namespace Project.Core.Pooling
     }
 
     /// <summary>
-    /// Owns one <see cref="ComponentPool{T}"/> per prefab. Pools are created from a <see cref="PoolConfig"/>
-    /// when a context starts (warm-up) and lazily on first use for prefabs missing from the config.
+    /// Owns one <see cref="ComponentPool{T}"/> per prefab. Pools are created when a context warms them up,
+    /// or lazily on first spawn.
     /// </summary>
     public sealed class PoolService : IDisposable
     {
@@ -33,25 +33,13 @@ namespace Project.Core.Pooling
 
         private readonly Transform _root;
         private readonly Dictionary<GameObject, ComponentPool<Transform>> _byPrefab = new();
-        private readonly Dictionary<object, ComponentPool<Transform>> _byPool = new();
 
         public PoolService(Transform root)
         {
             _root = root;
         }
 
-        public void Prewarm(PoolConfig config)
-        {
-            if (config == null) return;
-            foreach (var entry in config.Entries)
-            {
-                if (entry.Prefab == null) continue;
-                var pool = GetOrCreate(entry.Prefab, entry.MaxCount);
-                pool.Warm(entry.WarmCount - pool.TotalCreated);
-            }
-        }
-
-        /// <summary>Warms one prefab directly, for data that maps types to prefabs (e.g. an item registry).</summary>
+        /// <summary>Warms one prefab, e.g. from an item registry's warm/max counts.</summary>
         public void Prewarm(GameObject prefab, int warmCount, int maxCount)
         {
             if (prefab == null) return;
@@ -71,8 +59,7 @@ namespace Project.Core.Pooling
         {
             if (instance == null) return;
             var handle = instance.GetComponent<PoolHandle>();
-            if (handle != null && handle.Owner != null && _byPool.TryGetValue(handle.Owner, out var pool)
-                && pool.Return(instance.transform))
+            if (handle != null && handle.Owner is ComponentPool<Transform> pool && pool.Return(instance.transform))
                 return;
 
             Debug.LogWarning($"[Pool] '{instance.name}' is not spawned from a pool; destroying it instead.");
@@ -96,7 +83,6 @@ namespace Project.Core.Pooling
         {
             foreach (var pool in _byPrefab.Values) pool.DestroyAll();
             _byPrefab.Clear();
-            _byPool.Clear();
         }
 
         private ComponentPool<Transform> GetOrCreate(GameObject prefab, int maxCount)
@@ -107,7 +93,6 @@ namespace Project.Core.Pooling
             container.SetParent(_root, false);
             pool = new ComponentPool<Transform>(prefab.transform, container, 0, maxCount);
             _byPrefab.Add(prefab, pool);
-            _byPool.Add(pool, pool);
             return pool;
         }
     }

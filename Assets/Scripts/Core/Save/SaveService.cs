@@ -6,8 +6,8 @@ namespace Project.Core.Save
 {
     /// <summary>
     /// One JSON file per model under persistentDataPath. Writes go to a temp file first and the
-    /// previous file is kept as .bak, so a crash during save never leaves a half-written file.
-    /// Loading falls back to the backup when the main file is missing or corrupt.
+    /// previous file is kept as .bak. Loading falls back to the backup when the main file is missing or corrupt,
+    /// so a crash during save loses at most the save in progress.
     /// </summary>
     public sealed class SaveService
     {
@@ -46,13 +46,6 @@ namespace Project.Core.Save
             {
                 Debug.LogError($"[Save] Could not save '{key}': {e.Message}");
             }
-        }
-
-        public void Delete(string key)
-        {
-            var path = PathFor(key);
-            foreach (var file in new[] { path, path + ".bak", path + ".tmp" })
-                if (File.Exists(file)) File.Delete(file);
         }
 
         private string PathFor(string key) => Path.Combine(_folder, key + ".json");

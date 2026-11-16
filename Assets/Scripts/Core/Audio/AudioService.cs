@@ -3,7 +3,7 @@ using UnityEngine;
 namespace Project.Core.Audio
 {
     /// <summary>
-    /// One music source plus a small round-robin set of SFX sources (no AudioSource is created at runtime).
+    /// One music source plus a small round-robin set of SFX sources, all created once on initialization.
     /// Mute flags are persisted through the SettingsService by the caller.
     /// </summary>
     public sealed class AudioService : MonoBehaviour
@@ -51,12 +51,6 @@ namespace Project.Core.Audio
             _music.clip = entry.Clip;
             _music.volume = entry.Volume <= 0f ? 1f : entry.Volume;
             _music.Play();
-        }
-
-        public void StopMusic()
-        {
-            _currentMusicId = null;
-            if (_music != null) _music.Stop();
         }
 
         public void SetMusicMuted(bool muted)

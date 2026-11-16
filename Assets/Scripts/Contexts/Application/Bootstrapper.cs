@@ -10,7 +10,6 @@ using Project.Core.Save;
 using Project.Core.SceneLoading;
 using Project.Core.Services;
 using Project.Core.Settings;
-using Project.Core.Updater;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -27,7 +26,6 @@ namespace Project.Contexts.Application
         public const string EditorStartSceneKey = "Project.EditorStartScene";
 
         [Header("Scene objects")]
-        [SerializeField] private UpdateDispatcher _updater;
         [SerializeField] private AudioService _audio;
         [SerializeField] private LoadingOverlay _loadingOverlay;
         [SerializeField] private Transform _popupRoot;
@@ -48,7 +46,6 @@ namespace Project.Contexts.Application
 
             Services.Register(save);
             Services.Register(settings);
-            Services.Register(_updater);
             Services.Register(_audio);
             Services.Register(new HapticService(settings.Model.HapticsEnabled));
             Services.Register(new LocalizationService(_localizationTables, settings.Model.Language));

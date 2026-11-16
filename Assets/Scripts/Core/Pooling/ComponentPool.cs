@@ -139,7 +139,7 @@ namespace Project.Core.Pooling
         {
             var newMax = Mathf.Max(MaxCount * 2, 1);
             Debug.LogWarning($"[Pool] '{Name}' exceeded MaxCount {MaxCount}, growing to {newMax}. " +
-                             "Raise MaxCount in the PoolConfig if this is expected.");
+                             "Raise MaxCount in the ItemRegistry if this is expected.");
             Array.Resize(ref _available, newMax);
             Array.Resize(ref _inUse, newMax);
             Array.Resize(ref _inUseHandles, newMax);

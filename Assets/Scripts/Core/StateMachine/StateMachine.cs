@@ -4,15 +4,8 @@ using UnityEngine;
 
 namespace Project.Core.StateMachine
 {
-    public interface IState
-    {
-        void Enter();
-        void Exit();
-        void Tick(float deltaTime);
-    }
-
-    /// <summary>Base class so simple states only override what they need.</summary>
-    public abstract class State : IState
+    /// <summary>One state of a <see cref="StateMachine{TKey}"/>; override only what it needs.</summary>
+    public abstract class State
     {
         public virtual void Enter() { }
         public virtual void Exit() { }
@@ -25,14 +18,14 @@ namespace Project.Core.StateMachine
     /// </summary>
     public sealed class StateMachine<TKey> where TKey : struct, Enum
     {
-        private readonly Dictionary<TKey, IState> _states = new();
-        private IState _current;
+        private readonly Dictionary<TKey, State> _states = new();
+        private State _current;
         private bool _transitioning;
         private TKey? _pending;
 
         public TKey? CurrentKey { get; private set; }
 
-        public StateMachine<TKey> Add(TKey key, IState state)
+        public StateMachine<TKey> Add(TKey key, State state)
         {
             _states[key] = state;
             return this;

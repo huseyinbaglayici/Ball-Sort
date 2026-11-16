@@ -11,7 +11,7 @@ using UnityEngine.UI;
 
 namespace Project.Contexts.Home
 {
-    /// <summary>Sample Home screen: level and coins, Play, and the three persisted settings toggles.</summary>
+    /// <summary>Home screen: level and coins, Play, and the three persisted settings toggles.</summary>
     public sealed class HomeScreen : MonoBehaviour
     {
         [SerializeField] private TMP_Text _levelText;
