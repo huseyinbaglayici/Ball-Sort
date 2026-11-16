@@ -25,8 +25,6 @@ namespace Project.Contexts.Game.Items
 
         private Dictionary<ItemType, Item> _prefabs;
 
-        public IReadOnlyList<Entry> Entries => _entries;
-
         public Item GetPrefab(ItemType type)
         {
             if (_prefabs == null)

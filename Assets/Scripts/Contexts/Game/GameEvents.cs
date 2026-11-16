@@ -1,3 +1,4 @@
+using Project.Contexts.Game.Items;
 using Project.Core.Events;
 
 namespace Project.Contexts.Game
@@ -9,15 +10,9 @@ namespace Project.Contexts.Game
         Lost
     }
 
-    public readonly struct CollectibleTapped : IEvent
+    public readonly struct BottleTapped : IEvent
     {
-        public readonly Collectible Target;
-        public CollectibleTapped(Collectible target) => Target = target;
-    }
-
-    public readonly struct CollectibleExpired : IEvent
-    {
-        public readonly Collectible Target;
-        public CollectibleExpired(Collectible target) => Target = target;
+        public readonly BottleItem Bottle;
+        public BottleTapped(BottleItem bottle) => Bottle = bottle;
     }
 }
