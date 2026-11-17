@@ -11,7 +11,6 @@ using Project.Core.Services;
 using Project.Core.StateMachine;
 using TMPro;
 using UnityEngine;
-using UnityEngine.Serialization;
 using Project.Common.UI.PopUps;
 
 namespace Project.Contexts.Game
@@ -22,10 +21,6 @@ namespace Project.Contexts.Game
     /// </summary>
     public sealed class GameController : MonoBehaviour
     {
-        // The retry counter of the level being played, kept for the session. Each retry shows the next layout variant.
-        private static int _attemptLevel = -1;
-        private static int _attempt;
-
         [Header("Data")]
         [SerializeField] private ItemRegistry _items;
         [SerializeField] private LevelCatalog _catalog;
@@ -36,8 +31,8 @@ namespace Project.Contexts.Game
         [SerializeField] private BoardView _board;
 
         [Header("UI")]
-        [FormerlySerializedAs("_timerText")] [SerializeField] private TMP_Text _levelText;
-        [FormerlySerializedAs("_progressText")] [SerializeField] private TMP_Text _movesText;
+        [SerializeField] private TMP_Text _levelText;
+        [SerializeField] private TMP_Text _movesText;
         [SerializeField] private ResultPopup _resultPopup;
 
         private readonly StateMachine<GameState> _states = new();
@@ -47,15 +42,12 @@ namespace Project.Contexts.Game
         private HapticService _haptics;
         private SortBoard _model;
         private BottleItem _selected;
-        private bool _busy;
+        // The winning move is made in the model; input waits until its last ball lands.
+        private bool _winPending;
+        // The deadlock check request: set when a move's last ball lands, kept until the board is stopped (no ball
+        // flying; a lifted selection does not count), then checked once and cleared. Undo does not clear it.
+        private bool _stuckCheckPending;
         private int _level;
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStatics()
-        {
-            _attemptLevel = -1;
-            _attempt = 0;
-        }
 
         private void Start()
         {
@@ -66,15 +58,19 @@ namespace Project.Contexts.Game
             _factory.Prewarm();
 
             _states.Add(GameState.Playing, new PlayingState(this))
-                   .Add(GameState.Won, new WonState(this));
+                   .Add(GameState.Won, new WonState(this))
+                   .Add(GameState.Lost, new LostState(this));
             _states.ChangeState(GameState.Playing);
+        }
 
+        private void OnEnable()
+        {
+            EventBus<BottleTapped>.Subscribe(OnBottleTapped);
             DebugPanel.AddAction("Undo move", Undo);
             DebugPanel.AddAction("Restart level", Restart);
             DebugPanel.AddAction("Win level", Win);
+            DebugPanel.AddAction("Lose level", Lose);
         }
-
-        private void OnEnable() => EventBus<BottleTapped>.Subscribe(OnBottleTapped);
 
         private void OnDisable()
         {
@@ -82,6 +78,7 @@ namespace Project.Contexts.Game
             DebugPanel.RemoveAction("Undo move");
             DebugPanel.RemoveAction("Restart level");
             DebugPanel.RemoveAction("Win level");
+            DebugPanel.RemoveAction("Lose level");
         }
 
         private void Update() => _states.Tick(Time.deltaTime);
@@ -89,13 +86,8 @@ namespace Project.Contexts.Game
         private void BeginLevel()
         {
             _level = _progress.Level;
-            if (_attemptLevel != _level)
-            {
-                _attemptLevel = _level;
-                _attempt = 0;
-            }
-
-            var data = _catalog != null ? _catalog.Get(_level, _attempt) : null;
+            // Each retry shows the level's next layout variant.
+            var data = _catalog != null ? _catalog.Get(_level, _progress.Attempt) : null;
             if (data == null)
             {
                 Debug.LogError("[Game] No level found. Import levels, then run Tools > Project > Rebuild Level Catalog.");
@@ -104,20 +96,21 @@ namespace Project.Contexts.Game
 
             _model = new SortBoard(data);
             _selected = null;
-            _busy = false;
+            _winPending = false;
+            _stuckCheckPending = false;
             _board.Build(data, _model, _factory, _palette);
             RefreshHud();
         }
 
         private void OnBottleTapped(BottleTapped evt)
         {
-            if (_busy || _model == null || _states.CurrentKey != GameState.Playing) return;
+            if (_winPending || _model == null || _states.CurrentKey != GameState.Playing) return;
 
             var tapped = evt.Bottle;
             if (_selected == null)
             {
-                if (!_model.CanSelectAsOrigin(tapped.Index)) return;
-                Select(tapped);
+                if (CanPick(tapped.Index)) Select(tapped);
+                else _board.Refuse(tapped.Index);
                 return;
             }
 
@@ -129,69 +122,80 @@ namespace Project.Contexts.Game
 
             var from = _selected.Index;
             var to = tapped.Index;
-            Deselect();
-            if (!_model.CanMove(from, to))
+            if (_board.IsLocked(to) || !_model.CanMove(from, to))
             {
-                // Not a legal target: the tap just moves the selection when that bottle can be picked up.
-                if (_model.CanSelectAsOrigin(to)) Select(tapped);
+                // Not a legal target: the tap just moves the selection when that bottle can be picked up; otherwise
+                // the selection drops and the tapped tube says no.
+                Deselect();
+                if (CanPick(to)) Select(tapped);
+                else _board.Reject(to);
                 return;
             }
 
+            // The model moves at once; the view catches up. The lifted balls keep their pose and fly from there.
+            _selected = null;
             _model.TryMove(from, to, out var move);
-            _busy = true;
-            _audio.PlaySfx("collect");
+            if (move.RevealedSlot >= 0) _board.Reveal(move.From, move.RevealedSlot);
+            _winPending = _model.IsSolved();
             _haptics.Play(HapticStrength.Light);
-            _board.Transfer(move.From, move.To, move.Count, () => OnMoveFinished(move));
+            _board.Transfer(move.From, move.To, move.Count, () => OnMoveLanded(move));
+            _board.AssertMatches(_model);
+            RefreshHud();
         }
 
-        private void OnMoveFinished(BallMove move)
+        /// <summary>The last ball of a move landed. Never runs for a move whose flight was cancelled.</summary>
+        private void OnMoveLanded(BallMove move)
         {
-            if (move.RevealedSlot >= 0) _board.Reveal(move.From, move.RevealedSlot);
-            if (move.Completed) _board.SetCompleted(move.To, true);
-            _busy = false;
-            RefreshHud();
-            if (_model.IsSolved()) _states.ChangeState(GameState.Won);
+            if (move.Completed && _model.IsCompleted(move.To)) _board.SetCompleted(move.To, true);
+            if (_winPending) _states.ChangeState(GameState.Won);
+            else _stuckCheckPending = true;
         }
+
+        /// <summary>A bottle can be picked up when the rules allow it and no ball is flying into or out of it.</summary>
+        private bool CanPick(int bottle) => _model.CanSelectAsOrigin(bottle) && !_board.IsLocked(bottle);
 
         private void Select(BottleItem bottle)
         {
             _selected = bottle;
-            bottle.SetSelected(true);
+            _board.Select(bottle.Index, _model.TopRun(bottle.Index));
             _haptics.Play(HapticStrength.Light);
         }
 
         private void Deselect()
         {
             if (_selected == null) return;
-            _selected.SetSelected(false);
+            _board.Deselect(_selected.Index);
             _selected = null;
         }
 
+        /// <summary>Works during motion too: balls still flying turn back from where they are.</summary>
         private void Undo()
         {
-            if (_busy || _model == null || _states.CurrentKey != GameState.Playing) return;
+            if (_winPending || _model == null || _states.CurrentKey != GameState.Playing) return;
             Deselect();
             if (!_model.TryUndo(out var move)) return;
 
             if (move.Completed) _board.SetCompleted(move.To, false);
-            _busy = true;
-            _board.Transfer(move.To, move.From, move.Count, () =>
-            {
-                _busy = false;
-                RefreshHud();
-            });
+            _board.Transfer(move.To, move.From, move.Count, null);
+            _board.AssertMatches(_model);
+            RefreshHud();
         }
 
         private void Restart()
         {
             if (_states.CurrentKey != GameState.Playing) return;
-            _attempt++;
+            _progress.FailAttempt();
             _states.ChangeState(GameState.Playing);
         }
 
         private void Win()
         {
             if (_states.CurrentKey == GameState.Playing) _states.ChangeState(GameState.Won);
+        }
+
+        private void Lose()
+        {
+            if (_states.CurrentKey == GameState.Playing) _states.ChangeState(GameState.Lost);
         }
 
         private void RefreshHud()
@@ -206,6 +210,33 @@ namespace Project.Contexts.Game
             public PlayingState(GameController controller) => _c = controller;
 
             public override void Enter() => _c.BeginLevel();
+
+            public override void Tick(float deltaTime)
+            {
+                if (!_c._stuckCheckPending || _c._board.IsAnimating) return;
+                _c._stuckCheckPending = false;
+                if (_c._model != null && !_c._winPending && _c._model.HasNoMove()) _c._states.ChangeState(GameState.Lost);
+            }
+        }
+
+        /// <summary>
+        /// No move is left. The try counts as failed, so the next try shows the level's next layout variant, the same as
+        /// a restart.
+        /// </summary>
+        private sealed class LostState : State
+        {
+            private readonly GameController _c;
+            public LostState(GameController controller) => _c = controller;
+
+            public override void Enter()
+            {
+                _c.Deselect();
+                _c._audio.PlaySfx("lose");
+                _c._haptics.Play(HapticStrength.Heavy);
+                _c._progress.FailAttempt();
+                Services.Get<PopupService>().Show(_c._resultPopup,
+                    new ResultArgs(false, 0, () => _c._states.ChangeState(GameState.Playing)));
+            }
         }
 
         private sealed class WonState : State
@@ -215,12 +246,12 @@ namespace Project.Contexts.Game
 
             public override void Enter()
             {
-                _attempt = 0;
                 _c.Deselect();
                 _c._progress.CompleteLevel(_c._reward);
                 _c._audio.PlaySfx("win");
                 _c._haptics.Play(HapticStrength.Heavy);
-                Services.Get<PopupService>().Show(_c._resultPopup, new ResultArgs(true, _c._reward));
+                Services.Get<PopupService>().Show(_c._resultPopup,
+                    new ResultArgs(true, _c._reward, () => _ = Services.Get<GameFlow>().GoHomeAsync()));
             }
         }
     }

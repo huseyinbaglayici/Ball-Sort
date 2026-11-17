@@ -242,6 +242,7 @@ MonoBehaviour:
   _title: {fileID: 8872815793028568628}
   _reward: {fileID: 393787806547751511}
   _continue: {fileID: 282208835601725319}
+  _continueLabel: {fileID: 2397655402382578765}
 --- !u!1 &2031220149943346104
 GameObject:
   m_ObjectHideFlags: 0

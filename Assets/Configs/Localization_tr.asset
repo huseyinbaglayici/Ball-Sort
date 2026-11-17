@@ -31,6 +31,8 @@ MonoBehaviour:
   - Key: result.win
     Value: "Kazand\u0131n!"
   - Key: result.lose
-    Value: "S\xFCre bitti"
+    Value: "Hamle kalmadı"
   - Key: common.continue
     Value: Devam
+  - Key: common.retry
+    Value: Tekrar dene

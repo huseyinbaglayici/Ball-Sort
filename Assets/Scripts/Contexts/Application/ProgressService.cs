@@ -18,7 +18,9 @@ namespace Project.Contexts.Application
         public CoinsChanged(int coins) => Coins = coins;
     }
 
-    /// <summary>Player progress (level, coins), saved after every change.</summary>
+    /// <summary>
+    /// Player progress (level, coins), saved after every change, and the tries of the current level in this session.
+    /// </summary>
     public sealed class ProgressService
     {
         private const string Key = "progress";
@@ -34,9 +36,16 @@ namespace Project.Contexts.Application
         public int Level => _model.Level;
         public int Coins => _model.Coins;
 
+        /// <summary>0 for the first try of the current level, +1 for every failed or restarted try. Not saved.</summary>
+        public int Attempt { get; private set; }
+
+        /// <summary>The current try is over without a win; the next one is a retry.</summary>
+        public void FailAttempt() => Attempt++;
+
         public void CompleteLevel(int reward)
         {
             _model.Level++;
+            Attempt = 0;
             AddCoins(reward);
         }
 
@@ -51,6 +60,7 @@ namespace Project.Contexts.Application
         {
             _model.Level = 1;
             _model.Coins = 0;
+            Attempt = 0;
             _save.Save(Key, _model);
             EventBus<CoinsChanged>.Raise(new CoinsChanged(0));
         }

@@ -31,6 +31,8 @@ MonoBehaviour:
   - Key: result.win
     Value: You win!
   - Key: result.lose
-    Value: Time's up
+    Value: No moves left
   - Key: common.continue
     Value: Continue
+  - Key: common.retry
+    Value: Try again
