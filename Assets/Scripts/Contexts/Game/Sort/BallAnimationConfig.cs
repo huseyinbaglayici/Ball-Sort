@@ -1,0 +1,237 @@
+using UnityEngine;
+
+namespace Project.Contexts.Game.Sort
+{
+    /// <summary>
+    /// Every timing of the ball motion: selection wave, warp between tubes, partial-transfer return, landing settle,
+    /// tube reactions, highlight and the completed-bottle mark.
+    /// </summary>
+    [CreateAssetMenu(menuName = "Project/Ball Animation Config", fileName = "BallAnimationConfig")]
+    public sealed class BallAnimationConfig : ScriptableObject
+    {
+        [Header("Selection wave")]
+        [Tooltip("How far every selected ball rises from its slot, in slot heights. The same for a full tube and a single ball at the bottom, so a selection always reads the same. The balls keep their stack spacing.")]
+        [Range(0f, 2f)] public float LiftHeight = 1f;
+        [Tooltip("Lift speed in board units per second; the lift time is distance / speed within the limits below.")]
+        public float LiftSpeed = 30f;
+        [Tooltip("Shortest lift time.")]
+        public float LiftMinDuration = 0.09f;
+        [Tooltip("Longest lift time; only a ball lifted from deep in the tube reaches it.")]
+        public float LiftMaxDuration = 0.12f;
+        public AnimationCurve LiftCurve = Curve(0f, 0f, 2f, 2f, 1f, 1f, 0f, 0f);
+        [Tooltip("Delay between ball i and ball i+1, top ball first. Small, so the balls below follow in line. The last entry repeats.")]
+        public float[] WaveStagger = { 0.025f };
+        [Tooltip("Lowering speed on deselect, in board units per second.")]
+        public float LowerSpeed = 40f;
+        [Tooltip("Shortest and longest lowering time.")]
+        public float LowerMinDuration = 0.09f;
+        public float LowerMaxDuration = 0.12f;
+        public AnimationCurve LowerCurve = Curve(0f, 0f, 0f, 0f, 1f, 1f, 0f, 0f);
+        [Tooltip("Follow-through: the balls first rise this much further, in slot heights, then settle back down to LiftHeight over LiftSettleDuration. 0 = no overshoot.")]
+        [Range(0f, 1f)] public float LiftOvershoot = 0f;
+        [Tooltip("Time to settle back from the overshoot into the mouth.")]
+        public float LiftSettleDuration = 0.08f;
+        [Tooltip("While it settles back into the mouth the ball gives this small squash (area kept), peaking halfway.")]
+        public Vector2 LiftSettleSquash = new(1.05f, 0.95f);
+        [Tooltip("On the tap, the balls that stay in the tube give one tiny up-and-down. Height in board units and time.")]
+        public float TapBob = 0.04f;
+        public float TapBobDuration = 0.16f;
+        [Tooltip("While selected, the lifted balls float up and down by this much (board units), so the selection stays alive while the player decides. 0 = still.")]
+        public float HoverHeight = 0.03f;
+        [Tooltip("One full float up and down, in seconds.")]
+        public float HoverPeriod = 0.6f;
+
+        [Header("Warp (the jump between tubes)")]
+        [Tooltip("Time to cross the portals, from the end of the charge to the ball just out of the target ring. The same from any depth: a ball deep in its tube travels faster, not longer, so every move lasts the same.")]
+        public float WarpCross = 0.17f;
+        [Tooltip("Time for a ball to pass through a portal, from touching the source ring to all out of the target ring, at one steady speed. Short enough to stay snappy, long enough that the share going in and coming out reads. Part of WarpCross.")]
+        public float PortalPass = 0.1f;
+        [Tooltip("Anticipation: the ball gathers and shivers before it jumps, while the source portal opens over it.")]
+        public float WarpCharge = 0.05f;
+        [Tooltip("Ball scale at the end of the charge (it grows a little).")]
+        public Vector2 ChargeSquash = new(1.12f, 1.12f);
+        [Tooltip("Sideways shiver while charging, in board units.")]
+        public float ChargeShiver = 0.025f;
+        [Tooltip("How many times as tall the ball is when fully inside a portal (area kept, so it gets thinner).")]
+        public float VanishStretch = 1.5f;
+        [Tooltip("Gap between a tube's mouth and the bottom edge of the portal ring over it, in board units, at both ends of a move. Small, so the ring sits on the mouth like a cap and the ball goes straight from the tube into the ring.")]
+        public float PortalHeight = 0.1f;
+        [Tooltip("The portal, a thick ring 1 unit wide seen from above like the tubes (ArtSource/Hole/make_hole.py), pivoted on the center of its face. Back is the face and the void through the opening, Front the near half and the side wall under it. Both draw over the balls: a ball rises up into one ring and disappears behind its lower edge, and comes down from behind the other.")]
+        public Sprite PortalBack;
+        public Sprite PortalFront;
+        [Tooltip("Tint of the portal art; white keeps its colors. Its alpha fades with the portal.")]
+        public Color PortalColor = Color.white;
+        [Tooltip("Portal width, as a multiple of the ball diameter.")]
+        public float PortalWidth = 1.6f;
+        [Tooltip("Time for a portal to open like an iris: a flat slit that widens, then opens up with a small overshoot. Both portals open together on the target tap, while the balls charge; the selection opens none.")]
+        public float PortalOpen = 0.12f;
+        [Tooltip("Time for a portal to close: it swells a little and collapses into its center. It starts once the last ball of the move is through.")]
+        public float PortalClose = 0.14f;
+        [Tooltip("The ring art's outer half width, as a share of its width (make_hole.py: 0.5 minus the padding). With the flatness it sets how far the ring reaches under its center, so it sits just over the mouth.")]
+        public float PortalRim = 0.49f;
+        [Tooltip("Height of the ring art's side wall under its face, as a share of its width (make_hole.py THICK). With the rim and the flatness it sets the ring's lowest edge: where it sits over the mouth and where it splits the balls.")]
+        public float PortalWall = 0.085f;
+
+        [Header("Narrow mouth and snap")]
+        [Tooltip("Out of the target portal the ball keeps falling, straight through the mouth into its slot, starting at the speed it came out with. A deep slot keeps speeding it up, like gravity; a near one slows it down, but it always hits the slot with at least this share of its exit speed, and the snap takes the impact. 0 = it may ease to a stop.")]
+        [Range(0f, 1f)] public float ExitKeep = 0.35f;
+        [Tooltip("Ball scale at its tightest in the mouth, on the way in and out. Keep x times y near 1 so the ball keeps its volume.")]
+        public Vector2 NeckSqueeze = new(0.9f, 1.11f);
+        [Tooltip("The hard stop in the slot: hit pose, linear hit time, and an eased release with no overshoot.")]
+        public Vector2 SnapSquash = new(1.16f, 0.82f);
+        [Tooltip("Long enough that the hit pose is always drawn for at least 2 frames.")]
+        public float SnapHit = 0.04f;
+        public float SnapRecover = 0.07f;
+
+        [Header("Motion smear (keeps fast moves continuous)")]
+        [Tooltip("Each frame the ball stretches back over the distance it just travelled, times this, so there is never a gap between two frames for the eye to jump. 1 = it covers the whole step.")]
+        public float SmearAmount = 1f;
+        [Tooltip("Longest the smeared ball may get, as a multiple of its diameter.")]
+        public float MaxSmear = 2.6f;
+        [Tooltip("How much thinner the ball gets as it stretches (0 = keeps its width).")]
+        [Range(0f, 0.5f)] public float SmearThin = 0.12f;
+
+        [Header("Drop into the slot")]
+        [Tooltip("The entry window of a move, from the first ball starting into the target mouth to the last ball in its slot. The same for any number of balls, so a move never grows with the group: more balls share it. A single ball only uses its own entry (EntryShare of it).")]
+        public float EntryWindow = 0.25f;
+        [Tooltip("Each ball's own entry, as a share of the window, for any number of balls; with several balls the rest is spread as the stagger between them, so they land one after another and the last one lands at the end of the window.")]
+        [Range(0.2f, 1f)] public float EntryShare = 0.55f;
+
+        [Header("Return after a partial transfer")]
+        [Tooltip("In board units per second, with a shortest time.")]
+        public float ReturnSpeed = 106.8f;
+        public float ReturnMinDuration = 0.27f;
+        public AnimationCurve ReturnCurve = AnimationCurve.Linear(0f, 0f, 1f, 1f);
+
+        [Header("Landing settle")]
+        [Tooltip("Delay before the squash; a ball squashes on contact.")]
+        public float SettleDelay;
+        [Tooltip("Squash, stretch and recover poses and times of a landing ball.")]
+        public Vector2 SquashScale = new(1.12f, 0.88f);
+        public float SquashDuration = 0.05f;
+        public AnimationCurve SquashCurve = Curve(0f, 0f, 0f, 0f, 1f, 1f, 2f, 2f);
+        public Vector2 StretchScale = new(0.96f, 1.05f);
+        public float StretchDuration = 0.08f;
+        public AnimationCurve StretchCurve = Curve(0f, 0f, 0f, 0f, 1f, 1f, 0f, 0f);
+        public float RecoverDuration = 0.16f;
+        public AnimationCurve RecoverCurve = Curve(0f, 0f, 0f, 0f, 1f, 1f, 0f, 0f);
+
+        [Header("Ripple shape, played by the balls under a landing ball")]
+        public Vector2 TubeSquash = new(1.07f, 0.95f);
+        public float TubeSquashDuration = 0.04f;
+        public Vector2 TubeStretch = new(0.97f, 1.04f);
+        public float TubeStretchDuration = 0.07f;
+        public float TubeRecoverDuration = 0.20f;
+
+        [Header("Tube reactions (they add up; the tube art and its resting balls squash from the bottom)")]
+        [Tooltip("Picked: the tube presses down (wide and short, and this far down) as if pushing the balls up, then releases. Together they last as long as the lift.")]
+        public Vector2 SelectPress = new(1.04f, 0.96f);
+        public float SelectDrop = 0.03f;
+        public float SelectPressDuration = 0.03f;
+        public float SelectReleaseDuration = 0.06f;
+        [Tooltip("Deselected, or the balls left after a partial move go back: a small catch when they are back in.")]
+        public Vector2 CatchSquash = new(1.02f, 0.98f);
+        public float CatchInDuration = 0.03f;
+        public float CatchOutDuration = 0.08f;
+        [Tooltip("Tapped as a target that cannot take the balls: a sideways shake that dies out, in board units.")]
+        public float RejectShake = 0.05f;
+        public float RejectCycles = 3f;
+        public float RejectDuration = 0.2f;
+        [Tooltip("Tapped while it cannot be picked (empty, completed or busy): a small press only.")]
+        public Vector2 LockedPress = new(1.02f, 0.98f);
+        public float LockedDuration = 0.06f;
+        [Tooltip("A ball shoots out of the mouth: the tube kicks back down and wide, springs up a little and settles.")]
+        public Vector2 RecoilSquash = new(1.04f, 0.96f);
+        [Tooltip("How far the kick pushes the tube down, in board units.")]
+        public float RecoilDrop = 0.04f;
+        public Vector2 RecoilStretch = new(0.98f, 1.03f);
+        public float RecoilHit = 0.04f;
+        public float RecoilStretchDuration = 0.07f;
+        public float RecoilRecover = 0.2f;
+        [Tooltip("A ball goes into the mouth: the tube widens by this share for a moment, like a gulp.")]
+        public float SwallowWiden = 0.03f;
+        public float SwallowIn = 0.02f;
+        public float SwallowOut = 0.04f;
+        [Tooltip("A ball lands in its slot: the tube takes the hit (wide and short) and recovers.")]
+        public Vector2 ImpactSquash = new(1.04f, 0.97f);
+        public float ImpactIn = 0.04f;
+        public float ImpactOut = 0.12f;
+        [Tooltip("With several balls in one move, each later ball's launch, gulp and impact is this share of the one before; the first ball reacts hardest.")]
+        [Range(0f, 1f)] public float ReactionFalloff = 0.6f;
+
+        [Header("Anticipation and follow-through")]
+        [Tooltip("Before a selected ball rises it presses down a little (wider, shorter). Taken out of the lift time, so the lift still ends on time.")]
+        public Vector2 AnticipationSquash = new(1.06f, 0.94f);
+        public float AnticipationDuration = 0.02f;
+
+        [Header("Impact wave on the balls below")]
+        [Tooltip("When a ball lands, each ball under it plays a small copy of the tube squash (TubeSquash, TubeStretch and their times), top to bottom. Share of the full squash for the ball right below.")]
+        [Range(0f, 1f)] public float RippleStrength = 0.6f;
+        [Tooltip("Each ball further down gets this share of the one above, so the wave dies out toward the bottom.")]
+        [Range(0f, 1f)] public float RippleFalloff = 0.6f;
+        [Tooltip("Delay between one ball of the wave and the next one down.")]
+        public float RippleStep = 0.04f;
+
+        [Header("Highlight")]
+        [Tooltip("Fade-in and fade-out times. Every selected ball lights up at once.")]
+        public float HighlightInDuration = 0.12f;
+        public float HighlightOutDuration = 0.25f;
+        [Tooltip("Outer diameter of the thin contour around each selected ball, relative to the ball.")]
+        public float ContourScale = 1.1f;
+        public Color ContourColor = new(1f, 1f, 1f, 0.95f);
+        [Tooltip("Outer diameter of the soft light around each selected ball, relative to the ball. Keep it tight so neighbours stay separate.")]
+        public float GlowScale = 1.26f;
+        public Color GlowColor = new(1f, 0.97f, 0.8f, 0.55f);
+
+        [Header("Completed bottle")]
+        [Tooltip("The cap art drops onto the mouth and settles over this time.")]
+        public float CapDuration = 0.25f;
+        [Tooltip("Completed: after the last impact settles, the cap drops and the tube gives a small victory hop, landing with a squash.")]
+        public float CompleteDelay = 0.15f;
+        [Tooltip("Hop height in board units.")]
+        public float CompleteHop = 0.3f;
+        public float CompleteRise = 0.28f;
+        public float CompleteFall = 0.05f;
+        public Vector2 CompleteSquash = new(1.08f, 0.93f);
+        public float CompleteSquashIn = 0.04f;
+        public float CompleteSquashOut = 0.15f;
+
+        [Header("Sound")]
+        public string LandSound = "ball_land";
+        [Tooltip("Pitch rise for each later ball of one transfer.")]
+        public float LandPitchStep = 0.04f;
+
+        public float WaveDelay(int index)
+        {
+            var delay = 0f;
+            for (var i = 0; i < index; i++) delay += At(WaveStagger, i);
+            return delay;
+        }
+
+        /// <summary>
+        /// The entry window split for <paramref name="count"/> balls: each ball's own entry and the delay between two
+        /// balls. A ball always gets the same entry, <see cref="EntryShare"/> of the window, so a single ball goes in as
+        /// briskly as one of a group. With several balls the rest of the window is the stagger, so the last one lands at
+        /// the end of the window; a single ball just lands sooner.
+        /// </summary>
+        public void EntryTiming(int count, out float entry, out float stagger)
+        {
+            entry = EntryWindow * EntryShare;
+            stagger = count <= 1 ? 0f : (EntryWindow - entry) / (count - 1);
+        }
+
+        public float LiftDuration(float distance) =>
+            Mathf.Clamp(distance / Mathf.Max(LiftSpeed, 0.01f), LiftMinDuration, Mathf.Max(LiftMinDuration, LiftMaxDuration));
+
+        public float LowerDuration(float distance) =>
+            Mathf.Clamp(distance / Mathf.Max(LowerSpeed, 0.01f), LowerMinDuration, Mathf.Max(LowerMinDuration, LowerMaxDuration));
+
+        public float ReturnDuration(float distance) => Mathf.Max(distance / Mathf.Max(ReturnSpeed, 0.01f), ReturnMinDuration);
+
+        private static float At(float[] values, int index) =>
+            values == null || values.Length == 0 ? 0f : values[Mathf.Min(index, values.Length - 1)];
+
+        private static AnimationCurve Curve(float t0, float v0, float in0, float out0, float t1, float v1, float in1, float out1) =>
+            new(new Keyframe(t0, v0, in0, out0), new Keyframe(t1, v1, in1, out1));
+    }
+}

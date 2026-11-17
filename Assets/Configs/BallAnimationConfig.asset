@@ -1,0 +1,225 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c5220409f5b28ca4196843cd014c1ac1, type: 3}
+  m_Name: BallAnimationConfig
+  m_EditorClassIdentifier: Project.Contexts::Project.Contexts.Game.Sort.BallAnimationConfig
+  LiftHeight: 1
+  LiftSpeed: 30
+  LiftMinDuration: 0.09
+  LiftMaxDuration: 0.09
+  LiftCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 2
+      outSlope: 2
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  WaveStagger:
+  - 0.025
+  LowerSpeed: 40
+  LowerMinDuration: 0.09
+  LowerMaxDuration: 0.12
+  LowerCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  LiftOvershoot: 0
+  LiftSettleDuration: 0.08
+  LiftSettleSquash: {x: 1.05, y: 0.95}
+  TapBob: 0.04
+  TapBobDuration: 0.09
+  WarpCross: 0.17
+  WarpCharge: 0.05
+  ChargeSquash: {x: 1.12, y: 1.12}
+  ChargeShiver: 0.025
+  VanishStretch: 1.5
+  PortalBack: {fileID: 21300000, guid: 63d937f526c8e904aaca0543764f7ac8, type: 3}
+  PortalFront: {fileID: 21300000, guid: a58b9e9e96fda9c489883f5348388602, type: 3}
+  PortalColor: {r: 1, g: 1, b: 1, a: 1}
+  PortalWidth: 1.6
+  PortalOpen: 0.12
+  PortalClose: 0.14
+  PortalRim: 0.49
+  PortalWall: 0.085
+  ExitKeep: 0.35
+  NeckSqueeze: {x: 0.9, y: 1.11}
+  SnapSquash: {x: 1.16, y: 0.82}
+  SnapHit: 0.04
+  SnapRecover: 0.07
+  SmearAmount: 1
+  MaxSmear: 2.6
+  SmearThin: 0.12
+  PortalHeight: 0.25
+  EntryWindow: 0.25
+  EntryShare: 0.55
+  ReturnSpeed: 106.8
+  ReturnMinDuration: 0.27
+  ReturnCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 1
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 1
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  SettleDelay: 0
+  SquashScale: {x: 1.12, y: 0.88}
+  SquashDuration: 0.05
+  SquashCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 2
+      outSlope: 2
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  StretchScale: {x: 0.96, y: 1.05}
+  StretchDuration: 0.08
+  StretchCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  RecoverDuration: 0.16
+  RecoverCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  TubeSquash: {x: 1.07, y: 0.95}
+  TubeSquashDuration: 0.04
+  TubeStretch: {x: 0.97, y: 1.04}
+  TubeStretchDuration: 0.07
+  TubeRecoverDuration: 0.2
+  RecoilDrop: 0.04
+  RecoilStretch: {x: 0.98, y: 1.03}
+  AnticipationSquash: {x: 1.06, y: 0.94}
+  AnticipationDuration: 0
+  RippleStrength: 0.6
+  RippleFalloff: 0.6
+  RippleStep: 0.04
+  HighlightInDuration: 0.09
+  HighlightOutDuration: 0.25
+  ContourScale: 1.1
+  ContourColor: {r: 1, g: 1, b: 1, a: 0.95}
+  GlowScale: 1.26
+  GlowColor: {r: 1, g: 0.97, b: 0.8, a: 0.55}
+  CapDuration: 0.25
+  LandSound: ball_land
+  LandPitchStep: 0.04

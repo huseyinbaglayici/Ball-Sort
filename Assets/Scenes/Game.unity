@@ -250,9 +250,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c3d8242d9aa6cc246997242116bb1ec3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Project.Contexts::Project.Contexts.Game.Sort.BoardView
-  _maxWidth: 9.6
-  _maxHeight: 13
-  _center: {x: 0, y: -0.5}
+  _animation: {fileID: 11400000, guid: 0aae03f676d7e844eaea03588121405c, type: 2}
 --- !u!4 &346832389
 Transform:
   m_ObjectHideFlags: 0
