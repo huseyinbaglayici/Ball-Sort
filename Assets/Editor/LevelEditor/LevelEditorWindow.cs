@@ -234,6 +234,8 @@ namespace Project.Editor.LevelEditor
                 AssetDatabase.StopAssetEditing();
             }
             AssetDatabase.SaveAssets();
+            // Imported levels are playable at once; a level made with New starts empty and joins at the next rebuild.
+            LevelCatalogBuilder.Rebuild();
             _level = null;
             Refresh();
             Debug.Log($"Imported {imported.Count} levels into {LevelAssetStore.LevelsFolder}.");

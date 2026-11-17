@@ -9,11 +9,17 @@ namespace Project.Editor.LevelEditor
     {
         public readonly string Label;
         public readonly LevelData Level;
+        /// <summary>
+        /// Whether the game's catalog uses it: a level with numbered layouts (_v1, _v2, ...) ignores a plain Level_NNN
+        /// asset with the same number.
+        /// </summary>
+        public readonly bool InCatalog;
 
-        public LevelVariant(string label, LevelData level)
+        public LevelVariant(string label, LevelData level, bool inCatalog)
         {
             Label = label;
             Level = level;
+            InCatalog = inCatalog;
         }
     }
 
@@ -26,8 +32,8 @@ namespace Project.Editor.LevelEditor
     }
 
     /// <summary>
-    /// Groups level assets for the editor window by the number in their name (Level_007_v1, Level_007_v2 ... = level 7).
-    /// Only the view is grouped: the assets, their names and the game's data stay exactly as they are.
+    /// Groups level assets by the number in their name (Level_007_v1, Level_007_v2 ... = level 7), for the editor window
+    /// and the level catalog. The assets and their names stay exactly as they are.
     /// </summary>
     public static class LevelGrouping
     {
@@ -61,8 +67,9 @@ namespace Project.Editor.LevelEditor
                 var group = new LevelGroup { Number = pair.Key, Title = $"Level {pair.Key}" };
                 foreach (var (index, level) in pair.Value)
                 {
-                    var label = index > 0 ? $"Variant {index}" : hasNumbered ? "Base (not used by the catalog)" : "Layout";
-                    group.Variants.Add(new LevelVariant(label, level));
+                    var inCatalog = index > 0 || !hasNumbered;
+                    var label = index > 0 ? $"Variant {index}" : inCatalog ? "Layout" : "Base (not used by the catalog)";
+                    group.Variants.Add(new LevelVariant(label, level, inCatalog));
                 }
                 groups.Add(group);
             }
@@ -70,7 +77,7 @@ namespace Project.Editor.LevelEditor
             foreach (var level in others)
             {
                 var group = new LevelGroup { Number = 0, Title = level.name };
-                group.Variants.Add(new LevelVariant("Layout", level));
+                group.Variants.Add(new LevelVariant("Layout", level, inCatalog: false));
                 groups.Add(group);
             }
             return groups;

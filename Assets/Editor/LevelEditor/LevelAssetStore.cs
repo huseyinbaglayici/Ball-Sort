@@ -44,16 +44,6 @@ namespace Project.Editor.LevelEditor
             return existing;
         }
 
-        public static string NextFreeName()
-        {
-            EnsureFolder();
-            for (var i = 1; ; i++)
-            {
-                var name = $"Level_{i:000}";
-                if (!File.Exists($"{LevelsFolder}/{name}.asset")) return name;
-            }
-        }
-
         public static LevelPalette FindOrCreatePalette()
         {
             var guids = AssetDatabase.FindAssets("t:" + nameof(LevelPalette));
