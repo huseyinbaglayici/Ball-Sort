@@ -49,7 +49,7 @@ namespace Project.Contexts.Game
         private bool _stuckCheckPending;
         private int _level;
 
-        private void Start()
+        private void Awake()
         {
             _progress = Services.Get<ProgressService>();
             _audio = Services.Get<AudioService>();
@@ -57,11 +57,20 @@ namespace Project.Contexts.Game
             _factory = new ItemFactory(Services.Get<PoolService>(), _items);
             _factory.Prewarm();
 
-            _states.Add(GameState.Playing, new PlayingState(this))
+            _states.Add(GameState.Idle, new IdleState(this))
+                   .Add(GameState.Playing, new PlayingState(this))
                    .Add(GameState.Won, new WonState(this))
                    .Add(GameState.Lost, new LostState(this));
-            _states.ChangeState(GameState.Playing);
+            _states.ChangeState(GameState.Idle);
         }
+
+        private void Start() => Enter();
+
+        /// <summary>Starts the current level.</summary>
+        public void Enter() => _states.ChangeState(GameState.Playing);
+
+        /// <summary>Stops the level and returns the board's items to the pools.</summary>
+        public void Exit() => _states.ChangeState(GameState.Idle);
 
         private void OnEnable()
         {
@@ -202,6 +211,22 @@ namespace Project.Contexts.Game
         {
             _levelText.text = $"Level {_level}";
             _movesText.text = _model != null ? $"Moves {_model.MoveCount}" : string.Empty;
+        }
+
+        /// <summary>No level is shown: the board is empty and taps are ignored.</summary>
+        private sealed class IdleState : State
+        {
+            private readonly GameController _c;
+            public IdleState(GameController controller) => _c = controller;
+
+            public override void Enter()
+            {
+                _c.Deselect();
+                _c._board.Clear();
+                _c._model = null;
+                _c._winPending = false;
+                _c._stuckCheckPending = false;
+            }
         }
 
         private sealed class PlayingState : State

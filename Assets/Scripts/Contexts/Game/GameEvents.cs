@@ -5,6 +5,7 @@ namespace Project.Contexts.Game
 {
     public enum GameState
     {
+        Idle,
         Playing,
         Won,
         Lost
