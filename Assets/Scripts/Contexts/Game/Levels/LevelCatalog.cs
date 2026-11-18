@@ -4,11 +4,7 @@ using UnityEngine;
 
 namespace Project.Contexts.Game.Levels
 {
-    /// <summary>
-    /// Ordered list of the game's levels. Every level has one or more layout variants; the variant is chosen
-    /// by how many times the player has retried the level, cycling through the list.
-    /// Rebuilt from the level assets by Tools &gt; Project &gt; Rebuild Level Catalog.
-    /// </summary>
+    // Each level has layout variants picked by retry count; rebuilt by Tools > Project > Rebuild Level Catalog.
     [CreateAssetMenu(menuName = "Project/Level Catalog", fileName = "LevelCatalog")]
     public sealed class LevelCatalog : ScriptableObject
     {
@@ -24,15 +20,16 @@ namespace Project.Contexts.Game.Levels
         public List<Entry> Levels => _levels;
         public int Count => _levels.Count;
 
-        /// <param name="level">1-based level number. Past the last level the list starts over.</param>
-        /// <param name="attempt">0 for the first try, +1 for every retry.</param>
-        public LevelData Get(int level, int attempt)
+        // Level is 1-based; both the level and the variant wrap past the end.
+        public LevelData Get(int level, int variant)
         {
-            if (_levels.Count == 0) return null;
-
-            var entry = _levels[Mathf.Max(0, level - 1) % _levels.Count];
-            if (entry.Variants.Count == 0) return null;
-            return entry.Variants[Mathf.Abs(attempt) % entry.Variants.Count];
+            var entry = EntryFor(level);
+            if (entry == null || entry.Variants.Count == 0) return null;
+            return entry.Variants[Mathf.Abs(variant) % entry.Variants.Count];
         }
+
+        public int VariantCount(int level) => EntryFor(level)?.Variants.Count ?? 0;
+
+        private Entry EntryFor(int level) => _levels.Count == 0 ? null : _levels[Mathf.Max(0, level - 1) % _levels.Count];
     }
 }
