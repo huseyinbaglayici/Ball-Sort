@@ -1,13 +1,11 @@
-using Project.Contexts.Application;
 using UnityEditor;
 using UnityEditor.SceneManagement;
-using UnityEngine.SceneManagement;
 
 namespace Project.Editor
 {
     /// <summary>
-    /// "Always start from Boot": pressing Play in Home or Game still runs the Boot scene first
-    /// (services exist), and the Bootstrapper then opens the scene you were editing.
+    /// "Always start from Boot": pressing Play in any scene still runs the Boot scene first, so services exist
+    /// before Main opens.
     /// </summary>
     [InitializeOnLoad]
     public static class BootPlayModeStarter
@@ -50,13 +48,7 @@ namespace Project.Editor
 
         private static void OnPlayModeChanged(PlayModeStateChange change)
         {
-            if (change != PlayModeStateChange.ExitingEditMode) return;
-            Apply();
-            var active = SceneManager.GetActiveScene().name;
-            if (Enabled && SceneNames.IsContent(active))
-                SessionState.SetString(Bootstrapper.EditorStartSceneKey, active);
-            else
-                SessionState.EraseString(Bootstrapper.EditorStartSceneKey);
+            if (change == PlayModeStateChange.ExitingEditMode) Apply();
         }
     }
 }

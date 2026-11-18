@@ -1,4 +1,5 @@
 using Project.Contexts.Application;
+using Project.Contexts.Main;
 using Project.Core.Audio;
 using Project.Core.Events;
 using Project.Core.Haptics;
@@ -14,6 +15,7 @@ namespace Project.Contexts.Home
     /// <summary>Home screen: level and coins, Play, and the three persisted settings toggles.</summary>
     public sealed class HomeScreen : MonoBehaviour
     {
+        [SerializeField] private GameObject _view;
         [SerializeField] private TMP_Text _levelText;
         [SerializeField] private TMP_Text _coinsText;
         [SerializeField] private Button _playButton;
@@ -55,9 +57,16 @@ namespace Project.Contexts.Home
                 settings.Save();
                 if (on) haptics.Play(HapticStrength.Medium);
             });
-            _playButton.onClick.AddListener(() => _ = Services.Get<GameFlow>().GoToGameAsync());
+            _playButton.onClick.AddListener(() => _ = Services.Get<MainFlow>().GoToGameAsync());
 
             Refresh();
+        }
+
+        /// <summary>Shows or hides the home view; it shows the current level and coins when it opens.</summary>
+        public void SetOpen(bool open)
+        {
+            _view.SetActive(open);
+            if (open) Refresh();
         }
 
         private void OnEnable()

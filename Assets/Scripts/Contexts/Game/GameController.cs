@@ -2,6 +2,7 @@ using Project.Contexts.Application;
 using Project.Contexts.Game.Items;
 using Project.Contexts.Game.Levels;
 using Project.Contexts.Game.Sort;
+using Project.Contexts.Main;
 using Project.Core.Audio;
 using Project.Core.Debugging;
 using Project.Core.Events;
@@ -31,6 +32,7 @@ namespace Project.Contexts.Game
         [SerializeField] private BoardView _board;
 
         [Header("UI")]
+        [SerializeField] private GameObject _hud;
         [SerializeField] private TMP_Text _levelText;
         [SerializeField] private TMP_Text _movesText;
         [SerializeField] private ResultPopup _resultPopup;
@@ -64,12 +66,14 @@ namespace Project.Contexts.Game
             _states.ChangeState(GameState.Idle);
         }
 
-        private void Start() => Enter();
+        /// <summary>Shows the HUD and starts the current level.</summary>
+        public void Enter()
+        {
+            _hud.SetActive(true);
+            _states.ChangeState(GameState.Playing);
+        }
 
-        /// <summary>Starts the current level.</summary>
-        public void Enter() => _states.ChangeState(GameState.Playing);
-
-        /// <summary>Stops the level and returns the board's items to the pools.</summary>
+        /// <summary>Stops the level, returns the board's items to the pools and hides the HUD.</summary>
         public void Exit() => _states.ChangeState(GameState.Idle);
 
         private void OnEnable()
@@ -226,6 +230,7 @@ namespace Project.Contexts.Game
                 _c._model = null;
                 _c._winPending = false;
                 _c._stuckCheckPending = false;
+                _c._hud.SetActive(false);
             }
         }
 
@@ -276,7 +281,7 @@ namespace Project.Contexts.Game
                 _c._audio.PlaySfx("win");
                 _c._haptics.Play(HapticStrength.Heavy);
                 Services.Get<PopupService>().Show(_c._resultPopup,
-                    new ResultArgs(true, _c._reward, () => _ = Services.Get<GameFlow>().GoHomeAsync()));
+                    new ResultArgs(true, _c._reward, () => _ = Services.Get<MainFlow>().GoHomeAsync()));
             }
         }
     }

@@ -4,9 +4,6 @@ namespace Project.Contexts.Application
     public static class SceneNames
     {
         public const string Boot = "Boot";
-        public const string Home = "Home";
-        public const string Game = "Game";
-
-        public static bool IsContent(string sceneName) => sceneName == Home || sceneName == Game;
+        public const string Main = "Main";
     }
 }

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Project.Common.UI;
 using Project.Common.UI.PopUps;
+using Project.Contexts.Main;
 using Project.Core.Audio;
 using Project.Core.Debugging;
 using Project.Core.Haptics;
@@ -23,8 +24,6 @@ namespace Project.Contexts.Application
     [DefaultExecutionOrder(-1000)]
     public sealed class Bootstrapper : MonoBehaviour
     {
-        public const string EditorStartSceneKey = "Project.EditorStartScene";
-
         [Header("Scene objects")]
         [SerializeField] private AudioService _audio;
         [SerializeField] private LoadingOverlay _loadingOverlay;
@@ -53,25 +52,19 @@ namespace Project.Contexts.Application
             Services.Register(new PopupService(_popupRoot));
             Services.Register(new SceneLoader());
             Services.Register(new ProgressService(save));
-            Services.Register(new GameFlow(
-                Services.Get<SceneLoader>(), _loadingOverlay, Services.Get<PopupService>(),
-                Services.Get<PoolService>(), _audio));
+            Services.Register(_loadingOverlay);
 
             RegisterDebugActions();
         }
 
         private async void Start()
         {
+            await _loadingOverlay.ShowAsync();
+            await Services.Get<SceneLoader>().SwitchToAsync(SceneNames.Main, _loadingOverlay.SetProgress);
+
             // A new player (level 1) goes straight into the first level; everyone else lands on Home.
-            var startScene = Services.Get<ProgressService>().Level == 1 ? SceneNames.Game : SceneNames.Home;
-#if UNITY_EDITOR
-            // Set by the "Always start from Boot" editor tool: reopen the scene you pressed Play in.
-            var requested = UnityEditor.SessionState.GetString(EditorStartSceneKey, string.Empty);
-            UnityEditor.SessionState.EraseString(EditorStartSceneKey);
-            if (SceneNames.IsContent(requested)) startScene = requested;
-#endif
-            var flow = Services.Get<GameFlow>();
-            if (startScene == SceneNames.Game) await flow.GoToGameAsync();
+            var flow = Services.Get<MainFlow>();
+            if (Services.Get<ProgressService>().Level == 1) await flow.GoToGameAsync();
             else await flow.GoHomeAsync();
         }
 
@@ -79,7 +72,7 @@ namespace Project.Contexts.Application
 
         private static void RegisterDebugActions()
         {
-            DebugPanel.AddAction("Go Home", () => _ = Services.Get<GameFlow>().GoHomeAsync());
+            DebugPanel.AddAction("Go Home", () => _ = Services.Get<MainFlow>().GoHomeAsync());
             DebugPanel.AddAction("Add 100 coins", () => Services.Get<ProgressService>().AddCoins(100));
             DebugPanel.AddAction("Reset progress", () => Services.Get<ProgressService>().ResetProgress());
             DebugPanel.AddAction("Toggle language", () =>
