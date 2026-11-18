@@ -1,30 +1,4 @@
-"""Placeholder black-hole warp portal, procedurally drawn as a thick 3D ring, seen from ABOVE like the tubes.
-
-The board camera looks slightly down: the tube mouths show their top face. A ring hanging just over a mouth,
-seen through that same camera, shows its top face too, with its side wall under it. Both portals use it:
-a ball rises up into one ring and disappears behind its near (lower) edge, and drops down out of the other.
-
-The ring is built here as seen from below (the face, the wall on the far side of it, a tunnel receding
-into the dark) and the images are then turned upside down, which gives the view from above:
-
-  - the face is an annulus flattened to FLATTEN (= BoardView.RingFlatten); its center is the portal's
-    pivot;
-  - the side wall hangs UNDER the face's near (lower) arc, THICK of the width (= BallAnimationConfig.PortalWall);
-  - through the opening the inner far wall shows at the top, lit near the lip and fading into a
-    pure-black event horizon, with fainter rings deeper down for depth.
-
-Lighting comes from the hole itself: the face is dark, hot only at its inner edge where light spills out
-of the void (white-hot -> gold -> magenta), cooling to violet outward, with spiral streaks and one
-brighter side. A thin rim light outlines it.
-
-  Hole_Back.png   the face and the opening (tunnel + void).
-  Hole_Front.png  the near half of the face and the side wall (the part of the ring nearest the camera).
-Both draw over the balls; they share the canvas and the pivot (printed on run), so they stack with one
-transform. The opening is OPENING of the width; with the portal 1.6 ball diameters wide, a ball (0.625 of
-the width) fits through it.
-
-Run:  python ArtSource/Hole/make_hole.py
-"""
+"""Warp portal ring, drawn as seen from below and then flipped to match the board camera looking down."""
 import os
 import numpy as np
 from PIL import Image, ImageOps
@@ -92,7 +66,6 @@ def fbm(s, t, seed, octaves=4, ns=8, nt=3):
     return total / norm
 
 
-# Heat ramp: near-black violet -> violet -> magenta -> orange -> gold -> white-hot.
 RAMP_T = np.array([0.0, 0.18, 0.4, 0.62, 0.8, 0.93, 1.0])
 RAMP_C = np.array([
     [8, 4, 22],
@@ -117,7 +90,7 @@ def over(dst_rgb, dst_a, src_rgb, src_a):
 
 
 fu, fv, d_face = ellipse(CX, CY, al, bl)           # underside, outer edge
-ou, ov, d_open = ellipse(CX, CY, ao, bo)           # opening
+ou, ov, d_open = ellipse(CX, CY, ao, bo)
 _, _, d_top = ellipse(CX, CY - t_px, al, bl)       # top edge of the side wall
 _, _, d_deep = ellipse(CX, CY - d_px, ao, bo)      # where the visible inner wall meets the void
 
@@ -125,26 +98,24 @@ in_face = smooth(0.6, -0.6, d_face)
 in_open = smooth(0.6, -0.6, d_open)
 in_top = smooth(0.6, -0.6, d_top)
 in_deep = smooth(0.6, -0.6, d_deep)
-near_half = smooth(1.0 * SS, -1.0 * SS, y - CY)    # above the face's center line on screen: the near side
+near_half = smooth(1.0 * SS, -1.0 * SS, y - CY)    # the near side: above the face's center line on screen
 
 theta = np.arctan2(fv, fu)
 doppler = 1.0 + 0.3 * np.cos(theta - np.deg2rad(-20))   # approaching side: right
 
-# ---------------------------------------------------------------- underside: lit only by the hole
-# k: 0 at the opening's edge, 1 at the outer edge.
+# Underside, lit only by the hole; k is 0 at the opening's edge, 1 at the outer edge.
 k = np.clip(d_open / np.maximum(d_open - d_face, 1e-6), 0, 1)
 spiral = theta / (2 * np.pi) + 0.14 * k ** 1.2
 swirl = fbm(spiral, k, seed=11, ns=7, nt=2)
 streak = fbm(spiral + 0.37, k, seed=31, ns=48, nt=2, octaves=3)
 matter = smooth(0.3, 0.8, swirl) * 0.55 + streak * 0.45
-spill = np.exp(-k / 0.28)                                   # light spilling out of the void, falling off outward
+spill = np.exp(-k / 0.28)                                   # light spilling out of the void
 heat = (0.16 + 0.62 * spill) * (0.55 + 0.7 * matter) * doppler
 heat = np.maximum(heat, np.exp(-((d_open - 1.4) / 1.3) ** 2) * 0.98)    # white-hot photon ring on the lip
 rim = np.exp(-((d_face + 1.3) / 1.1) ** 2) * 0.45                       # thin rim light on the outer edge
 face_rgb = ramp(heat) + rim[..., None] * np.array([0.65, 0.55, 1.0])
 face_a = in_face * (1 - in_open)
 
-# ---------------------------------------------------------------- side wall above the near arc
 wall_a = in_top * (1 - in_face) * near_half
 # 0 at the face's near edge, 1 at the top of the wall; shaded like a cylinder seen from below
 face_top_y = CY - bl * np.sqrt(np.clip(1 - fu * fu, 0, 1))
@@ -155,8 +126,7 @@ wall_rgb = np.array([52, 28, 128]) / 255.0 * lit[..., None]
 wall_rgb = wall_rgb + np.exp(-(wall_t / 0.18) ** 2)[..., None] * np.array([0.5, 0.25, 0.75]) * 0.35   # glow off the face
 wall_rgb = wall_rgb + np.exp(-((d_top + 1.2) / 1.0) ** 2)[..., None] * np.array([0.5, 0.4, 0.95]) * 0.4  # top rim light
 
-# ---------------------------------------------------------------- opening: tunnel receding upward
-# The far inner wall: the band between the lip and the same ellipse moved up by the depth, lowest on screen.
+# The far inner wall: the band between the lip and the same ellipse moved up by the depth.
 inner = in_open * (1 - in_deep)
 lip_y = CY + bo * np.sqrt(np.clip(1 - ou * ou, 0, 1))      # lower (far) arc of the opening
 depth_t = np.clip((lip_y - y) / d_px, 0, 1)                 # 0 at the lip, 1 deep up the tunnel
@@ -172,7 +142,6 @@ rings = rings * in_deep
 tunnel_rgb = tunnel_rgb * inner[..., None] + ramp(rings * 1.4) * rings[..., None]
 open_rgb = tunnel_rgb                                       # everything else in the opening is pure black
 
-# ---------------------------------------------------------------- layers
 back_rgb, back_a = over(open_rgb, in_open, face_rgb, face_a)
 front_rgb, front_a = over(wall_rgb, wall_a, face_rgb, face_a * near_half)
 
@@ -191,9 +160,7 @@ PLANE_Y = FH - CY / SS                                      # face center (pivot
 back.save(os.path.join(OUT, "Hole_Back.png"))
 front.save(os.path.join(OUT, "Hole_Front.png"))
 
-# ---------------------------------------------------------------- preview: ball rising into it
-# A plain shaded ball under both layers at a few heights, rough preview only: the game cuts it at the ring's
-# lowest edge (the bottom of the wall) and the ring hides the rest.
+# Preview only: the game cuts the ball at the ring's lowest edge and the ring hides the rest.
 
 
 def ball_img(size, cut_y):

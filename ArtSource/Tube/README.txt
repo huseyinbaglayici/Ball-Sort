@@ -57,3 +57,14 @@ EKRAN
 TOP KONUMLARI
 -------------
 Top boyutu netleşince eklenecek (iç genişlik 290 px).
+
+PROJEDEKİ ADLAR (Assets/Art/Sprites/Tube)
+-----------------------------------------
+Son paket (Orbit_Sort_Tube_Sprites) adları -> proje adları:
+  Tube_Back            -> Tube_Back
+  Tube_Front           -> Tube_Front      (additive)
+  Tube_Glow            -> Tube_Outline
+  Tube_Empty_Cap       -> Tube_Mouth      (+ Tube_RimFront: ArtSource/Tube/slice_mouth.py ile kesilen ön yarı)
+  Tube_Completed_Cap   -> Tube_Stopper
+  Tube_Completed_Gem   -> Tube_Gem
+Tube_OutlineGlow ve Tube_CapGlow, Create Board Prefabs tarafından üretilir.

@@ -7,28 +7,15 @@ using UnityEngine.Rendering;
 
 namespace Project.Contexts.Game.Items
 {
-    /// <summary>
-    /// A tube on the board: its art, its tap area and the stack of ball units shown inside it.
-    /// It only holds views. The puzzle rules and the real contents live in SortBoard.
-    /// The root has its own SortingGroup, and a Container child holds the Back sprite and the open Mouth, the contents
-    /// in between, the additive Front glass, the Outline and the RimFront (the front half of the mouth) on top. A Stopper
-    /// child with its Gem is the cap that replaces the open mouth when the tube is completed. The root sits at the
-    /// bottom of the art (see <see cref="TubeArt"/>).
-    /// Taps arrive through the camera's Physics2DRaycaster, so a Collider2D is required.
-    /// The stack order always matches SortBoard right away; tweens only move the balls toward their slots.
-    /// The resting balls live in a Balls layer that follows the tube's <see cref="Reactions"/>; a ball in flight hangs
-    /// from the root, so the tubes it travels between never pull it around.
-    /// </summary>
+    // Order always matches SortBoard; tweens only move balls. Flying balls hang from the root so tubes never drag.
     [RequireComponent(typeof(BoxCollider2D), typeof(SortingGroup))]
     public sealed class BottleItem : Item, IPointerClickHandler
     {
-        // A selected tube or one with balls flying in or out draws above the others.
         private const int RaisedGroupOrder = 10;
-        // A tube receiving balls draws above the tube they come from, so a flying ball never passes behind its origin.
+        // Above the source tube, so a flying ball never passes behind its origin.
         private const int ReceivingGroupOrder = 11;
-        // The completed cap drops onto the mouth from this far above, in board units.
         private const float CapDrop = 0.35f;
-        // In the selection wave the last ball still lifts over at least this share of the lift time.
+        // The last ball in the selection wave still gets at least this share of the lift time.
         private const float MinWaveShare = 0.55f;
 
         [SerializeField] private SpriteRenderer _back;
@@ -38,7 +25,7 @@ namespace Project.Contexts.Game.Items
         [SerializeField] private SpriteRenderer _rimFront;
         [SerializeField] private SpriteRenderer _stopper;
         [SerializeField] private SpriteRenderer _gem;
-        // Additive completion glows, tinted through their color: a soft light around the whole tube and one behind the cap.
+        // Additive completion glows, tinted through their color.
         [SerializeField] private SpriteRenderer _outlineGlow;
         [SerializeField] private SpriteRenderer _capGlow;
         [SerializeField] private BoxCollider2D _collider;
@@ -49,13 +36,25 @@ namespace Project.Contexts.Game.Items
         private bool _inMotion;
         private bool _receiving;
         private Transform _content;
+        // Body sprites with their art size and position, for stretching to other capacities.
+        private readonly List<(SpriteRenderer Renderer, Vector2 Size, Vector3 Position)> _body = new();
+        private Vector3 _mouthPosition;
+        private Vector3 _rimFrontPosition;
 
         public int Index { get; private set; }
         public int Capacity { get; private set; }
         public IReadOnlyList<BallItem> Balls => _balls;
+
+        // Extra height over the TubeArt.Slots art; set by the board.
+        public float Rise { get; private set; }
+
+        public float MouthLocalY => TubeArt.MouthLocalY + Rise;
+
+        public Vector2 Size => new(TubeArt.Size.x, MouthLocalY);
         public int BallCount => _balls.Count;
 
-        /// <summary>The tube's squash and shake reactions; they move the art and the resting balls together.</summary>
+        public int LiftedCount => _lifted.Count;
+
         public TubeReactions Reactions { get; private set; }
 
         private void Awake()
@@ -63,17 +62,22 @@ namespace Project.Contexts.Game.Items
             _content = new GameObject("Balls").transform;
             _content.SetParent(transform, false);
             Reactions = new TubeReactions(_back.transform.parent, _content);
+
+            foreach (Transform child in _back.transform.parent)
+                if (child.TryGetComponent<SpriteRenderer>(out var part) && part != _mouth && part != _rimFront && part != _stopper && part.sprite != null)
+                    _body.Add((part, part.sprite.bounds.size, child.localPosition));
+            _mouthPosition = _mouth.transform.localPosition;
+            _rimFrontPosition = _rimFront.transform.localPosition;
         }
 
         private void LateUpdate() => Reactions.Tick();
 
-        public void Setup(int index, int capacity, Vector2 localPosition)
+        // rise is at least TubeArt.Rise(capacity), more when the tube spans board rows.
+        public void Setup(int index, int capacity, Vector2 localPosition, float rise)
         {
-            if (capacity != TubeArt.Slots)
-                Debug.LogWarning($"[BottleItem] The tube art holds {TubeArt.Slots} balls; this level uses capacity {capacity}.");
-
             Index = index;
             Capacity = capacity;
+            Rise = rise;
             _inMotion = false;
             _receiving = false;
             Reactions.Clear();
@@ -82,17 +86,28 @@ namespace Project.Contexts.Game.Items
             _balls.Clear();
             _lifted.Clear();
 
-            var size = TubeArt.Size;
+            FitArt(rise);
+            var size = Size;
             _collider.size = size;
             _collider.offset = new Vector2(0f, size.y * 0.5f);
             ShowCap(false, null);
             UpdateSorting();
         }
 
-        /// <summary>
-        /// Keeps the tube above the others while it is selected or has balls flying in or out, so lifted and flying
-        /// balls are never drawn behind a neighbouring tube.
-        /// </summary>
+        // Body sprites draw sliced and stretch by rise with the bottom fixed; sprites without a border stretch whole.
+        private void FitArt(float rise)
+        {
+            foreach (var (part, size, position) in _body)
+            {
+                part.drawMode = Mathf.Approximately(rise, 0f) ? SpriteDrawMode.Simple : SpriteDrawMode.Sliced;
+                if (part.drawMode == SpriteDrawMode.Sliced) part.size = new Vector2(size.x, size.y + rise);
+                part.transform.localPosition = position + Vector3.up * (rise * 0.5f);
+            }
+            _mouth.transform.localPosition = _mouthPosition + Vector3.up * rise;
+            _rimFront.transform.localPosition = _rimFrontPosition + Vector3.up * rise;
+        }
+
+        // Raised so lifted and flying balls are never drawn behind a neighbouring tube.
         public void SetInMotion(bool inMotion, bool receiving = false)
         {
             _inMotion = inMotion;
@@ -104,19 +119,27 @@ namespace Project.Contexts.Game.Items
 
         public int IndexOf(BallItem ball) => _balls.IndexOf(ball);
 
-        /// <summary>Adds the unit on top of the stack. With snap it is placed in its slot at once.</summary>
         public void Push(BallItem ball, bool snap)
         {
             var slot = _balls.Count;
             _balls.Add(ball);
-            ball.transform.SetParent(_content, !snap);
+            ball.SetStackIndex(slot);
+            Enter(ball);
             if (snap) ball.transform.localPosition = TubeArt.SlotLocalPosition(slot);
         }
 
-        /// <summary>Takes a ball of this tube back into the resting layer, where it is, after a flight.</summary>
+        // Reparents a ball back into the resting layer after a flight.
         public void Adopt(BallItem ball)
         {
-            if (ball.transform.parent != _content) ball.transform.SetParent(_content, true);
+            if (ball.transform.parent != _content) Enter(ball);
+        }
+
+        // Keeps local scale: the layer may be mid-squash, and keeping world size would bake the inverse squash in.
+        private void Enter(BallItem ball)
+        {
+            var shape = ball.transform.localScale;
+            ball.transform.SetParent(_content, true);
+            ball.transform.localScale = shape;
         }
 
         public BallItem Pop()
@@ -127,80 +150,78 @@ namespace Project.Contexts.Game.Items
             return top;
         }
 
-        /// <summary>
-        /// A completed bottle is locked by the rules; this only shows it. Once the last ball's impact has settled the cap
-        /// drops on the mouth and the tube gives a small victory hop. Undo takes the cap away at once.
-        /// </summary>
+        // The cap waits for the last ball's impact to settle. Undo removes it at once.
         public void SetCompleted(bool completed, BallAnimationConfig config)
         {
             ShowCap(completed, config, completed ? config.CompleteDelay : 0f);
             if (completed) Reactions.Complete(config);
         }
 
-        /// <summary>
-        /// Highlights the top <paramref name="count"/> balls all at once, so the whole group reads as selected on the
-        /// first frame, then lifts them one after another, top ball first. Every ball rises by the same short distance
-        /// from its slot, wherever the stack ends, so a selection always reads the same; the long way up to the portal
-        /// belongs to the move. With <see cref="BallAnimationConfig.LiftToMouth"/> (experimental) the top ball instead
-        /// always goes to the same spot at the mouth, from any depth. The group keeps its stack spacing. Each ball starts
-        /// from where it is now.
-        /// </summary>
-        public void Select(int count, BallAnimationConfig config)
+        // Lifts top first, each the same short distance; liftDelays gets each ball's start delay for lift sounds.
+        public void Select(int count, BallAnimationConfig config, List<float> liftDelays = null)
         {
             Deselect(config);
             count = Mathf.Min(count, _balls.Count);
             if (count <= 0) return;
 
             var top = _balls.Count - 1;
-            // Every lifted ball moves the same way, so they stay in line; near the mouth the ball squeezes as it passes.
             var rise = TubeArt.SlotHeight * config.LiftHeight;
-            // Experimental: the top ball goes to the mouth spot (where a full tube's top ball lifts to), from any depth.
-            if (config.LiftToMouth) rise += TubeArt.SlotLocalPosition(TubeArt.Slots - 1).y - TubeArt.SlotLocalPosition(top).y;
+            // Fixed lift: the top ball always goes to the same spot at the mouth, from any depth.
+            if (config.LiftToMouth) rise += TubeArt.SlotLocalPosition(Capacity - 1).y - TubeArt.SlotLocalPosition(top).y;
             var overshoot = Vector3.up * (TubeArt.SlotHeight * config.LiftOvershoot);
             var duration = config.LiftDuration(rise + overshoot.y);
-            // The whole wave ends when the top ball does: a later ball starts later and lifts faster. The stagger is
-            // compressed so the last ball still gets at least MinWaveShare of the lift time.
+            // The wave ends with the top ball; the stagger is compressed so the last ball still gets MinWaveShare.
             var lifting = 0;
             while (lifting < count && !_balls[top - lifting].IsHidden) lifting++;
             var lastDelay = config.WaveDelay(lifting - 1);
             var compress = lastDelay > 0f ? Mathf.Min(1f, duration * (1f - MinWaveShare) / lastDelay) : 1f;
+            var spacing = TubeArt.LiftedSpacing(config.GlowScale);
             for (var i = 0; i < lifting; i++)
             {
                 var slot = top - i;
                 var ball = _balls[slot];
                 var delay = config.WaveDelay(i) * compress;
+                liftDelays?.Add(delay);
                 _lifted.Add(ball);
                 ball.SetHighlight(true, config);
                 ball.StopMotion();
-                ball.MoveLocal(TubeArt.SlotLocalPosition(slot) + Vector3.up * rise, duration - delay, config.LiftCurve, config,
-                    BallItem.Arrival.Hover, delay, anticipate: true, mouthY: TubeArt.MouthLocalY,
+                var lifted = TubeArt.SlotLocalPosition(top) + Vector3.up * (rise - spacing * i);
+                ball.MoveLocal(lifted, duration - delay, config.LiftCurve, config,
+                    BallItem.Arrival.Hover, delay, anticipate: true, mouthY: MouthLocalY,
                     overshoot: overshoot, settle: config.LiftSettleDuration);
             }
-            // The balls that stay in the tube feel the tap: one tiny up-and-down.
+            // Balls left in the tube feel the tap.
             for (var slot = 0; slot <= top - _lifted.Count; slot++) _balls[slot].Bob(config.TapBob, config.TapBobDuration);
             if (_lifted.Count > 0) Reactions.Select(config);
             UpdateSorting();
         }
 
-        /// <summary>Lowers every lifted ball back to its slot with the deselect timing.</summary>
-        public void Deselect(BallAnimationConfig config) =>
-            LowerLifted(config, config.LowerDuration, config.LowerCurve);
+        // Bottom ball lands first. onContact(index, count) runs as each one lands, in landing order.
+        public void Deselect(BallAnimationConfig config, System.Action<int, int> onContact = null) =>
+            LowerLifted(config, config.LowerDuration, config.LowerCurve, onContact, config.ReturnContactStagger);
 
-        /// <summary>Sends the balls left lifted after a partial transfer back to their slots.</summary>
+        // Silent return of balls left lifted after a partial transfer.
         public void ReturnLifted(BallAnimationConfig config) =>
             LowerLifted(config, config.ReturnDuration, config.ReturnCurve);
 
-        private void LowerLifted(BallAnimationConfig config, System.Func<float, float> durationFor, AnimationCurve curve)
+        private void LowerLifted(BallAnimationConfig config, System.Func<float, float> durationFor, AnimationCurve curve,
+            System.Action<int, int> onContact = null, float stagger = 0f)
         {
             var back = 0f;
-            foreach (var ball in _lifted)
+            var count = _lifted.Count;
+            // _lifted is top ball first; the bottom ball lands first.
+            for (var k = 0; k < count; k++)
             {
+                var ball = _lifted[count - 1 - k];
                 ball.StopMotion();
                 ball.SetHighlight(false, config);
                 var home = TubeArt.SlotLocalPosition(_balls.IndexOf(ball));
                 var duration = durationFor(Mathf.Abs(ball.transform.localPosition.y - home.y));
-                back = Mathf.Max(back, duration);
-                ball.MoveLocal(home, duration, curve, config, BallItem.Arrival.Land, mouthY: TubeArt.MouthLocalY);
+                var delay = k * stagger;
+                back = Mathf.Max(back, delay + duration);
+                var index = k;
+                ball.MoveLocal(home, duration, curve, config, BallItem.Arrival.Land, delay, mouthY: MouthLocalY,
+                    onArrive: onContact == null ? null : () => onContact(index, count));
             }
             if (_lifted.Count > 0) Reactions.Catch(config, back);
             _lifted.Clear();
@@ -210,17 +231,13 @@ namespace Project.Contexts.Game.Items
         private void UpdateSorting() =>
             _sortingGroup.sortingOrder = _receiving ? ReceivingGroupOrder : _inMotion || _lifted.Count > 0 ? RaisedGroupOrder : 0;
 
-        /// <summary>
-        /// The completed cap and its gem (the gem is a child of the cap and shares its canvas): after
-        /// <paramref name="delay"/> they drop onto the mouth, fading in on the way, and settle with a small overshoot,
-        /// while the open mouth fades out under them. As the cap lands the tube's glow flashes and the light behind the
-        /// cap flashes with it, then stays softly lit. Hiding restores the open mouth at once.
-        /// </summary>
+        // Cap and gem drop in as the open mouth fades out; hiding restores the open mouth at once.
         private void ShowCap(bool show, BallAnimationConfig config, float delay = 0f)
         {
             var cap = _stopper.transform;
             StopCapTweens();
-            cap.localPosition = new Vector3(0f, TubeArt.CapLocalY, 0f);
+            var capY = TubeArt.CapLocalY + Rise;
+            cap.localPosition = new Vector3(0f, capY, 0f);
             _stopper.color = _gem.color = _mouth.color = _rimFront.color = Color.white;
             _stopper.enabled = _gem.enabled = show;
             _mouth.enabled = _rimFront.enabled = true;
@@ -228,9 +245,9 @@ namespace Project.Contexts.Game.Items
             if (!show) return;
 
             var fade = config.CapDuration * 0.5f;
-            cap.localPosition = new Vector3(0f, TubeArt.CapLocalY + CapDrop, 0f);
+            cap.localPosition = new Vector3(0f, capY + CapDrop, 0f);
             _stopper.color = _gem.color = new Color(1f, 1f, 1f, 0f);
-            PrimeTween.Tween.LocalPositionY(cap, TubeArt.CapLocalY + CapDrop, TubeArt.CapLocalY, config.CapDuration,
+            PrimeTween.Tween.LocalPositionY(cap, capY + CapDrop, capY, config.CapDuration,
                 PrimeTween.Ease.OutBack, startDelay: delay);
             PrimeTween.Tween.Alpha(_stopper, 0f, 1f, fade, PrimeTween.Ease.OutQuad, startDelay: delay);
             PrimeTween.Tween.Alpha(_gem, 0f, 1f, fade, PrimeTween.Ease.OutQuad, startDelay: delay);
@@ -242,12 +259,11 @@ namespace Project.Contexts.Game.Items
             Flash(_capGlow, config.CapGlowColor, config.CapGlowRestAlpha, config, landed);
         }
 
-        /// <summary>From clear up to the color's alpha, held a moment, then down to <paramref name="rest"/>.</summary>
         private static void Flash(SpriteRenderer glow, Color color, float rest, BallAnimationConfig config, float delay)
         {
             glow.enabled = true;
             glow.color = new Color(color.r, color.g, color.b, 0f);
-            // Two plain tweens on the renderer (not a sequence), so StopCapTweens stops them like the cap's own.
+            // Plain tweens on the renderer, not a sequence, so StopCapTweens catches them.
             PrimeTween.Tween.Alpha(glow, 0f, color.a, config.CompleteGlowIn, PrimeTween.Ease.OutQuad, startDelay: delay);
             PrimeTween.Tween.Alpha(glow, color.a, rest, config.CompleteGlowOut, PrimeTween.Ease.InOutSine,
                 startDelay: delay + config.CompleteGlowIn + config.CompleteGlowHold);

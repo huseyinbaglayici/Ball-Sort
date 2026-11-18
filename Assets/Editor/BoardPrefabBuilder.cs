@@ -10,11 +10,7 @@ using UnityEngine.U2D;
 
 namespace Project.Editor
 {
-    /// <summary>
-    /// Builds the tube prefab from the art in Art/Sprites/Tube, the ball prefabs and the <see cref="LevelPalette"/> from
-    /// the orb art in Art/Sprites/Orb, and the <see cref="ItemRegistry"/> that maps item types to them. Safe to run
-    /// again: assets are overwritten in place.
-    /// </summary>
+    // Re-running overwrites the assets in place.
     public static class BoardPrefabBuilder
     {
         private const string PrefabFolder = "Assets/Prefabs/Items";
@@ -38,7 +34,9 @@ namespace Project.Editor
             if (System.Array.Exists(skins, IsIncomplete) || IsIncomplete(hidden)) return;
             var back = ImportOrbSprite($"{OrbFolder}/Orb_Back.png");
             var front = ImportOrbSprite($"{OrbFolder}/Orb_Front.png", sharp: true);
-            if (back == null || front == null) return;
+            var coreGlow = ImportOrbSprite($"{OrbFolder}/Orb_CoreGlow.png");
+            if (back == null || front == null || coreGlow == null) return;
+            for (var i = 0; i < skins.Length; i++) skins[i].CoreGlow = coreGlow;
             BuildPalette(skins);
 
             var bottle = SavePrefab(CreateBottle(), "Bottle");
@@ -55,19 +53,17 @@ namespace Project.Editor
             Debug.Log("[BoardPrefabBuilder] Bottle, Ball, BallQuestionMark prefabs, LevelPalette and ItemRegistry are ready.");
         }
 
-        // The ball colors, by level color index. 0-7 are the art team's scale: each has its own OuterGlow, Core and
-        // InnerGlow (Art/Sprites/Orb/Orb_<Layer>_<Name>.png; their spec is ArtSource/Orb/README_Orbs.txt). Levels use all
-        // twelve, so a color without art yet (8-11, and the hidden ball) is made from the Cyan art recolored to it, into
-        // Orb/Generated. Put the art team's files in Art/Sprites/Orb and run again to replace a stand-in.
+        // Indexed by the color index levels store, so the order must not change.
         private static readonly (string name, Color color)[] OrbColors =
         {
-            ("Red", Hex("FF120D")), ("Blue", Hex("1C1FFF")), ("Green", Hex("B3FF0D")), ("Yellow", Hex("FFC40D")),
-            ("Purple", Hex("A836FF")), ("Orange", Hex("FF6B0D")), ("Cyan", Hex("00FFEB")), ("Pink", Hex("FF70D9")),
-            ("Fuchsia", Hex("FF0D8A")), ("White", Hex("F2F2FF")), ("Emerald", Hex("0DFF5E")), ("SkyBlue", Hex("0DA6FF"))
+            ("Red", Hex("CB1610")), ("DarkBlue", Hex("1927C8")), ("LightGreen", Hex("7BAD12")), ("Yellow", Hex("FCC620")),
+            ("Violet", Hex("6C25A0")), ("Orange", Hex("E56109")), ("LightBlue", Hex("1BA3EF")), ("Pink", Hex("FC7DD8")),
+            ("Wine", Hex("730456")), ("White", Hex("656CAB")), ("DarkGreen", Hex("154404")), ("Brown", Hex("7C362D"))
         };
+        // No CoreGlow: the "?" stays readable on it.
         private static readonly (string name, Color color) HiddenOrb = ("Hidden", Hex("525769"));
-        // Fully saturated and bright, so its saturation and value scale straight onto any color.
-        private const string RecolorSource = "Cyan";
+        // Saturated and bright, so its saturation and value scale onto any color.
+        private const string RecolorSource = "LightBlue";
         private static readonly string[] OrbColorLayers = { "OuterGlow", "Core", "InnerGlow" };
 
         private static Color Hex(string hex) => ColorUtility.TryParseHtmlString("#" + hex, out var color) ? color : Color.magenta;
@@ -92,7 +88,7 @@ namespace Project.Editor
             return new OrbSkin { OuterGlow = sprites[0], Core = sprites[1], InnerGlow = sprites[2] };
         }
 
-        /// <summary>The source layer with each pixel's hue set to the color's, its saturation and value scaled by the color's.</summary>
+        // Hue from the color; saturation and value scaled by the color's.
         private static bool WriteRecolor(string source, string target, Color color)
         {
             if (!System.IO.File.Exists(source))
@@ -117,11 +113,7 @@ namespace Project.Editor
             return true;
         }
 
-        /// <summary>
-        /// Imports an orb layer at the tube's pixels per unit, as the art is drawn (pivot at the center). The soft layers
-        /// are compressed; a <paramref name="sharp"/> one (the glass reflection's thin highlights) stays uncompressed so
-        /// compression never makes it blocky.
-        /// </summary>
+        // Sharp layers (thin glass highlights) stay uncompressed so they never turn blocky.
         private static Sprite ImportOrbSprite(string path, bool sharp = false)
         {
             var importer = (TextureImporter)AssetImporter.GetAtPath(path);
@@ -132,8 +124,8 @@ namespace Project.Editor
             }
             importer.textureType = TextureImporterType.Sprite;
             importer.spriteImportMode = SpriteImportMode.Single;
-            importer.spritePixelsPerUnit = TubeArt.PixelsPerUnit;
-            // Drawn at about half its size on a phone: mipmapped and trilinear against shimmer.
+            importer.spritePixelsPerUnit = TubeArt.OrbSpherePx / TubeArt.BallDiameter;
+            // Drawn at about half size on a phone: mipmapped and trilinear against shimmer.
             importer.mipmapEnabled = true;
             importer.alphaIsTransparency = true;
             importer.filterMode = FilterMode.Trilinear;
@@ -147,7 +139,7 @@ namespace Project.Editor
             return AssetDatabase.LoadAssetAtPath<Sprite>(path);
         }
 
-        /// <summary>The orb layer material: normal (premultiplied) blending, or additive for the glass.</summary>
+        // Premultiplied blending, or additive for the glass.
         private static Material EnsureOrbMaterial(string path, BlendMode destination)
         {
             var shader = Shader.Find(OrbShaderName);
@@ -189,21 +181,14 @@ namespace Project.Editor
         {
             property.FindPropertyRelative(nameof(OrbSkin.OuterGlow)).objectReferenceValue = skin.OuterGlow;
             property.FindPropertyRelative(nameof(OrbSkin.Core)).objectReferenceValue = skin.Core;
+            property.FindPropertyRelative(nameof(OrbSkin.CoreGlow)).objectReferenceValue = skin.CoreGlow;
             property.FindPropertyRelative(nameof(OrbSkin.InnerGlow)).objectReferenceValue = skin.InnerGlow;
         }
 
-        /// <summary>
-        /// The tube: a SortingGroup on the root, a Container with
-        /// Back (normal: glass and base), Mouth (the whole open mouth), the balls in between, Front (additive glass),
-        /// Outline (normal), RimFront (the front half of the mouth, sliced from the Mouth by ArtSource/Tube/slice_mouth.py
-        /// and drawn over the balls so a ball going through the mouth is half inside) and a Stopper with a Gem for the
-        /// completed cap. The tube layers share the art's canvas, so they sit at the Container origin; the cap has its
-        /// own canvas and sits at TubeArt.CapLocalY. The root is the bottom of the tube.
-        /// </summary>
+        // RimFront (the mouth's front half) draws over the balls, so a ball in the mouth looks half inside.
         private static GameObject CreateBottle()
         {
-            // The tube body is packed in the gameplay atlas (compressed there), while the thin glowing outline stays a
-            // separate, uncompressed texture so compression never makes it blocky.
+            // The thin outline stays out of the compressed atlas so it never turns blocky.
             var back = ImportTubeSprite("Tube_Back");
             var front = ImportTubeSprite("Tube_Front");
             var outline = ImportTubeSprite("Tube_Outline");
@@ -211,7 +196,7 @@ namespace Project.Editor
             var rimFront = ImportTubeSprite("Tube_RimFront");
             var cap = ImportTubeSprite("Tube_Stopper");
             var gem = ImportTubeSprite("Tube_Gem");
-            // The soft completion glows are made from the art and packed with it: soft light survives compression.
+            // Soft light survives compression, so the glows can go in the atlas.
             WriteOutlineGlow();
             WriteCapGlow();
             var outlineGlow = ImportTubeSprite(OutlineGlowName, GlowResolution);
@@ -229,7 +214,10 @@ namespace Project.Editor
 
             var backRenderer = AddSprite(container, "Back", back, TubeArt.BackOrder, null);
             var mouthRenderer = AddSprite(container, "Mouth", mouth, TubeArt.MouthOrder, null);
+            var frontBehind = AddSprite(container, "FrontBehind", front, TubeArt.GlassBehindOrder, EnsureAdditiveMaterial());
+            frontBehind.color = new Color(1f, 1f, 1f, 1f - TubeArt.GlassOverBalls);
             var frontRenderer = AddSprite(container, "Front", front, TubeArt.FrontOrder, EnsureAdditiveMaterial());
+            frontRenderer.color = new Color(1f, 1f, 1f, TubeArt.GlassOverBalls);
             var outlineRenderer = AddSprite(container, "Outline", outline, TubeArt.OutlineOrder, null);
             var rimFrontRenderer = AddSprite(container, "RimFront", rimFront, TubeArt.RimFrontOrder, null);
 
@@ -271,14 +259,12 @@ namespace Project.Editor
             return renderer;
         }
 
-        // The completion glows (see BottleItem). The tube glow is the outline art's shape blurred into soft light, at
-        // GlowResolution of the art's size with GlowPadPx of room for the light around it, so its center stays the art's.
+        // Padded by GlowPadPx so the blurred outline's center matches the art's.
         private const string OutlineGlowName = "Tube_OutlineGlow";
         private const float GlowResolution = 0.5f;
         private const int GlowPadPx = 32;
         private const int GlowBlurRadius = 6;
         private const float GlowBoost = 1.8f;
-        // The cap glow: a round light CapGlowWidthPx wide on the art's scale (a little wider than the mouth).
         private const string CapGlowName = "Tube_CapGlow";
         private const int CapGlowPx = 128;
         private const float CapGlowWidthPx = 430f;
@@ -293,7 +279,6 @@ namespace Project.Editor
             var height = texture.height / step + GlowPadPx * 2;
             var pixels = texture.GetPixels();
             var alpha = new float[width * height];
-            // Downsample: the mean alpha of each step x step block.
             for (var y = 0; y < texture.height / step; y++)
             for (var x = 0; x < texture.width / step; x++)
             {
@@ -303,7 +288,7 @@ namespace Project.Editor
                     sum += pixels[(y * step + dy) * texture.width + x * step + dx].a;
                 alpha[(y + GlowPadPx) * width + x + GlowPadPx] = sum / (step * step);
             }
-            // Three box blurs each way come close to a gaussian.
+            // Three box blurs each way approximate a gaussian.
             for (var pass = 0; pass < 3; pass++)
             {
                 BoxBlur(alpha, width, height, 1, width, GlowBlurRadius);
@@ -317,7 +302,6 @@ namespace Project.Editor
             Object.DestroyImmediate(texture);
         }
 
-        /// <summary>One box blur along lines of <paramref name="length"/> values, <paramref name="stride"/> apart.</summary>
         private static void BoxBlur(float[] values, int length, int lines, int stride, int lineStride, int radius)
         {
             var line = new float[length];
@@ -360,10 +344,7 @@ namespace Project.Editor
             AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
         }
 
-        /// <summary>
-        /// Imports a tube sprite with the pixels per unit the slot math in BottleItem is written for, times
-        /// <paramref name="resolution"/> for art made at another scale.
-        /// </summary>
+        // Pixels per unit must match BottleItem's slot math, scaled for art made at another resolution.
         private static Sprite ImportTubeSprite(string name, float resolution = 1f)
         {
             var path = $"{TubeFolder}/{name}.png";
@@ -374,9 +355,7 @@ namespace Project.Editor
                 return null;
             }
 
-            // The art is drawn well below its source size on a phone and smaller still in the editor Game view, so it is
-            // mipmapped and trilinear; without mips its thin edges and the outline alias into jagged pixels. The source
-            // stays uncompressed: atlas members are compressed by the atlas, and the outline is used as it is.
+            // Drawn well below source size, so mips stop thin edges aliasing; the atlas does the compressing.
             importer.textureType = TextureImporterType.Sprite;
             importer.spriteImportMode = SpriteImportMode.Single;
             importer.spritePixelsPerUnit = TubeArt.PixelsPerUnit * resolution;
@@ -389,18 +368,17 @@ namespace Project.Editor
             var settings = new TextureImporterSettings();
             importer.ReadTextureSettings(settings);
             settings.spriteAlignment = (int)SpriteAlignment.Center;
+            // A 9-slice sprite is drawn sliced for long tubes, which needs a full-rect mesh.
+            if (settings.spriteBorder != Vector4.zero) settings.spriteMeshType = SpriteMeshType.FullRect;
             importer.SetTextureSettings(settings);
             importer.SaveAndReimport();
             return AssetDatabase.LoadAssetAtPath<Sprite>(path);
         }
 
-        /// <summary>
-        /// Packs the tube body: 2048 pages, mipmapped and trilinear (8 px padding so smaller mips do not bleed), ASTC 6x6 on
-        /// phones. Standalone uses BC7 so the editor shows the same quality as a device.
-        /// </summary>
+        // 8 px padding so smaller mips do not bleed; BC7 on Standalone so the editor matches device quality.
         private static void BuildGameplayAtlas(params Sprite[] sprites)
         {
-            // Rewritten on every run, so its contents are exactly the given sprites.
+            // Rewritten on every run, so it holds exactly the given sprites.
             var asset = new SpriteAtlasAsset();
             asset.Add(System.Array.ConvertAll(sprites, s => (Object)s));
             SpriteAtlasAsset.Save(asset, AtlasPath);
@@ -433,7 +411,6 @@ namespace Project.Editor
                 textureCompression = TextureImporterCompression.CompressedHQ
             };
 
-        /// <summary>Additive sprite material for the glass.</summary>
         private static Material EnsureAdditiveMaterial()
         {
             var material = AssetDatabase.LoadAssetAtPath<Material>(AdditivePath);
@@ -443,11 +420,7 @@ namespace Project.Editor
             return material;
         }
 
-        /// <summary>
-        /// A ball: the five orb layers, all at the same spot (bottom to top OuterGlow, Back, Core, Front additive,
-        /// InnerGlow, at sorting orders 1-5 inside the tube) under a Visual child (the transform squash and smear scale),
-        /// and for a QuestionMark unit a "?" above them. The prefab shows <paramref name="sample"/>; each ball sets its own.
-        /// </summary>
+        // Six layers at sorting orders 1-6 under a Visual child that squash and smear scale.
         private static GameObject CreateBall(ItemType type, Sprite back, Sprite front, OrbSkin sample, OrbSkin hidden)
         {
             var root = new GameObject(type == ItemType.Ball ? "Ball" : "BallQuestionMark");
@@ -460,9 +433,10 @@ namespace Project.Editor
             var outerGlow = AddSprite(visual, "OuterGlow", sample.OuterGlow, 1, normal);
             var backRenderer = AddSprite(visual, "Back", back, 2, normal);
             var core = AddSprite(visual, "Core", sample.Core, 3, normal);
-            var frontRenderer = AddSprite(visual, "Front", front, 4, additive);
-            var innerGlow = AddSprite(visual, "InnerGlow", sample.InnerGlow, 5, normal);
-            var layers = new List<SpriteRenderer> { outerGlow, backRenderer, core, frontRenderer, innerGlow };
+            var coreGlow = AddSprite(visual, "CoreGlow", sample.CoreGlow, 4, normal);
+            var frontRenderer = AddSprite(visual, "Front", front, 5, additive);
+            var innerGlow = AddSprite(visual, "InnerGlow", sample.InnerGlow, 6, normal);
+            var layers = new List<SpriteRenderer> { outerGlow, backRenderer, core, coreGlow, frontRenderer, innerGlow };
 
             GameObject mark = null;
             if (type == ItemType.QuestionMark)
@@ -483,6 +457,7 @@ namespace Project.Editor
             SetArray(so.FindProperty("_layers"), layers);
             so.FindProperty("_outerGlow").objectReferenceValue = outerGlow;
             so.FindProperty("_core").objectReferenceValue = core;
+            so.FindProperty("_coreGlow").objectReferenceValue = coreGlow;
             so.FindProperty("_innerGlow").objectReferenceValue = innerGlow;
             so.FindProperty("_questionMark").objectReferenceValue = mark;
             SetOrbSkin(so.FindProperty("_hiddenOrb"), hidden);

@@ -1,18 +1,10 @@
-"""Slices the front half of the tube mouth out of Empty_Tube_Cap.png into Tube_RimFront.png.
-
-The whole cap is drawn below the balls; this slice is drawn again over them, so a ball passing through the mouth
-is half inside: the opening's back rim and its inside stay behind the ball, the front lip and the gold rings cover it.
-The cut follows the lower arc of the opening and, outside the opening, the rim's center line.
-
-Usage: python slice_mouth.py <Empty_Tube_Cap.png> <Tube_RimFront.png> [debug_overlay.png]
-"""
+"""Cuts the mouth's front rim to draw over the balls. Usage: slice_mouth.py <src.png> <dst.png> [debug.png]"""
 import sys
 
 import numpy as np
 from PIL import Image
 
-# The opening of Empty_Tube_Cap (384x1024, pixels from the top-left), measured from the art: the lip highlight sits
-# just below this arc, so it stays in the front slice.
+# Opening of the 384x1024 cap, measured from the art; the lip highlight sits just below this arc.
 CX, CY = 192.0, 36.0
 A, B = 136.0, 16.0
 FEATHER = 1.0  # px of soft edge along the cut
