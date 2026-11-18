@@ -75,7 +75,7 @@ namespace Project.Contexts.Game.Sort
                     var color = board.ColorAt(b, s);
                     var type = board.IsSpecial(b, s) ? ItemType.QuestionMark : ItemType.Ball;
                     var ball = _factory.Get<BallItem>(type, bottle.transform);
-                    ball.Setup(color, _palette.Get(color), hidden: !board.IsKnown(b, s));
+                    ball.Setup(color, _palette.GetOrb(color), hidden: !board.IsKnown(b, s));
                     bottle.Push(ball, snap: true);
                 }
             }
@@ -153,7 +153,7 @@ namespace Project.Contexts.Game.Sort
         public void Reveal(int bottle, int slot)
         {
             var ball = _bottles[bottle].Balls[slot];
-            ball.Reveal(_palette.Get(ball.ColorIndex));
+            ball.Reveal(_palette.GetOrb(ball.ColorIndex));
         }
 
         /// <summary>Editor check: the bottle stacks hold exactly the model's units.</summary>

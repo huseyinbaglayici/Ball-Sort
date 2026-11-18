@@ -55,7 +55,7 @@ namespace Project.Contexts.Game.Items
             copy.position = exit + (_visual.position - _root.position);
             for (var i = 0; i < _layers.Length; i++)
             {
-                _exitLayers[i].color = _layers[i].color;
+                _exitLayers[i].sprite = _layers[i].sprite;
                 _exitLayers[i].sortingOrder = _layers[i].sortingOrder;
             }
             Apply(_exitLayers, targetEdge);

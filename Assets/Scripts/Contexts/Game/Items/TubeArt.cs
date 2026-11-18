@@ -21,16 +21,11 @@ namespace Project.Contexts.Game.Items
         // The widest point, the mouth's top gold band.
         private const float WidthPx = 342f;
 
-        // The four balls are as large as the glass allows: the stack runs from where the glass turns straight under the
-        // mouth (153 px; the mouth's front rim ends at 150) down to 910 px, where the bottom ball rests on the floor ring
-        // just past the glass bottom (900 px). Stacked balls overlap a little: centers are 0.984 ball diameters apart.
-        // (Width is not the limit: the glass is 290 px wide inside, but four 290 px balls would not fit its height.)
-        private const float StackTopPx = 153f;
-        private const float StackBottomPx = 910f;
-        private const float SpacingPerBall = (770f - 286f) / 3f / 164f;
-        private const float BallPx = (StackBottomPx - StackTopPx) / (1f + (Slots - 1) * SpacingPerBall);
-        private const float SlotSpacingPx = BallPx * SpacingPerBall;
-        private const float BottomSlotPx = StackBottomPx - BallPx * 0.5f;
+        // From the art team's orb spec (ArtSource/Orb/README_Orbs.txt): the orb's sphere is 180 px at the tube's pixels
+        // per unit, and the slot centers are 183 px apart, the bottom one at 807 px.
+        private const float BallPx = 180f;
+        private const float SlotSpacingPx = 183f;
+        private const float BottomSlotPx = 807f;
 
         // The completed cap (384x384, pivot at the center) sits 492 px above the tube art's center.
         private const float CapOffsetPx = 492f;
@@ -56,13 +51,13 @@ namespace Project.Contexts.Game.Items
         /// </summary>
         public const float BottomFromOrigin = -0.1385f;
 
-        // Sorting inside the tube's group. Balls use 1 with their highlight at -1/-2, and +20 while flying.
+        // Sorting inside the tube's group. Balls use 1-5 (their orb layers) with their highlight at -1/-2, and +20 while flying.
         public const int BackOrder = -10;
         // The whole mouth, under the balls and their highlight, so its back rim and inside stay behind them.
         public const int MouthOrder = -5;
         public const int FrontOrder = 50;
         public const int OutlineOrder = 60;
-        // The front half of the mouth, over the balls (1, 21 while flying), so a ball in the mouth is half inside.
+        // The front half of the mouth, over the balls (1-5, 21-25 while flying), so a ball in the mouth is half inside.
         public const int RimFrontOrder = 65;
         public const int StopperOrder = 70;
         public const int GemOrder = 71;

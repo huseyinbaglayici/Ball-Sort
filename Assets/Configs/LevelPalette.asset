@@ -12,16 +12,76 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4f27cfd9517558741b644dcc8b5fe0ef, type: 3}
   m_Name: LevelPalette
   m_EditorClassIdentifier: Project.Contexts::Project.Contexts.Game.Levels.LevelPalette
-  _colors:
-  - {r: 1, g: 0.0706, b: 0.051, a: 1}
-  - {r: 0.1098, g: 0.1216, b: 1, a: 1}
-  - {r: 0.702, g: 1, b: 0.051, a: 1}
-  - {r: 1, g: 0.7686, b: 0.051, a: 1}
-  - {r: 0.6588, g: 0.2118, b: 1, a: 1}
-  - {r: 1, g: 0.4196, b: 0.051, a: 1}
-  - {r: 0, g: 1, b: 0.9216, a: 1}
-  - {r: 1, g: 0.4392, b: 0.851, a: 1}
-  - {r: 1, g: 0.051, b: 0.5412, a: 1}
-  - {r: 0.949, g: 0.949, b: 1, a: 1}
-  - {r: 0.051, g: 1, b: 0.3686, a: 1}
-  - {r: 0.051, g: 0.651, b: 1, a: 1}
+  _entries:
+  - Name: Red
+    Color: {r: 1, g: 0.07058824, b: 0.050980393, a: 1}
+    Orb:
+      OuterGlow: {fileID: 21300000, guid: a1a93563b836d6c4eb9ebbf11758b7b9, type: 3}
+      Core: {fileID: 21300000, guid: 305c59358c7d5cc4c807beca1e6fbbaa, type: 3}
+      InnerGlow: {fileID: 21300000, guid: 00c053b5aa80a4346ae9a4bfaa8a8940, type: 3}
+  - Name: Blue
+    Color: {r: 0.10980392, g: 0.12156863, b: 1, a: 1}
+    Orb:
+      OuterGlow: {fileID: 21300000, guid: 47274bf7227432940b45d53d7cbe5bf7, type: 3}
+      Core: {fileID: 21300000, guid: 4f0a694f8d855d54fa3011b3e4a83182, type: 3}
+      InnerGlow: {fileID: 21300000, guid: 0d75b4799508b2c4784ff963b2207f54, type: 3}
+  - Name: Green
+    Color: {r: 0.7019608, g: 1, b: 0.050980393, a: 1}
+    Orb:
+      OuterGlow: {fileID: 21300000, guid: b89e5ce1cc065e54db6bba04a51421b5, type: 3}
+      Core: {fileID: 21300000, guid: 55be535c28d5a2045930ef49988ef7b6, type: 3}
+      InnerGlow: {fileID: 21300000, guid: 9bebc6c127d946c4d928515206a14b30, type: 3}
+  - Name: Yellow
+    Color: {r: 1, g: 0.76862746, b: 0.050980393, a: 1}
+    Orb:
+      OuterGlow: {fileID: 21300000, guid: 81bf08b1f8032bf488770c31b4229362, type: 3}
+      Core: {fileID: 21300000, guid: 73144156bffcce74fa8bdbea120c44a1, type: 3}
+      InnerGlow: {fileID: 21300000, guid: c871bee42ab6d41498d1e8f9fdfdda31, type: 3}
+  - Name: Purple
+    Color: {r: 0.65882355, g: 0.21176471, b: 1, a: 1}
+    Orb:
+      OuterGlow: {fileID: 21300000, guid: 6e439033e729b884392dde20e4866445, type: 3}
+      Core: {fileID: 21300000, guid: 314c219eb61bfd5478f3082f1c17e20d, type: 3}
+      InnerGlow: {fileID: 21300000, guid: 1ed8a957dd9e80549aafd4cb93d58725, type: 3}
+  - Name: Orange
+    Color: {r: 1, g: 0.41960785, b: 0.050980393, a: 1}
+    Orb:
+      OuterGlow: {fileID: 21300000, guid: aee7afe64b2d8934c862d205170198d0, type: 3}
+      Core: {fileID: 21300000, guid: 36606783c76698d42bc27c5e84c5aca8, type: 3}
+      InnerGlow: {fileID: 21300000, guid: 79e83c75f84312244976ed475a009c6c, type: 3}
+  - Name: Cyan
+    Color: {r: 0, g: 1, b: 0.92156863, a: 1}
+    Orb:
+      OuterGlow: {fileID: 21300000, guid: 8d063c39909ea964f9ec03c610b9a5fc, type: 3}
+      Core: {fileID: 21300000, guid: e84a66d733492a549b2d6621147200ce, type: 3}
+      InnerGlow: {fileID: 21300000, guid: b69a34847d365a14682d9a76c341bcfb, type: 3}
+  - Name: Pink
+    Color: {r: 1, g: 0.4392157, b: 0.8509804, a: 1}
+    Orb:
+      OuterGlow: {fileID: 21300000, guid: 68f161ca46dce9a4cb3e2eae2ecab849, type: 3}
+      Core: {fileID: 21300000, guid: 9309dead588e7f94ebaae401cff3a4c7, type: 3}
+      InnerGlow: {fileID: 21300000, guid: 2e418db66efa5e64eabe8e44537cef66, type: 3}
+  - Name: Fuchsia
+    Color: {r: 1, g: 0.050980393, b: 0.5411765, a: 1}
+    Orb:
+      OuterGlow: {fileID: 21300000, guid: 1f19811809d1f124e851bc0f6b2344c5, type: 3}
+      Core: {fileID: 21300000, guid: 1e0fde96f8020ca4dbd366223a0938cc, type: 3}
+      InnerGlow: {fileID: 21300000, guid: bc6a075b9036df74faeb314e0883a208, type: 3}
+  - Name: White
+    Color: {r: 0.9490196, g: 0.9490196, b: 1, a: 1}
+    Orb:
+      OuterGlow: {fileID: 21300000, guid: 6abfbc8c82a146b4fac2bbfda1fe8e2d, type: 3}
+      Core: {fileID: 21300000, guid: 78a3e6da147e17b429f8029b1e0d8e35, type: 3}
+      InnerGlow: {fileID: 21300000, guid: 6bcb248a264eb8d4db738a372be8f380, type: 3}
+  - Name: Emerald
+    Color: {r: 0.050980393, g: 1, b: 0.36862746, a: 1}
+    Orb:
+      OuterGlow: {fileID: 21300000, guid: b95e9ef2daba76b4e9001f7bf89f85b3, type: 3}
+      Core: {fileID: 21300000, guid: 30ae5ba8267022943b74d9c0e904ee20, type: 3}
+      InnerGlow: {fileID: 21300000, guid: 1ce409bfe177df34dbeb69d56c77de08, type: 3}
+  - Name: SkyBlue
+    Color: {r: 0.050980393, g: 0.6509804, b: 1, a: 1}
+    Orb:
+      OuterGlow: {fileID: 21300000, guid: 5dfd07e9f2660c64abae99ed75459fdb, type: 3}
+      Core: {fileID: 21300000, guid: 778515e2f4a8a634f85d6a4a8ce6540b, type: 3}
+      InnerGlow: {fileID: 21300000, guid: 4123ee63934562e4ca575e6114cb7bc9, type: 3}

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Project.Contexts.Game.Items;
+using Project.Contexts.Game.Levels;
 using TMPro;
 using UnityEditor;
 using UnityEngine;
@@ -10,17 +11,20 @@ using UnityEngine.U2D;
 namespace Project.Editor
 {
     /// <summary>
-    /// Builds the tube prefab from the art in Art/Sprites/Tube, the ball prefabs from the orb art in ArtSource/Orb and the
-    /// <see cref="ItemRegistry"/> that maps item types to them. Safe to run again: assets are overwritten in place.
+    /// Builds the tube prefab from the art in Art/Sprites/Tube, the ball prefabs and the <see cref="LevelPalette"/> from
+    /// the orb art in Art/Sprites/Orb, and the <see cref="ItemRegistry"/> that maps item types to them. Safe to run
+    /// again: assets are overwritten in place.
     /// </summary>
     public static class BoardPrefabBuilder
     {
         private const string PrefabFolder = "Assets/Prefabs/Items";
         private const string RegistryPath = "Assets/Configs/ItemRegistry.asset";
-        private const string OrbSourceFolder = "ArtSource/Orb";
+        private const string PalettePath = "Assets/Configs/LevelPalette.asset";
         private const string OrbFolder = "Assets/Art/Sprites/Orb";
-        private const string TintShaderName = "Project/Sprite Tint Mask";
-        private const string OrbTintPath = "Assets/Art/Materials/OrbTint.mat";
+        private const string OrbGeneratedFolder = OrbFolder + "/Generated";
+        private const string OrbShaderName = "Project/Orb Layer";
+        private const string OrbLayerPath = "Assets/Art/Materials/OrbLayer.mat";
+        private const string OrbAdditivePath = "Assets/Art/Materials/OrbLayerAdditive.mat";
         private const string TubeFolder = "Assets/Art/Sprites/Tube";
         private const string AdditivePath = "Assets/Art/Materials/SpriteAdditive.mat";
         private const string AtlasPath = "Assets/Art/Atlases/GameplayAtlas.spriteatlasv2";
@@ -28,10 +32,18 @@ namespace Project.Editor
         [MenuItem("Tools/Project/Create Board Prefabs")]
         public static void Create()
         {
-            var orb = BuildOrb();
+            var skins = new OrbSkin[OrbColors.Length];
+            for (var i = 0; i < OrbColors.Length; i++) skins[i] = LoadOrbSkin(OrbColors[i].name, OrbColors[i].color);
+            var hidden = LoadOrbSkin(HiddenOrb.name, HiddenOrb.color);
+            if (System.Array.Exists(skins, IsIncomplete) || IsIncomplete(hidden)) return;
+            var back = ImportOrbSprite($"{OrbFolder}/Orb_Back.png");
+            var front = ImportOrbSprite($"{OrbFolder}/Orb_Front.png", sharp: true);
+            if (back == null || front == null) return;
+            BuildPalette(skins);
+
             var bottle = SavePrefab(CreateBottle(), "Bottle");
-            var ball = SavePrefab(CreateBall(orb, ItemType.Ball), "Ball");
-            var question = SavePrefab(CreateBall(orb, ItemType.QuestionMark), "BallQuestionMark");
+            var ball = SavePrefab(CreateBall(ItemType.Ball, back, front, skins[0], hidden), "Ball");
+            var question = SavePrefab(CreateBall(ItemType.QuestionMark, back, front, skins[0], hidden), "BallQuestionMark");
 
             BuildRegistry(new List<(ItemType, Item, int, int)>
             {
@@ -40,163 +52,144 @@ namespace Project.Editor
                 (ItemType.QuestionMark, question.GetComponent<Item>(), 24, 64)
             });
             AssetDatabase.SaveAssets();
-            Debug.Log("[BoardPrefabBuilder] Bottle, Ball, BallQuestionMark prefabs and ItemRegistry are ready.");
+            Debug.Log("[BoardPrefabBuilder] Bottle, Ball, BallQuestionMark prefabs, LevelPalette and ItemRegistry are ready.");
         }
 
-        // The orb is the art team's finished ball, recolored per ball. ArtSource/Orb holds their flattened comp of the
-        // turquoise ball on a flat background (Orb_Comp_Cyan) and the five layers it was made from. Rebuilding it from
-        // the layers cannot match the comp (their file has masks and effects the layer export does not carry), so the
-        // sprite is made from the comp itself, one texture and one draw per ball.
-        // Every pixel of the comp is background showing through plus light the ball adds:
-        //   comp = bg * u + white * (1,1,1) + amount * base,   base = #00FFEB (the color the art is drawn in)
-        // The base color has no red and its blue differs from the background's, so the three channels solve the three
-        // unknowns exactly: red gives white, green gives amount, blue gives u. The sprite stores R = white,
-        // G = amount, A = 1 - u (premultiplied), and the Sprite Tint Mask shader draws white + amount * ball color.
-        // The layers only mark where the lit core is (never see-through) and where nothing is drawn (background only).
-        private const string OrbCompName = "Orb_Comp_Cyan";
-        private static readonly Color OrbBaseColor = new(0f, 1f, 235f / 255f);
-        private static readonly string[] OrbLayerNames = { "OuterGlow", "Back", "Core", "InnerGlow", "Front" };
-        // Width of the orb's sphere (the dark frame ring) on the 512 px canvas; the halo reaches past it.
-        private const float OrbSpherePx = 328f;
-        // Pulls mip selection about 0.7 levels sharper, so the ball reads crisp at its ~110 px size on a phone.
-        private const float OrbMipBias = -0.7f;
-
-        private static Sprite BuildOrb()
+        // The ball colors, by level color index. 0-7 are the art team's scale: each has its own OuterGlow, Core and
+        // InnerGlow (Art/Sprites/Orb/Orb_<Layer>_<Name>.png; their spec is ArtSource/Orb/README_Orbs.txt). Levels use all
+        // twelve, so a color without art yet (8-11, and the hidden ball) is made from the Cyan art recolored to it, into
+        // Orb/Generated. Put the art team's files in Art/Sprites/Orb and run again to replace a stand-in.
+        private static readonly (string name, Color color)[] OrbColors =
         {
-            if (!AssetDatabase.IsValidFolder(OrbFolder)) AssetDatabase.CreateFolder("Assets/Art/Sprites", "Orb");
-            var path = $"{OrbFolder}/Orb.png";
-            if (!WriteOrbMask(path)) return null;
-            AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
-            return ImportOrbSprite(path);
+            ("Red", Hex("FF120D")), ("Blue", Hex("1C1FFF")), ("Green", Hex("B3FF0D")), ("Yellow", Hex("FFC40D")),
+            ("Purple", Hex("A836FF")), ("Orange", Hex("FF6B0D")), ("Cyan", Hex("00FFEB")), ("Pink", Hex("FF70D9")),
+            ("Fuchsia", Hex("FF0D8A")), ("White", Hex("F2F2FF")), ("Emerald", Hex("0DFF5E")), ("SkyBlue", Hex("0DA6FF"))
+        };
+        private static readonly (string name, Color color) HiddenOrb = ("Hidden", Hex("525769"));
+        // Fully saturated and bright, so its saturation and value scale straight onto any color.
+        private const string RecolorSource = "Cyan";
+        private static readonly string[] OrbColorLayers = { "OuterGlow", "Core", "InnerGlow" };
+
+        private static Color Hex(string hex) => ColorUtility.TryParseHtmlString("#" + hex, out var color) ? color : Color.magenta;
+
+        private static bool IsIncomplete(OrbSkin skin) => skin.OuterGlow == null || skin.Core == null || skin.InnerGlow == null;
+
+        private static OrbSkin LoadOrbSkin(string name, Color color)
+        {
+            var sprites = new Sprite[OrbColorLayers.Length];
+            for (var i = 0; i < OrbColorLayers.Length; i++)
+            {
+                var file = $"Orb_{OrbColorLayers[i]}_{name}.png";
+                var path = $"{OrbFolder}/{file}";
+                if (!System.IO.File.Exists(path))
+                {
+                    path = $"{OrbGeneratedFolder}/{file}";
+                    if (!WriteRecolor($"{OrbFolder}/Orb_{OrbColorLayers[i]}_{RecolorSource}.png", path, color)) return default;
+                    AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
+                }
+                sprites[i] = ImportOrbSprite(path);
+            }
+            return new OrbSkin { OuterGlow = sprites[0], Core = sprites[1], InnerGlow = sprites[2] };
         }
 
-        private static Color[] LoadPixels(string path, out int width, out int height)
+        /// <summary>The source layer with each pixel's hue set to the color's, its saturation and value scaled by the color's.</summary>
+        private static bool WriteRecolor(string source, string target, Color color)
         {
+            if (!System.IO.File.Exists(source))
+            {
+                Debug.LogError($"[BoardPrefabBuilder] Missing {source}.");
+                return false;
+            }
+            if (!AssetDatabase.IsValidFolder(OrbGeneratedFolder)) AssetDatabase.CreateFolder(OrbFolder, "Generated");
+            Color.RGBToHSV(color, out var hue, out var saturation, out var value);
             var texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
-            texture.LoadImage(System.IO.File.ReadAllBytes(path));
-            width = texture.width;
-            height = texture.height;
+            texture.LoadImage(System.IO.File.ReadAllBytes(source));
             var pixels = texture.GetPixels();
-            Object.DestroyImmediate(texture);
-            return pixels;
-        }
-
-        private static bool WriteOrbMask(string path)
-        {
-            var compPath = $"{OrbSourceFolder}/{OrbCompName}.png";
-            if (!System.IO.File.Exists(compPath))
+            for (var i = 0; i < pixels.Length; i++)
             {
-                Debug.LogError($"[BoardPrefabBuilder] Missing {compPath}.");
-                return false;
+                Color.RGBToHSV(pixels[i], out _, out var s, out var v);
+                var rgb = Color.HSVToRGB(hue, s * saturation, v * value);
+                pixels[i] = new Color(rgb.r, rgb.g, rgb.b, pixels[i].a);
             }
-            var comp = LoadPixels(compPath, out var width, out var height);
-            var layers = new Color[OrbLayerNames.Length][];
-            var inner = -1;
-            for (var i = 0; i < OrbLayerNames.Length; i++)
-            {
-                var layerPath = $"{OrbSourceFolder}/Orb_{OrbLayerNames[i]}_Cyan.png";
-                if (!System.IO.File.Exists(layerPath))
-                {
-                    Debug.LogError($"[BoardPrefabBuilder] Missing {layerPath}.");
-                    return false;
-                }
-                layers[i] = LoadPixels(layerPath, out var w, out var h);
-                if (w != width || h != height)
-                {
-                    Debug.LogError($"[BoardPrefabBuilder] {layerPath} is {w}x{h}, the comp is {width}x{height}.");
-                    return false;
-                }
-                if (OrbLayerNames[i] == "InnerGlow") inner = i;
-            }
-
-            // The comp's flat background, from its four corners.
-            var bg = Color.clear;
-            var samples = 0;
-            const int patch = 12;
-            foreach (var (cx, cy) in new[] { (0, 0), (width - patch, 0), (0, height - patch), (width - patch, height - patch) })
-            for (var y = cy; y < cy + patch; y++)
-            for (var x = cx; x < cx + patch; x++)
-            {
-                bg += comp[y * width + x];
-                samples++;
-            }
-            bg /= samples;
-            var b = OrbBaseColor;
-            var denominator = bg.b - bg.r - b.b * (bg.g - bg.r);
-            if (Mathf.Abs(denominator) < 0.05f)
-            {
-                Debug.LogError("[BoardPrefabBuilder] The comp's background must be a color whose blue differs from the " +
-                               "ball's base color (e.g. dark navy); it cannot be separated from this one.");
-                return false;
-            }
-
-            var mask = new Color[comp.Length];
-            for (var i = 0; i < comp.Length; i++)
-            {
-                var c = comp[i];
-                var u = Mathf.Clamp01((c.b - c.r - b.b * (c.g - c.r)) / denominator);
-                // The lit core (InnerGlow's solid disc) never lets the background through.
-                u *= 1f - Mathf.Clamp01((layers[inner][i].a - 0.6f) / 0.3f);
-                var empty = 1f;
-                foreach (var layer in layers) empty *= 1f - layer[i].a;
-                // Nothing is drawn there: background only. Clear it, or the comp's noise would add light over the
-                // whole sprite quad and show its edges.
-                if (1f - empty < 0.02f)
-                {
-                    mask[i] = Color.clear;
-                    continue;
-                }
-                var white = Mathf.Clamp01(c.r - bg.r * u);
-                var amount = Mathf.Clamp01(c.g - bg.g * u - white);
-                mask[i] = new Color(white, amount, 0f, 1f - u);
-            }
-            var texture = new Texture2D(width, height, TextureFormat.RGBA32, false);
-            texture.SetPixels(mask);
-            System.IO.File.WriteAllBytes(path, texture.EncodeToPNG());
+            texture.SetPixels(pixels);
+            System.IO.File.WriteAllBytes(target, texture.EncodeToPNG());
             Object.DestroyImmediate(texture);
             return true;
         }
 
-        private static Sprite ImportOrbSprite(string path)
+        /// <summary>
+        /// Imports an orb layer at the tube's pixels per unit, as the art is drawn (pivot at the center). The soft layers
+        /// are compressed; a <paramref name="sharp"/> one (the glass reflection's thin highlights) stays uncompressed so
+        /// compression never makes it blocky.
+        /// </summary>
+        private static Sprite ImportOrbSprite(string path, bool sharp = false)
         {
             var importer = (TextureImporter)AssetImporter.GetAtPath(path);
+            if (importer == null)
+            {
+                Debug.LogError($"[BoardPrefabBuilder] Missing {path}.");
+                return null;
+            }
             importer.textureType = TextureImporterType.Sprite;
             importer.spriteImportMode = SpriteImportMode.Single;
-            // At scale 1 the sphere is exactly one ball wide.
-            importer.spritePixelsPerUnit = OrbSpherePx / TubeArt.BallDiameter;
-            // Full 512 px source, mipmapped against shimmer, but with Kaiser mips and a negative bias: plain trilinear
-            // blends in the half-size mip at the ball's on-screen size and the ball looks blurry.
+            importer.spritePixelsPerUnit = TubeArt.PixelsPerUnit;
+            // Drawn at about half its size on a phone: mipmapped and trilinear against shimmer.
             importer.mipmapEnabled = true;
-            importer.mipmapFilter = TextureImporterMipFilter.KaiserFilter;
-            importer.mipMapBias = OrbMipBias;
+            importer.alphaIsTransparency = true;
             importer.filterMode = FilterMode.Trilinear;
             importer.wrapMode = TextureWrapMode.Clamp;
-            // A premultiplied mask: the halo is light where alpha is 0, so its color must not be replaced there.
-            importer.alphaIsTransparency = false;
-            importer.sRGBTexture = false;
-            importer.maxTextureSize = 512;
-            importer.textureCompression = TextureImporterCompression.Uncompressed;
+            importer.textureCompression = sharp ? TextureImporterCompression.Uncompressed : TextureImporterCompression.CompressedHQ;
             var settings = new TextureImporterSettings();
             importer.ReadTextureSettings(settings);
             settings.spriteAlignment = (int)SpriteAlignment.Center;
-            settings.spriteMeshType = SpriteMeshType.FullRect;
             importer.SetTextureSettings(settings);
             importer.SaveAndReimport();
             return AssetDatabase.LoadAssetAtPath<Sprite>(path);
         }
 
-        private static Material EnsureTintMaterial()
+        /// <summary>The orb layer material: normal (premultiplied) blending, or additive for the glass.</summary>
+        private static Material EnsureOrbMaterial(string path, BlendMode destination)
         {
-            var shader = Shader.Find(TintShaderName);
-            var material = AssetDatabase.LoadAssetAtPath<Material>(OrbTintPath);
+            var shader = Shader.Find(OrbShaderName);
+            var material = AssetDatabase.LoadAssetAtPath<Material>(path);
             if (material == null)
             {
-                material = new Material(shader) { name = "OrbTint" };
-                AssetDatabase.CreateAsset(material, OrbTintPath);
+                material = new Material(shader) { name = System.IO.Path.GetFileNameWithoutExtension(path) };
+                AssetDatabase.CreateAsset(material, path);
             }
             material.shader = shader;
+            material.SetFloat("_DstBlend", (float)destination);
             EditorUtility.SetDirty(material);
             return material;
+        }
+
+        private static void BuildPalette(OrbSkin[] skins)
+        {
+            var palette = AssetDatabase.LoadAssetAtPath<LevelPalette>(PalettePath);
+            if (palette == null)
+            {
+                palette = ScriptableObject.CreateInstance<LevelPalette>();
+                AssetDatabase.CreateAsset(palette, PalettePath);
+            }
+            var so = new SerializedObject(palette);
+            var entries = so.FindProperty("_entries");
+            entries.arraySize = OrbColors.Length;
+            for (var i = 0; i < OrbColors.Length; i++)
+            {
+                var entry = entries.GetArrayElementAtIndex(i);
+                entry.FindPropertyRelative("Name").stringValue = OrbColors[i].name;
+                entry.FindPropertyRelative("Color").colorValue = OrbColors[i].color;
+                SetOrbSkin(entry.FindPropertyRelative("Orb"), skins[i]);
+            }
+            so.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(palette);
+        }
+
+        private static void SetOrbSkin(SerializedProperty property, OrbSkin skin)
+        {
+            property.FindPropertyRelative(nameof(OrbSkin.OuterGlow)).objectReferenceValue = skin.OuterGlow;
+            property.FindPropertyRelative(nameof(OrbSkin.Core)).objectReferenceValue = skin.Core;
+            property.FindPropertyRelative(nameof(OrbSkin.InnerGlow)).objectReferenceValue = skin.InnerGlow;
         }
 
         /// <summary>
@@ -346,19 +339,25 @@ namespace Project.Editor
         }
 
         /// <summary>
-        /// A ball: the orb sprite under a Visual child (the transform squash and smear scale), at sorting order 1 inside
-        /// the tube, and for a QuestionMark unit a "?" above it.
+        /// A ball: the five orb layers, all at the same spot (bottom to top OuterGlow, Back, Core, Front additive,
+        /// InnerGlow, at sorting orders 1-5 inside the tube) under a Visual child (the transform squash and smear scale),
+        /// and for a QuestionMark unit a "?" above them. The prefab shows <paramref name="sample"/>; each ball sets its own.
         /// </summary>
-        private static GameObject CreateBall(Sprite orb, ItemType type)
+        private static GameObject CreateBall(ItemType type, Sprite back, Sprite front, OrbSkin sample, OrbSkin hidden)
         {
             var root = new GameObject(type == ItemType.Ball ? "Ball" : "BallQuestionMark");
             var item = root.AddComponent<BallItem>();
 
             var visual = new GameObject("Visual").transform;
             visual.SetParent(root.transform, false);
-            var renderer = AddSprite(visual, "Orb", orb, 1, EnsureTintMaterial());
-            var layers = new List<SpriteRenderer> { renderer };
-            var tinted = new List<SpriteRenderer> { renderer };
+            var normal = EnsureOrbMaterial(OrbLayerPath, BlendMode.OneMinusSrcAlpha);
+            var additive = EnsureOrbMaterial(OrbAdditivePath, BlendMode.One);
+            var outerGlow = AddSprite(visual, "OuterGlow", sample.OuterGlow, 1, normal);
+            var backRenderer = AddSprite(visual, "Back", back, 2, normal);
+            var core = AddSprite(visual, "Core", sample.Core, 3, normal);
+            var frontRenderer = AddSprite(visual, "Front", front, 4, additive);
+            var innerGlow = AddSprite(visual, "InnerGlow", sample.InnerGlow, 5, normal);
+            var layers = new List<SpriteRenderer> { outerGlow, backRenderer, core, frontRenderer, innerGlow };
 
             GameObject mark = null;
             if (type == ItemType.QuestionMark)
@@ -377,8 +376,11 @@ namespace Project.Editor
             var so = new SerializedObject(item);
             so.FindProperty("_visual").objectReferenceValue = visual;
             SetArray(so.FindProperty("_layers"), layers);
-            SetArray(so.FindProperty("_tinted"), tinted);
+            so.FindProperty("_outerGlow").objectReferenceValue = outerGlow;
+            so.FindProperty("_core").objectReferenceValue = core;
+            so.FindProperty("_innerGlow").objectReferenceValue = innerGlow;
             so.FindProperty("_questionMark").objectReferenceValue = mark;
+            SetOrbSkin(so.FindProperty("_hiddenOrb"), hidden);
             so.ApplyModifiedPropertiesWithoutUndo();
             return root;
         }

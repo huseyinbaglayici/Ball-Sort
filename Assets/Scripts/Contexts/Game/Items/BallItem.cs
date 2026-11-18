@@ -7,9 +7,8 @@ namespace Project.Contexts.Game.Items
     /// <summary>
     /// One unit of colored ball. The same component serves the Ball and QuestionMark prefabs:
     /// a QuestionMark unit hides its color behind a "?" until <see cref="Reveal"/> is called.
-    /// The ball is the orb art (Art/Sprites/Orb) under one Visual transform, which squash and smear scale.
-    /// The art is drawn once, in one base color; the tinted renderers take the ball's color through their
-    /// SpriteRenderer color (see the Sprite Tint Mask shader), while white highlights stay white.
+    /// The ball is the orb art (Art/Sprites/Orb), five layers under one Visual transform, which squash and smear scale.
+    /// The Back and the Front (glass) are the same for every color; the other three take the ball's <see cref="OrbSkin"/>.
     /// Motion lives on separate tween targets so each can be stopped alone: the root transform (lift, flight, return)
     /// and this component (landing settle). The selection highlight is a <see cref="BallHighlight"/>, the split between
     /// two portals a <see cref="BallPortalMask"/>.
@@ -30,11 +29,14 @@ namespace Project.Contexts.Game.Items
 
         // Scaled by squash and smear. At scale 1 the orb's sphere is TubeArt.BallDiameter wide.
         [SerializeField] private Transform _visual;
-        // Every orb layer, bottom to top, and the ones that take the ball color.
+        // Every orb layer, bottom to top, and the ones that take the ball's color.
         [SerializeField] private SpriteRenderer[] _layers;
-        [SerializeField] private SpriteRenderer[] _tinted;
+        [SerializeField] private SpriteRenderer _outerGlow;
+        [SerializeField] private SpriteRenderer _core;
+        [SerializeField] private SpriteRenderer _innerGlow;
         [SerializeField] private GameObject _questionMark;
-        [SerializeField] private Color _hiddenColor = new(0.32f, 0.34f, 0.42f);
+        // What a hidden ball shows until it is revealed.
+        [SerializeField] private OrbSkin _hiddenOrb;
 
         private int[] _baseOrders;
         private PrimeTween.Sequence _settle;
@@ -67,21 +69,21 @@ namespace Project.Contexts.Game.Items
             _portal = new BallPortalMask(transform, _visual, _layers);
         }
 
-        public void Setup(int colorIndex, Color color, bool hidden)
+        public void Setup(int colorIndex, OrbSkin orb, bool hidden)
         {
             ColorIndex = colorIndex;
             IsHidden = hidden && _questionMark != null;
-            SetColor(IsHidden ? _hiddenColor : color);
+            SetOrb(IsHidden ? _hiddenOrb : orb);
             if (_questionMark != null) _questionMark.SetActive(IsHidden);
             transform.localScale = Vector3.one;
             ResetVisuals();
         }
 
-        public void Reveal(Color color)
+        public void Reveal(OrbSkin orb)
         {
             if (!IsHidden) return;
             IsHidden = false;
-            SetColor(color);
+            SetOrb(orb);
             if (_questionMark != null) _questionMark.SetActive(false);
             TweenPresets.Punch(transform, RevealPunch);
         }
@@ -348,9 +350,11 @@ namespace Project.Contexts.Game.Items
             _visual.localPosition = new Vector3(0f, (squash.y - 1f) * TubeArt.BallDiameter * 0.5f, 0f);
         }
 
-        private void SetColor(Color color)
+        private void SetOrb(OrbSkin orb)
         {
-            foreach (var layer in _tinted) layer.color = color;
+            _outerGlow.sprite = orb.OuterGlow;
+            _core.sprite = orb.Core;
+            _innerGlow.sprite = orb.InnerGlow;
         }
     }
 }
