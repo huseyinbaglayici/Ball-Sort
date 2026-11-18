@@ -2,17 +2,13 @@ using UnityEngine;
 
 namespace Project.Contexts.Game.Sort
 {
-    /// <summary>
-    /// Every timing of the ball motion: selection wave, warp between tubes, partial-transfer return, landing settle,
-    /// tube reactions, highlight and the completed-bottle mark.
-    /// </summary>
     [CreateAssetMenu(menuName = "Project/Ball Animation Config", fileName = "BallAnimationConfig")]
     public sealed class BallAnimationConfig : ScriptableObject
     {
         [Header("Selection wave")]
         [Tooltip("How far every selected ball rises from its slot, in slot heights. The same for a full tube and a single ball at the bottom, so a selection always reads the same. The balls keep their stack spacing.")]
         [Range(0f, 2f)] public float LiftHeight = 1f;
-        [Tooltip("Experimental: the selected group always rises to one fixed spot at the mouth instead of by LiftHeight from its slots. The top ball ends where a full tube's top ball lifts to (LiftHeight above the top slot), wherever the stack ends; the group keeps its stack spacing below it. Off = the fixed short lift.")]
+        [Tooltip("The selected group always rises to one fixed spot at the mouth instead of by LiftHeight from its slots. The top ball ends where a full tube's top ball lifts to (LiftHeight above the top slot), wherever the stack ends; the group keeps its stack spacing below it. Off = the fixed short lift.")]
         public bool LiftToMouth;
         [Tooltip("Lift speed in board units per second; the lift time is distance / speed within the limits below.")]
         public float LiftSpeed = 30f;
@@ -71,8 +67,8 @@ namespace Project.Contexts.Game.Sort
         [Header("Narrow mouth and snap")]
         [Tooltip("Out of the target portal the ball keeps falling, straight through the mouth into its slot, starting at the speed it came out with. A deep slot keeps speeding it up, like gravity; a near one slows it down, but it always hits the slot with at least this share of its exit speed, and the snap takes the impact. 0 = it may ease to a stop.")]
         [Range(0f, 1f)] public float ExitKeep = 0.35f;
-        [Tooltip("Ball scale at its tightest in the mouth, on the way in and out. Keep x times y near 1 so the ball keeps its volume.")]
-        public Vector2 NeckSqueeze = new(0.97f, 1.03f);
+        [Tooltip("Ball scale at its tightest in the mouth, on the way in and out. Keep x times y near 1 so the ball keeps its volume, and y under TubeArt.MaxStackStretch so a stretched ball never reaches its neighbour.")]
+        public Vector2 NeckSqueeze = new(0.985f, 1.015f);
         [Tooltip("The hard stop in the slot: hit pose, linear hit time, and an eased release with no overshoot.")]
         public Vector2 SnapSquash = new(1.16f, 0.82f);
         [Tooltip("Long enough that the hit pose is always drawn for at least 2 frames.")]
@@ -169,15 +165,25 @@ namespace Project.Contexts.Game.Sort
         public float RippleStep = 0.04f;
 
         [Header("Highlight")]
-        [Tooltip("Fade-in and fade-out times. Every selected ball lights up at once.")]
+        [Tooltip("Fade-in and fade-out times. Every selected ball lights up at once, holds steady while selected, and goes out almost at once.")]
         public float HighlightInDuration = 0.12f;
-        public float HighlightOutDuration = 0.25f;
-        [Tooltip("Outer diameter of the thin contour around each selected ball, relative to the ball.")]
-        public float ContourScale = 1.1f;
-        public Color ContourColor = new(1f, 1f, 1f, 0.95f);
-        [Tooltip("Outer diameter of the soft light around each selected ball, relative to the ball. Keep it tight so neighbours stay separate.")]
-        public float GlowScale = 1.26f;
-        public Color GlowColor = new(1f, 0.97f, 0.8f, 0.55f);
+        public float HighlightOutDuration = 0.06f;
+        [Tooltip("How far the thin bright rim on each selected ball's edge reaches past the ball, relative to the ball.")]
+        public float ContourScale = 1.04f;
+        [Tooltip("Multiplies the ball's own color, brought to full brightness. White = the ball's color as is.")]
+        public Color ContourColor = new(1f, 1f, 1f, 1f);
+        [Tooltip("How far the rim goes from the ball's color toward white: a light accent in the ball's hue.")]
+        [Range(0f, 1f)] public float ContourWhiten = 0.55f;
+        [Tooltip("Outer diameter of the soft light around each selected ball, relative to the ball. It is full at the ball's edge and fades out to here. It also sets the lifted spacing: the selected balls stand apart so their lights only meet at the faint tails (smaller = tighter group).")]
+        public float GlowScale = 1.18f;
+        [Tooltip("Multiplies the ball's own color, brought to full brightness. White = the ball's color as is.")]
+        public Color GlowColor = new(1f, 1f, 1f, 0.9f);
+        [Tooltip("How far the light goes from the ball's color toward white: a light tint of the ball's hue.")]
+        [Range(0f, 1f)] public float GlowWhiten = 0.4f;
+
+        [Header("Ball at rest")]
+        [Tooltip("Strength of the orb art's own halo around every ball. Resting balls are only a few pixels apart, narrower than the halo, so any value above 0 lets neighbours' halos touch and blurs the ball edges; 0 keeps every ball's edge crisp against the tube.")]
+        [Range(0f, 1f)] public float OrbHaloAlpha;
 
         [Header("Completed bottle")]
         [Tooltip("The cap art drops onto the mouth and settles over this time.")]
@@ -200,10 +206,9 @@ namespace Project.Contexts.Game.Sort
         public Color CapGlowColor = Color.white;
         public float CapGlowRestAlpha = 0.35f;
 
-        [Header("Sound")]
-        public string LandSound = "ball_land";
-        [Tooltip("Pitch rise for each later ball of one transfer.")]
-        public float LandPitchStep = 0.04f;
+        [Header("Contacts")]
+        [Tooltip("When a group drops back into its own tube, its balls land this far apart, bottom ball first, so each landing is heard on its own.")]
+        public float ReturnContactStagger = 0.05f;
 
         public float WaveDelay(int index)
         {
@@ -212,12 +217,7 @@ namespace Project.Contexts.Game.Sort
             return delay;
         }
 
-        /// <summary>
-        /// The entry window split for <paramref name="count"/> balls: each ball's own entry and the delay between two
-        /// balls. A ball always gets the same entry, <see cref="EntryShare"/> of the window, so a single ball goes in as
-        /// briskly as one of a group. With several balls the rest of the window is the stagger, so the last one lands at
-        /// the end of the window; a single ball just lands sooner.
-        /// </summary>
+        // Same entry time for every ball so a single ball is as brisk; the rest of the window is stagger.
         public void EntryTiming(int count, out float entry, out float stagger)
         {
             entry = EntryWindow * EntryShare;
