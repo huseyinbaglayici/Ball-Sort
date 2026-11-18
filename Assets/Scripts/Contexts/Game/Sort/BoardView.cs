@@ -9,65 +9,82 @@ using UnityEngine;
 
 namespace Project.Contexts.Game.Sort
 {
-    /// <summary>
-    /// Shows a <see cref="SortBoard"/>: spawns the bottles and ball units from the pool, scales the layout
-    /// to fit the screen and animates moves. It never decides what is allowed, SortBoard does.
-    /// The bottle stacks follow the model at once; only the ball positions catch up through tweens.
-    /// A bottle is locked while a ball flies into or out of it; the rest of the board stays playable.
-    /// </summary>
+    // Stacks follow the model at once, balls catch up by tween; only bottles with a ball in flight are locked.
     public sealed class BoardView : MonoBehaviour
     {
-        // The target portal's layers sort above every tube group (idle 0, raised 10, receiving 11), so balls come down
-        // out from under it. The source portal sorts under the source tube (raised) and its balls but over idle tubes:
-        // a ball rises over its near rim and lit inner wall and goes into the black, never behind the ring.
+        // Tubes: idle 0, raised 10, receiving 11. Target portal is above all; source portal above idle, below raised.
         private const int TargetPortalOrder = 20;
         private const int SourcePortalOrder = 5;
-        // Share of its frame step a ball smears by while it passes the target mouth.
         private const float MouthSmear = 0.35f;
         [SerializeField] private BallAnimationConfig _animation;
-        // The camera is fixed, so the board is scaled to the size the layout asks of it.
+        // The camera is fixed; the board scales to fit.
         [SerializeField] private BoardLayout _layout = new();
 
         private readonly List<BottleItem> _bottles = new();
-        // The bottles each flying ball locks: (from, to).
+        // (from, to) bottles each flying ball locks.
         private readonly Dictionary<BallItem, Vector2Int> _flights = new();
+        // Contact to play on landing; absent for a silent move (Undo).
+        private readonly Dictionary<BallItem, (OrbContact contact, bool last)> _landings = new();
+        // Tween target for delayed lift sounds, so they can be stopped together.
+        private readonly object _contactClock = new();
+        private const int TowerCapacity = 8;
+        private readonly List<float> _liftDelays = new();
         private int[] _locks = Array.Empty<int>();
-        // Balls flying into each bottle; a receiving bottle draws above the one they come from.
+        // A receiving bottle draws above the one the balls come from.
         private int[] _incoming = Array.Empty<int>();
         private ItemFactory _factory;
         private LevelPalette _palette;
-        private AudioService _audio;
-        private HapticService _haptics;
-        // Portals still open or closing over source and target tubes; cleared with the board.
+        private AudioManager _audio;
+        private HapticModule _haptics;
         private readonly List<PortalView> _portals = new();
+        private readonly ObstacleMarkers _markers = new();
+        private bool[] _capped = Array.Empty<bool>();
+        // Level grid positions, then capacities of every bottle (level ones first, added ones after).
+        private readonly List<Vector2> _positions = new();
+        private readonly List<int> _capacities = new();
+        private int _levelNumber;
+        // Relayout time after a bottle is added during play.
+        private const float AddDuration = 0.3f;
+        private float _settledAt;
 
-        public BottleItem Bottle(int index) => _bottles[index];
+        private void Awake()
+        {
+            _audio = Services.Get<AudioManager>();
+            _haptics = Services.Get<HapticModule>();
+        }
 
-        public bool IsLocked(int bottle) => _locks[bottle] > 0;
+        public bool IsLocked(int bottle) => _locks[bottle] > 0 || Time.time < _settledAt;
 
-        public bool IsAnimating => _flights.Count > 0;
+        public bool IsAnimating => _flights.Count > 0 || Time.time < _settledAt;
 
-        public void Build(LevelData level, SortBoard board, ItemFactory factory, LevelPalette palette)
+        public void Build(LevelData level, int levelNumber, SortBoard board, ItemFactory factory, LevelPalette palette)
         {
             Clear();
             _factory = factory;
             _palette = palette;
-            _audio ??= Services.Get<AudioService>();
-            if (_haptics == null) Services.TryGet(out _haptics);
+
+            _positions.Clear();
+            _capacities.Clear();
+            for (var b = 0; b < level.Bottles.Count; b++)
+            {
+                _positions.Add(level.Bottles[b].Position);
+                _capacities.Add(board.Capacity(b));
+            }
+            _levelNumber = levelNumber;
 
             var camera = Camera.main;
-            var origins = _layout.Place(level, camera != null ? camera.aspect : 9f / 16f, out var orthoSize);
-            var scale = camera != null ? camera.orthographicSize / orthoSize : 1f;
+            var origins = Place(out var rises, out var scale);
             var cameraCenter = camera != null ? camera.transform.position : Vector3.zero;
             transform.localScale = Vector3.one * scale;
             transform.position = new Vector3(cameraCenter.x, cameraCenter.y, 0f);
 
             _locks = new int[level.Bottles.Count];
             _incoming = new int[level.Bottles.Count];
+            _capped = new bool[level.Bottles.Count];
             for (var b = 0; b < level.Bottles.Count; b++)
             {
                 var bottle = _factory.Get<BottleItem>(ItemType.Bottle, transform);
-                bottle.Setup(b, level.Capacity, origins[b] + Vector2.up * TubeArt.BottomFromOrigin);
+                bottle.Setup(b, board.Capacity(b), BottleLocal(origins[b]), rises[b]);
                 _bottles.Add(bottle);
 
                 for (var s = 0; s < board.Count(b); s++)
@@ -75,15 +92,64 @@ namespace Project.Contexts.Game.Sort
                     var color = board.ColorAt(b, s);
                     var type = board.IsSpecial(b, s) ? ItemType.QuestionMark : ItemType.Ball;
                     var ball = _factory.Get<BallItem>(type, bottle.transform);
-                    ball.Setup(color, _palette.GetOrb(color), hidden: !board.IsKnown(b, s));
+                    ball.Setup(color, _palette.GetOrb(color), _palette.Get(color), hidden: !board.IsKnown(b, s), _animation);
                     bottle.Push(ball, snap: true);
                 }
             }
+
+            for (var b = 0; b < _bottles.Count; b++)
+                if (board.IsCompleted(b)) SetCompleted(b, true);
+            Sync(board);
         }
 
-        /// <summary>Stops every motion and returns every spawned item to the pool.</summary>
+        // Call only while no ball is flying.
+        public void AddBottle(SortBoard board, int index, Action onPlaced)
+        {
+            Debug.Assert(index == _bottles.Count, "[BoardView] Bottles are added at the end.");
+            _capacities.Add(board.Capacity(index));
+            var origins = Place(out var rises, out var scale);
+
+            if (transform.localScale != Vector3.one * scale)
+                PrimeTween.Tween.Scale(transform, Vector3.one * scale, AddDuration, PrimeTween.Ease.OutCubic);
+            for (var b = 0; b < _bottles.Count; b++)
+            {
+                var target = BottleLocal(origins[b]);
+                if (_bottles[b].transform.localPosition != target)
+                    PrimeTween.Tween.LocalPosition(_bottles[b].transform, target, AddDuration, PrimeTween.Ease.OutCubic);
+            }
+
+            Array.Resize(ref _locks, index + 1);
+            Array.Resize(ref _incoming, index + 1);
+            Array.Resize(ref _capped, index + 1);
+            var bottle = _factory.Get<BottleItem>(ItemType.Bottle, transform);
+            bottle.Setup(index, board.Capacity(index), BottleLocal(origins[index]), rises[index]);
+            _bottles.Add(bottle);
+            _settledAt = Time.time + AddDuration;
+            PrimeTween.Tween.Scale(bottle.transform, 0f, 1f, AddDuration, PrimeTween.Ease.OutBack)
+                .OnComplete(() => onPlaced?.Invoke());
+            Sync(board);
+        }
+
+        private Vector2[] Place(out float[] rises, out float scale)
+        {
+            var camera = Camera.main;
+            var origins = _layout.Place(_positions, _capacities, _levelNumber, camera != null ? camera.aspect : 9f / 16f,
+                out rises, out var orthoSize);
+            scale = camera != null ? camera.orthographicSize / orthoSize : 1f;
+            return origins;
+        }
+
+        private static Vector3 BottleLocal(Vector2 origin) => origin + Vector2.up * TubeArt.BottomFromOrigin;
+
         public void Clear()
         {
+            StopContacts();
+            _landings.Clear();
+            PrimeTween.Tween.StopAll(transform);
+            foreach (var bottle in _bottles) PrimeTween.Tween.StopAll(bottle.transform);
+            _settledAt = 0f;
+            _markers.Clear();
+            Array.Clear(_capped, 0, _capped.Length);
             _flights.Clear();
             foreach (var portal in _portals) portal.Destroy();
             _portals.Clear();
@@ -97,26 +163,60 @@ namespace Project.Contexts.Game.Sort
             _bottles.Clear();
         }
 
-        public void Select(int bottle, int count) => _bottles[bottle].Select(count, _animation);
+        public void Select(int bottle, int count)
+        {
+            StopContacts();
+            _liftDelays.Clear();
+            _bottles[bottle].Select(count, _animation, _liftDelays);
+            if (_liftDelays.Count == 0) return;
+            var plan = OrbContacts.Plan(ContactKind.Select, Mathf.Min(_liftDelays.Count, OrbContacts.MaxBalls));
+            for (var i = 0; i < plan.Count; i++)
+            {
+                var contact = plan[i];
+                if (_liftDelays[i] <= 0f) PlayContact(contact, false);
+                else PrimeTween.Tween.Delay(_contactClock, _liftDelays[i], () => PlayContact(contact, false));
+            }
+        }
 
-        public void Deselect(int bottle) => _bottles[bottle].Deselect(_animation);
+        // Drops the lifted group back into its own tube; not a move.
+        public void Deselect(int bottle)
+        {
+            StopContacts();
+            var tube = _bottles[bottle];
+            var lifted = tube.LiftedCount;
+            if (lifted == 0)
+            {
+                tube.Deselect(_animation);
+                return;
+            }
+            var plan = OrbContacts.Plan(ContactKind.Return, Mathf.Min(lifted, OrbContacts.MaxBalls));
+            tube.Deselect(_animation, (index, count) =>
+            {
+                if (index < plan.Count) PlayContact(plan[index], index == count - 1);
+            });
+        }
 
-        /// <summary>The tube was tapped as a target that cannot take the selected balls.</summary>
+        // Tapped as a target that can't take the selected balls.
         public void Reject(int bottle) => _bottles[bottle].Reactions.Reject(_animation);
 
-        /// <summary>The tube was tapped while it cannot be picked.</summary>
+        // Tapped while it can't be picked.
         public void Refuse(int bottle) => _bottles[bottle].Reactions.Locked(_animation);
 
-        /// <summary>
-        /// Moves the top <paramref name="count"/> ball units of one bottle onto another. The top ball leaves first and
-        /// goes to the first free slot; the next ones leave while it is still flying. Balls still lifted in the origin
-        /// (a partial transfer) return to their slots. <paramref name="onDone"/> runs when the last ball lands,
-        /// and never if that flight is cancelled (Undo, Restart).
-        /// </summary>
-        public void Transfer(int from, int to, int count, Action onDone)
+        // Leftover lifted balls return silently; onDone is skipped if the last flight is cancelled (Undo, Restart).
+        public void Transfer(int from, int to, int count, Action onDone, bool silent = false)
         {
             var source = _bottles[from];
             var target = _bottles[to];
+            StopContacts();
+            List<OrbContact> plan = null;
+            if (!silent && count > 0)
+            {
+                // Must be planned before the push so the target is read as it was.
+                var selected = Mathf.Clamp(Mathf.Max(source.LiftedCount, count), 1, OrbContacts.MaxBalls);
+                var moved = Mathf.Min(count, selected);
+                plan = OrbContacts.Plan(ContactKind.Transfer, selected, moved, empty: target.BallCount == 0,
+                    tower: target.Capacity >= TowerCapacity);
+            }
             if (count <= 0)
             {
                 source.ReturnLifted(_animation);
@@ -124,15 +224,9 @@ namespace Project.Contexts.Game.Sort
                 return;
             }
 
-            // One entry window for the whole group, whatever its size: each ball's entry and the delay to the next one.
             _animation.EntryTiming(count, out _, out var stagger);
             var lastStart = (count - 1) * stagger;
-            // Two portals per move, joined, one over each mouth. Both open on this tap, together, as the balls set off
-            // (the selection opens none), and close once the last ball of the move is through: the source one first, the
-            // target one PortalCloseLag later, so it shuts behind the ball and the eye ends there. They open with the same
-            // shape at the same time, and each one hides the balls only where it is drawn, so what goes into one comes out
-            // of the other even while they are still opening.
-            // The ring a ball goes into faces down, its opening toward the tube; the one it comes out of faces up.
+            // Both portals share one shape so in matches out; the target closes PortalCloseLag later so the eye ends on it.
             var sourcePortal = PortalOver(source, facesDown: true);
             var targetPortal = PortalOver(target, facesDown: false);
             var allThrough = lastStart + _animation.WarpCross;
@@ -144,21 +238,44 @@ namespace Project.Contexts.Game.Sort
             {
                 var ball = source.Pop();
                 target.Push(ball, snap: false);
+                // A cancelled earlier flight may have left a stale contact for this ball.
+                if (plan != null && i < plan.Count) _landings[ball] = (plan[i], i == plan.Count - 1);
+                else _landings.Remove(ball);
                 Fly(ball, from, to, sourcePortal, targetPortal, sourceView, targetView, i * stagger, i, count,
                     i == count - 1 ? onDone : null);
             }
             source.ReturnLifted(_animation);
         }
 
-        public void SetCompleted(int bottle, bool completed) => _bottles[bottle].SetCompleted(completed, _animation);
+        public void SetCompleted(int bottle, bool completed)
+        {
+            if (_capped[bottle] == completed) return;
+            _capped[bottle] = completed;
+            _bottles[bottle].SetCompleted(completed, _animation);
+        }
+
+        // Syncs all but ball positions. Caps are only removed here; a new cap waits for the last landing.
+        public void Sync(SortBoard board)
+        {
+            for (var b = 0; b < _bottles.Count; b++)
+            {
+                var balls = _bottles[b].Balls;
+                for (var s = 0; s < balls.Count && s < board.Count(b); s++)
+                {
+                    if (balls[s].IsHidden && board.IsKnown(b, s)) Reveal(b, s);
+                    else if (!balls[s].IsHidden && !board.IsKnown(b, s)) balls[s].Hide();
+                }
+                if (_capped[b] && !board.IsCompleted(b)) SetCompleted(b, false);
+            }
+            _markers.Refresh(board, _bottles, _palette);
+        }
 
         public void Reveal(int bottle, int slot)
         {
             var ball = _bottles[bottle].Balls[slot];
-            ball.Reveal(_palette.GetOrb(ball.ColorIndex));
+            ball.Reveal(_palette.GetOrb(ball.ColorIndex), _palette.Get(ball.ColorIndex));
         }
 
-        /// <summary>Editor check: the bottle stacks hold exactly the model's units.</summary>
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         public void AssertMatches(SortBoard board)
         {
@@ -176,14 +293,7 @@ namespace Project.Contexts.Game.Sort
             }
         }
 
-        /// <summary>
-        /// One ball's move: from where it is, with no anticipation, it is pulled up into the source portal and comes down
-        /// out of the target portal in one motion (see <see cref="WarpPath"/>). The two portals are one hole, so whatever share of the ball has
-        /// gone into the first is already out of the second, and the two slices always add up to one ball. Out of the
-        /// target portal it keeps falling through the narrow mouth, long and thin, straight into its slot, and stops hard
-        /// on the balls below. Planned from where the ball is now, so a half-finished lift or a reversed flight never
-        /// snaps. The portals are board-space ring centers (see <see cref="PortalOver"/>).
-        /// </summary>
+        // Portals act as one hole: both slices add up to one ball. Planned from the current pose so it never snaps.
         private void Fly(BallItem ball, int from, int to, Vector3 sourcePortal, Vector3 targetPortal, PortalView sourceView,
             PortalView targetView, float delay, int order, int count, Action onLanded)
         {
@@ -198,11 +308,9 @@ namespace Project.Contexts.Game.Sort
             source.SetInMotion(true, _incoming[from] > 0);
             target.SetInMotion(true, receiving: true);
             var slot = target.IndexOf(ball);
-            // The target already lists the ball, but until it is through the portals it is still in the source tube, so
-            // it draws there, under that tube's glass, and only shows over it once it is out of the mouth. It moves to
-            // the target tube at the hand-off; its twin out of the target portal draws in the target tube meanwhile.
+            // Stays parented to the source tube until the hand-off so it draws under that tube's glass.
             ball.transform.SetParent(source.transform, true);
-            // A ball lifted into the mouth is squeezed there; the move starts from that shape, not from round.
+            // Start from the squeezed lift shape, not from round.
             var startScale = ball.transform.localScale;
             ball.StopMotion();
             ball.SetFlying(true);
@@ -217,19 +325,15 @@ namespace Project.Contexts.Game.Sort
             var mouthY = MouthY(target);
             var sourceMouthY = MouthY(source);
             config.EntryTiming(count, out var entry, out _);
-            // Halfway through the hole (its center on the portal planes) the ball is this tall and thin (area kept).
+            // Shape with the center on the portal planes; area kept.
             var deep = new Vector3(1f / config.VanishStretch, config.VanishStretch, 1f);
-            // Each portal splits the ball on its cut line: the source where its black void begins, so the ball goes into
-            // the black there; the target at its lowest edge (the bottom of the side wall), so the ball comes down out from
-            // under it. Whatever is above a cut is hidden. Splitting there keeps the two parts adding up to one ball on
-            // screen: the share the source ring takes in is the share the target ring lets out.
+            // Above a cut line is hidden: source cuts at its void, target at its lowest edge, so what goes in comes out.
             var sourceCut = sourcePortal.y - PortalView.Cut(config, facesDown: true);
             var targetCut = targetPortal.y - PortalView.Cut(config, facesDown: false);
             var path = new WarpPath(start.y - sourceCut, radius, targetCut - radius - end.y, entry, config);
             var total = path.Duration;
-            var through = false;
             var previous = start;
-            // The tubes react to this ball as it leaves one mouth and enters the other; later balls of a move weaker.
+            // Later balls of a move get weaker tube reactions.
             var strength = Mathf.Pow(Mathf.Clamp01(config.ReactionFalloff), order);
             var launched = false;
             var swallowed = false;
@@ -242,10 +346,8 @@ namespace Project.Contexts.Game.Sort
                         var u = k * total;
                         Vector3 point;
                         var size = Vector3.one;
-                        // The twin out of the target portal rounds up while the part still going in keeps stretching.
+                        // Shape of the twin coming out of the target portal.
                         var outSize = Vector3.one;
-                        // How far the center is past the source cut line (negative before it); the twin's center is as
-                        // far below the target cut line.
                         var past = path.PastAt(u);
                         var twinY = targetCut - past;
                         if (!launched && sourceCut + past >= sourceMouthY)
@@ -260,8 +362,6 @@ namespace Project.Contexts.Game.Sort
                         }
                         if (past < 0f)
                         {
-                            // Going in: from the shape it had when the move started toward the plane's, squeezed
-                            // while it leaves its own mouth.
                             var w = Mathf.Clamp01(1f + past / radius);
                             size = Vector3.Scale(Vector3.LerpUnclamped(startScale, deep, w * w),
                                 BallItem.NeckScale(sourceCut + past, sourceMouthY, config));
@@ -269,47 +369,35 @@ namespace Project.Contexts.Game.Sort
                         }
                         else
                         {
-                            // Coming out: round again (with a small squash past round), squeezed in the target mouth.
                             var leave = Mathf.Clamp01(past / (radius * config.VanishStretch));
                             var round = PrimeTween.Easing.Evaluate(leave, PrimeTween.Ease.OutBack);
                             outSize = Vector3.Scale(Vector3.LerpUnclamped(deep, Vector3.one, round),
                                 BallItem.NeckScale(twinY, mouthY, config));
-                            // The tail still going in keeps the shape it went in with: the hole pulls the whole
-                            // ball, it does not draw it out.
+                            // The tail keeps its entry shape: the hole pulls the ball, it doesn't stretch it.
                             size = deep;
                         }
-                        // Until the twin is all out, the ball's tail is still going into the source portal.
                         var split = past < radius * outSize.y;
-                        // The tail's bottom stays where the twin's top is, so the two still add up to one ball
-                        // and the tail is all in just as the twin is all out.
+                        // Keep the tail's bottom at the twin's top so the two still add up to one ball.
                         if (split)
                             point = new Vector3(start.x, sourceCut + past + radius * (size.y - outSize.y), start.z);
                         else
                         {
-                            // Hand-off: the ball is through the portals and goes on in the target tube.
+                            // Hand-off to the target tube.
                             if (root.parent != target.transform) root.SetParent(target.transform, true);
                             point = new Vector3(end.x, twinY, end.z);
                             size = outSize;
-                            if (!through && twinY < mouthY - radius)
-                            {
-                                through = true;
-                                _haptics?.Play(HapticStrength.Light);
-                            }
-                            // It smears while it passes the mouth, where it is fastest and squeezed.
+                            // Smear only near the mouth, where the ball is fastest.
                             var nearMouth = Mathf.Abs(twinY - mouthY) < TubeArt.BallDiameter;
                             ball.SetMotionSmear(nearMouth ? (point - previous) * MouthSmear : Vector3.zero, config);
                         }
                         t.localScale = size;
                         t.position = board.TransformPoint(point);
-                        // While split, the ball that goes on is the twin out of the target portal, so the next step
-                        // (and its smear) is measured from there, not from the root left at the source portal.
+                        // Measure the next step's smear from the twin, not from the root left at the source portal.
                         var twin = new Vector3(end.x, targetCut - past, end.z);
                         previous = split ? twin : point;
-                        // All out: the ball keeps the exit glow, fading as it falls away from the target edge.
                         if (!split) ball.SetPortalTrail(targetView.OpenEdge);
                         else
                         {
-                            // Each ring hides the ball only where it is drawn now: its edge follows its opening.
                             var exitShape = new Vector3(outSize.x / size.x, outSize.y / size.y, 1f);
                             ball.SetPortalSplit(sourceView, board.TransformPoint(twin), exitShape, targetView,
                                 target.transform);
@@ -322,16 +410,10 @@ namespace Project.Contexts.Game.Sort
                 });
         }
 
-        /// <summary>Board-space y of a tube's mouth.</summary>
         private float MouthY(BottleItem bottle) =>
-            transform.InverseTransformPoint(bottle.transform.TransformPoint(new Vector3(0f, TubeArt.MouthLocalY, 0f))).y;
+            transform.InverseTransformPoint(bottle.transform.TransformPoint(new Vector3(0f, bottle.MouthLocalY, 0f))).y;
 
-        /// <summary>
-        /// Board-space center of the portal ring over a tube (the center of its face), at either end of a move: it sits
-        /// just over the mouth, its lowest point <see cref="BallAnimationConfig.PortalHeight"/> above it, like a cap. A
-        /// leaving ball rises out of its tube up into the ring's opening; an arriving one comes down out of it straight
-        /// into the mouth.
-        /// </summary>
+        // Board-space ring center, with the ring's lowest point PortalHeight above the mouth.
         private Vector3 PortalOver(BottleItem bottle, bool facesDown)
         {
             var x = transform.InverseTransformPoint(bottle.transform.position).x;
@@ -344,18 +426,13 @@ namespace Project.Contexts.Game.Sort
             var slot = target.IndexOf(ball);
             if (slot >= 0) ball.transform.localPosition = TubeArt.SlotLocalPosition(slot);
             ball.Snap(_animation);
-            _haptics?.Play(HapticStrength.Medium);
+            if (_landings.Remove(ball, out var landing)) PlayContact(landing.contact, landing.last);
             ImpactWave(target, slot);
-            // The tube takes the hit: the first ball of a move lands hardest.
             target.Reactions.Impact(_animation, Mathf.Pow(Mathf.Clamp01(_animation.ReactionFalloff), order));
-            _audio?.PlaySfx(_animation.LandSound, 1f + order * _animation.LandPitchStep);
             onLanded?.Invoke();
         }
 
-        /// <summary>
-        /// The new ball sits on the ones below: each of them plays a small copy of the tube squash, one after another
-        /// from top to bottom, weaker further down. A wave that meets a running one continues from its pose.
-        /// </summary>
+        // A wave that meets a running one continues from its pose.
         private void ImpactWave(BottleItem bottle, int slot)
         {
             var strength = _animation.RippleStrength;
@@ -368,13 +445,21 @@ namespace Project.Contexts.Game.Sort
             }
         }
 
-        /// <summary>Releases the locks of a ball's running flight. Its tween is stopped by the caller.</summary>
+        private void PlayContact(OrbContact contact, bool last)
+        {
+            _audio.PlayOneShotSound(contact.Sound, AudioManager.DecibelsToVolume(contact.GainDb));
+            if (contact.Haptic) _haptics.Haptic(last ? HapticModule.HapticType.Medium : HapticModule.HapticType.Light);
+        }
+
+        private void StopContacts() => PrimeTween.Tween.StopAll(_contactClock);
+
+        // The caller stops the tween.
         private void CancelFlight(BallItem ball)
         {
             ball.SetFlying(false);
             ball.ClearPortalCut();
             if (!_flights.Remove(ball, out var flight)) return;
-            // A flight stopped before its hand-off leaves the ball in the source tube; it belongs to the target.
+            // Stopped before the hand-off, the ball is still parented to the source tube.
             _bottles[flight.y].Adopt(ball);
             _locks[flight.x]--;
             _locks[flight.y]--;
@@ -383,10 +468,6 @@ namespace Project.Contexts.Game.Sort
             _bottles[flight.y].SetInMotion(_locks[flight.y] > 0, _incoming[flight.y] > 0);
         }
 
-        /// <summary>
-        /// Opens a portal centered on <paramref name="center"/> (board space), on the plane that slices the balls, sorted
-        /// at <paramref name="order"/>.
-        /// </summary>
         private PortalView NewPortal(Vector3 center, int order, bool facesDown)
         {
             _portals.RemoveAll(portal => portal.IsGone);
