@@ -211,7 +211,12 @@ namespace Project.Editor
             var rimFront = ImportTubeSprite("Tube_RimFront");
             var cap = ImportTubeSprite("Tube_Stopper");
             var gem = ImportTubeSprite("Tube_Gem");
-            BuildGameplayAtlas(back, front, mouth, rimFront, cap, gem);
+            // The soft completion glows are made from the art and packed with it: soft light survives compression.
+            WriteOutlineGlow();
+            WriteCapGlow();
+            var outlineGlow = ImportTubeSprite(OutlineGlowName, GlowResolution);
+            var capGlow = ImportTubeSprite(CapGlowName, CapGlowPx / CapGlowWidthPx);
+            BuildGameplayAtlas(back, front, mouth, rimFront, cap, gem, outlineGlow, capGlow);
 
             var root = new GameObject("Bottle");
             var item = root.AddComponent<BottleItem>();
@@ -234,6 +239,12 @@ namespace Project.Editor
             var gemRenderer = AddSprite(stopper.transform, "Gem", gem, TubeArt.GemOrder, null);
             gemRenderer.enabled = false;
 
+            var additive = EnsureAdditiveMaterial();
+            var outlineGlowRenderer = AddSprite(container, "OutlineGlow", outlineGlow, TubeArt.OutlineGlowOrder, additive);
+            outlineGlowRenderer.enabled = false;
+            var capGlowRenderer = AddSprite(stopper.transform, "CapGlow", capGlow, TubeArt.CapGlowOrder, additive);
+            capGlowRenderer.enabled = false;
+
             var so = new SerializedObject(item);
             so.FindProperty("_back").objectReferenceValue = backRenderer;
             so.FindProperty("_front").objectReferenceValue = frontRenderer;
@@ -242,6 +253,8 @@ namespace Project.Editor
             so.FindProperty("_rimFront").objectReferenceValue = rimFrontRenderer;
             so.FindProperty("_stopper").objectReferenceValue = stopper;
             so.FindProperty("_gem").objectReferenceValue = gemRenderer;
+            so.FindProperty("_outlineGlow").objectReferenceValue = outlineGlowRenderer;
+            so.FindProperty("_capGlow").objectReferenceValue = capGlowRenderer;
             so.FindProperty("_collider").objectReferenceValue = collider;
             so.FindProperty("_sortingGroup").objectReferenceValue = group;
             so.ApplyModifiedPropertiesWithoutUndo();
@@ -258,8 +271,100 @@ namespace Project.Editor
             return renderer;
         }
 
-        /// <summary>Imports a tube sprite with the pixels per unit the slot math in BottleItem is written for.</summary>
-        private static Sprite ImportTubeSprite(string name)
+        // The completion glows (see BottleItem). The tube glow is the outline art's shape blurred into soft light, at
+        // GlowResolution of the art's size with GlowPadPx of room for the light around it, so its center stays the art's.
+        private const string OutlineGlowName = "Tube_OutlineGlow";
+        private const float GlowResolution = 0.5f;
+        private const int GlowPadPx = 32;
+        private const int GlowBlurRadius = 6;
+        private const float GlowBoost = 1.8f;
+        // The cap glow: a round light CapGlowWidthPx wide on the art's scale (a little wider than the mouth).
+        private const string CapGlowName = "Tube_CapGlow";
+        private const int CapGlowPx = 128;
+        private const float CapGlowWidthPx = 430f;
+
+        private static void WriteOutlineGlow()
+        {
+            var source = $"{TubeFolder}/Tube_Outline.png";
+            var texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+            texture.LoadImage(System.IO.File.ReadAllBytes(source));
+            var step = Mathf.RoundToInt(1f / GlowResolution);
+            var width = texture.width / step + GlowPadPx * 2;
+            var height = texture.height / step + GlowPadPx * 2;
+            var pixels = texture.GetPixels();
+            var alpha = new float[width * height];
+            // Downsample: the mean alpha of each step x step block.
+            for (var y = 0; y < texture.height / step; y++)
+            for (var x = 0; x < texture.width / step; x++)
+            {
+                var sum = 0f;
+                for (var dy = 0; dy < step; dy++)
+                for (var dx = 0; dx < step; dx++)
+                    sum += pixels[(y * step + dy) * texture.width + x * step + dx].a;
+                alpha[(y + GlowPadPx) * width + x + GlowPadPx] = sum / (step * step);
+            }
+            // Three box blurs each way come close to a gaussian.
+            for (var pass = 0; pass < 3; pass++)
+            {
+                BoxBlur(alpha, width, height, 1, width, GlowBlurRadius);
+                BoxBlur(alpha, height, width, width, 1, GlowBlurRadius);
+            }
+            var max = 0f;
+            foreach (var a in alpha) max = Mathf.Max(max, a);
+            var glow = new Color[alpha.Length];
+            for (var i = 0; i < alpha.Length; i++) glow[i] = new Color(1f, 1f, 1f, Mathf.Clamp01(alpha[i] / max * GlowBoost));
+            WriteTexture($"{TubeFolder}/{OutlineGlowName}.png", width, height, glow);
+            Object.DestroyImmediate(texture);
+        }
+
+        /// <summary>One box blur along lines of <paramref name="length"/> values, <paramref name="stride"/> apart.</summary>
+        private static void BoxBlur(float[] values, int length, int lines, int stride, int lineStride, int radius)
+        {
+            var line = new float[length];
+            for (var l = 0; l < lines; l++)
+            {
+                var start = l * lineStride;
+                for (var i = 0; i < length; i++) line[i] = values[start + i * stride];
+                var sum = 0f;
+                for (var i = -radius; i <= radius; i++) sum += line[Mathf.Clamp(i, 0, length - 1)];
+                for (var i = 0; i < length; i++)
+                {
+                    values[start + i * stride] = sum / (radius * 2 + 1);
+                    sum += line[Mathf.Min(i + radius + 1, length - 1)] - line[Mathf.Max(i - radius, 0)];
+                }
+            }
+        }
+
+        private static void WriteCapGlow()
+        {
+            var glow = new Color[CapGlowPx * CapGlowPx];
+            var half = CapGlowPx * 0.5f;
+            for (var y = 0; y < CapGlowPx; y++)
+            for (var x = 0; x < CapGlowPx; x++)
+            {
+                var dx = (x + 0.5f - half) / half;
+                var dy = (y + 0.5f - half) / half;
+                var d = Mathf.Clamp01(Mathf.Sqrt(dx * dx + dy * dy));
+                // Soft falloff that reaches zero exactly at the edge.
+                glow[y * CapGlowPx + x] = new Color(1f, 1f, 1f, Mathf.Exp(-3f * d * d) * (1f - d * d));
+            }
+            WriteTexture($"{TubeFolder}/{CapGlowName}.png", CapGlowPx, CapGlowPx, glow);
+        }
+
+        private static void WriteTexture(string path, int width, int height, Color[] pixels)
+        {
+            var texture = new Texture2D(width, height, TextureFormat.RGBA32, false);
+            texture.SetPixels(pixels);
+            System.IO.File.WriteAllBytes(path, texture.EncodeToPNG());
+            Object.DestroyImmediate(texture);
+            AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
+        }
+
+        /// <summary>
+        /// Imports a tube sprite with the pixels per unit the slot math in BottleItem is written for, times
+        /// <paramref name="resolution"/> for art made at another scale.
+        /// </summary>
+        private static Sprite ImportTubeSprite(string name, float resolution = 1f)
         {
             var path = $"{TubeFolder}/{name}.png";
             var importer = (TextureImporter)AssetImporter.GetAtPath(path);
@@ -274,7 +379,7 @@ namespace Project.Editor
             // stays uncompressed: atlas members are compressed by the atlas, and the outline is used as it is.
             importer.textureType = TextureImporterType.Sprite;
             importer.spriteImportMode = SpriteImportMode.Single;
-            importer.spritePixelsPerUnit = TubeArt.PixelsPerUnit;
+            importer.spritePixelsPerUnit = TubeArt.PixelsPerUnit * resolution;
             importer.mipmapEnabled = true;
             importer.alphaIsTransparency = true;
             importer.filterMode = FilterMode.Trilinear;

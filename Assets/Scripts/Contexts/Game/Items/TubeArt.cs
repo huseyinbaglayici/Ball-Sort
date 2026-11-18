@@ -57,8 +57,12 @@ namespace Project.Contexts.Game.Items
         public const int MouthOrder = -5;
         public const int FrontOrder = 50;
         public const int OutlineOrder = 60;
+        // The completion glow around the tube (additive), over the glass and its outline.
+        public const int OutlineGlowOrder = 61;
         // The front half of the mouth, over the balls (1-5, 21-25 while flying), so a ball in the mouth is half inside.
         public const int RimFrontOrder = 65;
+        // The light behind the completed cap (additive).
+        public const int CapGlowOrder = 69;
         public const int StopperOrder = 70;
         public const int GemOrder = 71;
 

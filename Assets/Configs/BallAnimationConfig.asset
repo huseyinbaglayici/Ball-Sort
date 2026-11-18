@@ -252,5 +252,11 @@ MonoBehaviour:
   CompleteSquash: {x: 1.08, y: 0.93}
   CompleteSquashIn: 0.04
   CompleteSquashOut: 0.15
+  CompleteGlowColor: {r: 1, g: 0.858, b: 0.179, a: 0}
+  CompleteGlowIn: 0.12
+  CompleteGlowHold: 0.1
+  CompleteGlowOut: 0.6
+  CapGlowColor: {r: 1, g: 1, b: 1, a: 0}
+  CapGlowRestAlpha: 0
   LandSound: ball_land
   LandPitchStep: 0.04

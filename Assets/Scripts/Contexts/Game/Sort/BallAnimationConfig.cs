@@ -191,6 +191,14 @@ namespace Project.Contexts.Game.Sort
         public Vector2 CompleteSquash = new(1.08f, 0.93f);
         public float CompleteSquashIn = 0.04f;
         public float CompleteSquashOut = 0.15f;
+        [Tooltip("As the cap lands, an additive glow around the tube flashes up in this color and fades out.")]
+        public Color CompleteGlowColor = new(1f, 0.858f, 0.179f, 1f);
+        public float CompleteGlowIn = 0.12f;
+        public float CompleteGlowHold = 0.1f;
+        public float CompleteGlowOut = 0.6f;
+        [Tooltip("Additive light behind the cap: it flashes with the tube glow and then stays at the resting alpha.")]
+        public Color CapGlowColor = Color.white;
+        public float CapGlowRestAlpha = 0.35f;
 
         [Header("Sound")]
         public string LandSound = "ball_land";

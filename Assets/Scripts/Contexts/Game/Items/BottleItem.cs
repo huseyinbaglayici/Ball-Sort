@@ -38,6 +38,9 @@ namespace Project.Contexts.Game.Items
         [SerializeField] private SpriteRenderer _rimFront;
         [SerializeField] private SpriteRenderer _stopper;
         [SerializeField] private SpriteRenderer _gem;
+        // Additive completion glows, tinted through their color: a soft light around the whole tube and one behind the cap.
+        [SerializeField] private SpriteRenderer _outlineGlow;
+        [SerializeField] private SpriteRenderer _capGlow;
         [SerializeField] private BoxCollider2D _collider;
         [SerializeField] private SortingGroup _sortingGroup;
 
@@ -210,7 +213,8 @@ namespace Project.Contexts.Game.Items
         /// <summary>
         /// The completed cap and its gem (the gem is a child of the cap and shares its canvas): after
         /// <paramref name="delay"/> they drop onto the mouth, fading in on the way, and settle with a small overshoot,
-        /// while the open mouth fades out under them. Hiding restores the open mouth at once.
+        /// while the open mouth fades out under them. As the cap lands the tube's glow flashes and the light behind the
+        /// cap flashes with it, then stays softly lit. Hiding restores the open mouth at once.
         /// </summary>
         private void ShowCap(bool show, BallAnimationConfig config, float delay = 0f)
         {
@@ -220,6 +224,7 @@ namespace Project.Contexts.Game.Items
             _stopper.color = _gem.color = _mouth.color = _rimFront.color = Color.white;
             _stopper.enabled = _gem.enabled = show;
             _mouth.enabled = _rimFront.enabled = true;
+            _outlineGlow.enabled = _capGlow.enabled = false;
             if (!show) return;
 
             var fade = config.CapDuration * 0.5f;
@@ -231,6 +236,21 @@ namespace Project.Contexts.Game.Items
             PrimeTween.Tween.Alpha(_gem, 0f, 1f, fade, PrimeTween.Ease.OutQuad, startDelay: delay);
             PrimeTween.Tween.Alpha(_mouth, 1f, 0f, fade, PrimeTween.Ease.InQuad, startDelay: delay + fade);
             PrimeTween.Tween.Alpha(_rimFront, 1f, 0f, fade, PrimeTween.Ease.InQuad, startDelay: delay + fade);
+
+            var landed = delay + config.CapDuration * 0.5f;
+            Flash(_outlineGlow, config.CompleteGlowColor, 0f, config, landed);
+            Flash(_capGlow, config.CapGlowColor, config.CapGlowRestAlpha, config, landed);
+        }
+
+        /// <summary>From clear up to the color's alpha, held a moment, then down to <paramref name="rest"/>.</summary>
+        private static void Flash(SpriteRenderer glow, Color color, float rest, BallAnimationConfig config, float delay)
+        {
+            glow.enabled = true;
+            glow.color = new Color(color.r, color.g, color.b, 0f);
+            // Two plain tweens on the renderer (not a sequence), so StopCapTweens stops them like the cap's own.
+            PrimeTween.Tween.Alpha(glow, 0f, color.a, config.CompleteGlowIn, PrimeTween.Ease.OutQuad, startDelay: delay);
+            PrimeTween.Tween.Alpha(glow, color.a, rest, config.CompleteGlowOut, PrimeTween.Ease.InOutSine,
+                startDelay: delay + config.CompleteGlowIn + config.CompleteGlowHold);
         }
 
         private void StopCapTweens()
@@ -240,6 +260,8 @@ namespace Project.Contexts.Game.Items
             PrimeTween.Tween.StopAll(_gem);
             PrimeTween.Tween.StopAll(_mouth);
             PrimeTween.Tween.StopAll(_rimFront);
+            PrimeTween.Tween.StopAll(_outlineGlow);
+            PrimeTween.Tween.StopAll(_capGlow);
         }
 
         public void OnPointerClick(PointerEventData eventData) =>
@@ -250,7 +272,7 @@ namespace Project.Contexts.Game.Items
             Reactions.Clear();
             PrimeTween.Tween.StopAll(transform);
             StopCapTweens();
-            _stopper.enabled = _gem.enabled = false;
+            _stopper.enabled = _gem.enabled = _outlineGlow.enabled = _capGlow.enabled = false;
             _mouth.color = _rimFront.color = Color.white;
             _mouth.enabled = _rimFront.enabled = true;
             _inMotion = false;
