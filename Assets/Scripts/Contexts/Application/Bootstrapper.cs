@@ -8,7 +8,6 @@ using Project.Core.Haptics;
 using Project.Core.Localization;
 using Project.Core.Pooling;
 using Project.Core.Save;
-using Project.Core.SceneLoading;
 using Project.Core.Services;
 using Project.Core.Settings;
 using UnityEngine;
@@ -17,9 +16,9 @@ using UnityEngine.SceneManagement;
 namespace Project.Contexts.Application
 {
     /// <summary>
-    /// Composition root in the Boot scene (build index 0). Creates every service in dependency
-    /// order, registers it, then opens the first content scene. The Boot scene is never unloaded,
-    /// so everything here (camera, EventSystem, popup canvas, audio) lives for the whole session.
+    /// Composition root in the Main scene. Creates every service in dependency order and registers it before any
+    /// other object in the scene wakes up, then opens the first screen. Main is never unloaded, so everything here
+    /// (camera, EventSystem, popup canvas, audio, pools) lives for the whole session.
     /// </summary>
     [DefaultExecutionOrder(-1000)]
     public sealed class Bootstrapper : MonoBehaviour
@@ -50,22 +49,17 @@ namespace Project.Contexts.Application
             Services.Register(new LocalizationService(_localizationTables, settings.Model.Language));
             Services.Register(new PoolService(_poolRoot));
             Services.Register(new PopupService(_popupRoot));
-            Services.Register(new SceneLoader());
             Services.Register(new ProgressService(save));
             Services.Register(_loadingOverlay);
 
             RegisterDebugActions();
         }
 
-        private async void Start()
+        private void Start()
         {
-            await _loadingOverlay.ShowAsync();
-            await Services.Get<SceneLoader>().SwitchToAsync(SceneNames.Main, _loadingOverlay.SetProgress);
-
             // A new player (level 1) goes straight into the first level; everyone else lands on Home.
-            var flow = Services.Get<MainFlow>();
-            if (Services.Get<ProgressService>().Level == 1) await flow.GoToGameAsync();
-            else await flow.GoHomeAsync();
+            var first = Services.Get<ProgressService>().Level == 1 ? MainState.Game : MainState.Home;
+            Services.Get<MainFlow>().Begin(first);
         }
 
         private void OnDestroy() => Services.Clear();

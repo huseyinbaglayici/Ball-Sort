@@ -4,7 +4,7 @@ using UnityEngine;
 namespace Project.Common.UI.PopUps
 {
     /// <summary>
-    /// Opens popup prefabs under one overlay canvas (in the Boot scene, so popups survive scene switches).
+    /// Opens popup prefabs under one overlay canvas in the Main scene, shared by every screen.
     /// Each prefab is instantiated once and reused. One popup is shown at a time; extra requests wait in a queue.
     /// </summary>
     public sealed class PopupService

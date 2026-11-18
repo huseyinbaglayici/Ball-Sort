@@ -3,6 +3,7 @@ using Project.Common.UI.PopUps;
 using Project.Contexts.Game;
 using Project.Contexts.Home;
 using Project.Core.Audio;
+using Project.Core.Events;
 using Project.Core.Pooling;
 using Project.Core.Services;
 using Project.Core.StateMachine;
@@ -16,6 +17,9 @@ namespace Project.Contexts.Main
         Home,
         Game
     }
+
+    /// <summary>Raised once, when Main has opened its first screen.</summary>
+    public readonly struct MainReady : IEvent { }
 
     /// <summary>
     /// The only place that decides what the Main scene shows. Home and Game are states of the one scene, not scenes:
@@ -46,6 +50,14 @@ namespace Project.Contexts.Main
             _states.Add(MainState.Home, new HomeState(this))
                    .Add(MainState.Game, new GameState(this));
             Services.Register(this);
+        }
+
+        /// <summary>Opens the first screen at once, without the loading overlay (the splash still covers it).</summary>
+        public void Begin(MainState first)
+        {
+            if (Current != MainState.None) return;
+            _states.ChangeState(first);
+            EventBus<MainReady>.Raise(default);
         }
 
         public Awaitable GoHomeAsync() => SwitchAsync(MainState.Home);
