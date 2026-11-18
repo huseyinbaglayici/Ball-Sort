@@ -13,6 +13,7 @@ DOSYALAR
 --------
 Ortak (tüm renklerde aynı, 1'er adet):
   Orb_Back.png               Normal blend
+  Orb_CoreGlow.png           Normal blend (merkezdeki beyaz ışık, v2 ile geldi)
   Orb_Front.png              ADDITIVE blend (siyah zeminli cam yansıması)
 
 Renge özel (her renk için 3 dosya):
@@ -20,28 +21,25 @@ Renge özel (her renk için 3 dosya):
   Orb_InnerGlow_<Renk>.png   Normal blend
   Orb_OuterGlow_<Renk>.png   Normal blend
 
-Renkler (<Renk> yerine):
-  Blue     #1C1FFF
-  Pink     #FF70D9
-  Red      #FF120D
-  Green    #B3FF0D
-  Orange   #FF6B0D
-  Purple   #A836FF
-  Yellow   #FFC40D
-  Cyan     #00FFEB
+Renkler (v2, 12 renk; projede level renk indeksine göre sıralı):
+  0 Red   1 DarkBlue   2 LightGreen   3 Yellow   4 Violet     5 Orange
+  6 LightBlue   7 Pink   8 Wine   9 White   10 DarkGreen   11 Brown
 
-Örnek (mor): Orb_Core_Purple.png, Orb_InnerGlow_Purple.png,
-             Orb_OuterGlow_Purple.png
+Not: Paketteki dosya adları tutarsızdı (Orb_InnerGlow.png,
+Orb_OuterGlow_Glow.png, Orb_Core_LightGreen + Orb_InnerGlow_Green gibi);
+projeye Orb_<Katman>_<Renk>.png olarak, renk adı Core dosyasından alınarak
+kopyalandı.
 
 KATMAN SIRASI (alttan üste, bir orb için)
 -----------------------------------------
 1. Orb_OuterGlow_<Renk>
 2. Orb_Back
 3. Orb_Core_<Renk>
-4. Orb_Front              (additive)
-5. Orb_InnerGlow_<Renk>
+4. Orb_CoreGlow
+5. Orb_Front              (additive)
+6. Orb_InnerGlow_<Renk>
 
-Beşi de aynı konumda, offset yok. Bir prefab içinde child olarak
+Altısı da aynı konumda, offset yok. Bir prefab içinde child olarak
 tutulması önerilir; renk değişince sadece 3 renk sprite'ı değişir.
 
 TÜP İÇİNDEKİ KONUMLAR
