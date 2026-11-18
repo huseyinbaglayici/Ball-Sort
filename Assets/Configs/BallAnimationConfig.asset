@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: BallAnimationConfig
   m_EditorClassIdentifier: Project.Contexts::Project.Contexts.Game.Sort.BallAnimationConfig
   LiftHeight: 1
+  LiftToMouth: 1
   LiftSpeed: 30
   LiftMinDuration: 0.09
   LiftMaxDuration: 0.09
@@ -74,30 +75,30 @@ MonoBehaviour:
   LiftSettleSquash: {x: 1.05, y: 0.95}
   TapBob: 0.04
   TapBobDuration: 0.09
-  WarpCross: 0.17
-  WarpCharge: 0.05
-  ChargeSquash: {x: 1.12, y: 1.12}
-  ChargeShiver: 0.025
-  VanishStretch: 1.5
+  HoverHeight: 0.03
+  HoverPeriod: 0.6
+  WarpCross: 0.26
+  VanishStretch: 1.08
+  PortalHeight: 0.25
   PortalBack: {fileID: 21300000, guid: 63d937f526c8e904aaca0543764f7ac8, type: 3}
   PortalFront: {fileID: 21300000, guid: a58b9e9e96fda9c489883f5348388602, type: 3}
   PortalColor: {r: 1, g: 1, b: 1, a: 1}
   PortalWidth: 1.6
   PortalOpen: 0.12
   PortalClose: 0.14
+  PortalCloseLag: 0.05
   PortalRim: 0.49
   PortalWall: 0.085
   ExitKeep: 0.35
-  NeckSqueeze: {x: 0.9, y: 1.11}
+  NeckSqueeze: {x: 0.97, y: 1.03}
   SnapSquash: {x: 1.16, y: 0.82}
   SnapHit: 0.04
   SnapRecover: 0.07
   SmearAmount: 1
-  MaxSmear: 2.6
+  MaxSmear: 1.15
   SmearThin: 0.12
-  PortalHeight: 0.25
-  EntryWindow: 0.25
-  EntryShare: 0.55
+  EntryWindow: 0.31
+  EntryShare: 0.516
   ReturnSpeed: 106.8
   ReturnMinDuration: 0.27
   ReturnCurve:
@@ -207,8 +208,31 @@ MonoBehaviour:
   TubeStretch: {x: 0.97, y: 1.04}
   TubeStretchDuration: 0.07
   TubeRecoverDuration: 0.2
+  SelectPress: {x: 1.04, y: 0.96}
+  SelectDrop: 0.03
+  SelectPressDuration: 0.03
+  SelectReleaseDuration: 0.06
+  CatchSquash: {x: 1.02, y: 0.98}
+  CatchInDuration: 0.03
+  CatchOutDuration: 0.08
+  RejectShake: 0.05
+  RejectCycles: 3
+  RejectDuration: 0.2
+  LockedPress: {x: 1.02, y: 0.98}
+  LockedDuration: 0.06
+  RecoilSquash: {x: 1.04, y: 0.96}
   RecoilDrop: 0.04
   RecoilStretch: {x: 0.98, y: 1.03}
+  RecoilHit: 0.04
+  RecoilStretchDuration: 0.07
+  RecoilRecover: 0.2
+  SwallowWiden: 0.03
+  SwallowIn: 0.02
+  SwallowOut: 0.04
+  ImpactSquash: {x: 1.04, y: 0.97}
+  ImpactIn: 0.04
+  ImpactOut: 0.12
+  ReactionFalloff: 0.6
   AnticipationSquash: {x: 1.06, y: 0.94}
   AnticipationDuration: 0
   RippleStrength: 0.6
@@ -217,9 +241,16 @@ MonoBehaviour:
   HighlightInDuration: 0.09
   HighlightOutDuration: 0.25
   ContourScale: 1.1
-  ContourColor: {r: 1, g: 1, b: 1, a: 0.95}
+  ContourColor: {r: 1, g: 1, b: 1, a: 0}
   GlowScale: 1.26
-  GlowColor: {r: 1, g: 0.97, b: 0.8, a: 0.55}
+  GlowColor: {r: 1, g: 0.97, b: 0.8, a: 0}
   CapDuration: 0.25
+  CompleteDelay: 0.15
+  CompleteHop: 0.3
+  CompleteRise: 0.28
+  CompleteFall: 0.05
+  CompleteSquash: {x: 1.08, y: 0.93}
+  CompleteSquashIn: 0.04
+  CompleteSquashOut: 0.15
   LandSound: ball_land
   LandPitchStep: 0.04

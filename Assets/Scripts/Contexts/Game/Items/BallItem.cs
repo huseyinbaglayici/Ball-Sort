@@ -112,16 +112,26 @@ namespace Project.Contexts.Game.Items
         /// Placed by the caller so the part gone into one ring is the part out of the other. The selection highlight is
         /// hidden while split, and a "?" shows only while the ball's center is still below the source edge.
         /// </summary>
-        public void SetPortalSplit(Vector4 sourceEdge, Vector3 exit, Vector4 targetEdge, Transform exitParent)
+        public void SetPortalSplit(PortalView source, Vector3 exit, Vector3 exitShape, PortalView target,
+            Transform exitParent)
         {
             if (!_portal.IsSplit) _highlight.Hide();
-            _portal.Split(sourceEdge, exit, targetEdge, exitParent);
+            _portal.Split(source, exit, exitShape, target, exitParent);
+            var sourceEdge = source.Edge;
             if (_questionMark != null) _questionMark.SetActive(IsHidden && _visual.position.y < sourceEdge.x - sourceEdge.w);
+        }
+
+        /// <summary>The ball is all out of the target ring: it keeps the exit glow until it falls away (see
+        /// <see cref="BallPortalMask.Trail"/>).</summary>
+        public void SetPortalTrail(Vector4 targetEdge)
+        {
+            _portal.Trail(targetEdge);
+            if (_questionMark != null) _questionMark.SetActive(IsHidden);
         }
 
         public void ClearPortalCut()
         {
-            if (!_portal.IsSplit) return;
+            if (!_portal.IsActive) return;
             _portal.Clear();
             if (_questionMark != null) _questionMark.SetActive(IsHidden);
         }

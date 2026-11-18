@@ -12,6 +12,8 @@ namespace Project.Contexts.Game.Sort
         [Header("Selection wave")]
         [Tooltip("How far every selected ball rises from its slot, in slot heights. The same for a full tube and a single ball at the bottom, so a selection always reads the same. The balls keep their stack spacing.")]
         [Range(0f, 2f)] public float LiftHeight = 1f;
+        [Tooltip("Experimental: the selected group always rises to one fixed spot at the mouth instead of by LiftHeight from its slots. The top ball ends where a full tube's top ball lifts to (LiftHeight above the top slot), wherever the stack ends; the group keeps its stack spacing below it. Off = the fixed short lift.")]
+        public bool LiftToMouth;
         [Tooltip("Lift speed in board units per second; the lift time is distance / speed within the limits below.")]
         public float LiftSpeed = 30f;
         [Tooltip("Shortest lift time.")]
@@ -42,31 +44,25 @@ namespace Project.Contexts.Game.Sort
         public float HoverPeriod = 0.6f;
 
         [Header("Warp (the jump between tubes)")]
-        [Tooltip("Time to cross the portals, from the end of the charge to the ball just out of the target ring. The same from any depth: a ball deep in its tube travels faster, not longer, so every move lasts the same.")]
-        public float WarpCross = 0.17f;
-        [Tooltip("Time for a ball to pass through a portal, from touching the source ring to all out of the target ring, at one steady speed. Short enough to stay snappy, long enough that the share going in and coming out reads. Part of WarpCross.")]
-        public float PortalPass = 0.1f;
-        [Tooltip("Anticipation: the ball gathers and shivers before it jumps, while the source portal opens over it.")]
-        public float WarpCharge = 0.05f;
-        [Tooltip("Ball scale at the end of the charge (it grows a little).")]
-        public Vector2 ChargeSquash = new(1.12f, 1.12f);
-        [Tooltip("Sideways shiver while charging, in board units.")]
-        public float ChargeShiver = 0.025f;
+        [Tooltip("Time from the second tap until the ball is all in the source ring (so all out of the target ring), on an ease-in 'toward' curve: no anticipation, it sets off at once and is pulled in faster and faster. Short, so the whole move (crossing, drop into the tube and landing) reads as one quick motion. The same from any depth: a ball deep in its tube travels faster, not longer.")]
+        public float WarpCross = 0.26f;
         [Tooltip("How many times as tall the ball is when fully inside a portal (area kept, so it gets thinner).")]
-        public float VanishStretch = 1.5f;
+        public float VanishStretch = 1.08f;
         [Tooltip("Gap between a tube's mouth and the bottom edge of the portal ring over it, in board units, at both ends of a move. Small, so the ring sits on the mouth like a cap and the ball goes straight from the tube into the ring.")]
         public float PortalHeight = 0.1f;
-        [Tooltip("The portal, a thick ring 1 unit wide seen from above like the tubes (ArtSource/Hole/make_hole.py), pivoted on the center of its face. Back is the face and the void through the opening, Front the near half and the side wall under it. Both draw over the balls: a ball rises up into one ring and disappears behind its lower edge, and comes down from behind the other.")]
+        [Tooltip("The portal, a thick ring 1 unit wide seen from above like the tubes (ArtSource/Hole/make_hole.py), pivoted on the center of its face. Back is the face and the void through the opening, Front the near half and the side wall under it. The ring a ball goes into is turned upside down (seen from below, its opening toward the tube) and draws under the ball: the ball rises over its rim and lit inner wall into the black. The one it comes out of faces up and draws over the ball, which comes down from behind its side wall.")]
         public Sprite PortalBack;
         public Sprite PortalFront;
         [Tooltip("Tint of the portal art; white keeps its colors. Its alpha fades with the portal.")]
         public Color PortalColor = Color.white;
         [Tooltip("Portal width, as a multiple of the ball diameter.")]
         public float PortalWidth = 1.6f;
-        [Tooltip("Time for a portal to open like an iris: a flat slit that widens, then opens up with a small overshoot. Both portals open together on the target tap, while the balls charge; the selection opens none.")]
+        [Tooltip("Time for a portal to open like an iris: a flat slit that widens, then opens up with a small overshoot. Both portals open together on the target tap, as the balls set off; the selection opens none.")]
         public float PortalOpen = 0.12f;
         [Tooltip("Time for a portal to close: it swells a little and collapses into its center. It starts once the last ball of the move is through.")]
         public float PortalClose = 0.14f;
+        [Tooltip("The target portal starts closing this long after the source one, so the door shuts behind the ball and the eye ends on the target. 2-4 frames; much more and they read as two separate events.")]
+        public float PortalCloseLag = 0.05f;
         [Tooltip("The ring art's outer half width, as a share of its width (make_hole.py: 0.5 minus the padding). With the flatness it sets how far the ring reaches under its center, so it sits just over the mouth.")]
         public float PortalRim = 0.49f;
         [Tooltip("Height of the ring art's side wall under its face, as a share of its width (make_hole.py THICK). With the rim and the flatness it sets the ring's lowest edge: where it sits over the mouth and where it splits the balls.")]
@@ -76,7 +72,7 @@ namespace Project.Contexts.Game.Sort
         [Tooltip("Out of the target portal the ball keeps falling, straight through the mouth into its slot, starting at the speed it came out with. A deep slot keeps speeding it up, like gravity; a near one slows it down, but it always hits the slot with at least this share of its exit speed, and the snap takes the impact. 0 = it may ease to a stop.")]
         [Range(0f, 1f)] public float ExitKeep = 0.35f;
         [Tooltip("Ball scale at its tightest in the mouth, on the way in and out. Keep x times y near 1 so the ball keeps its volume.")]
-        public Vector2 NeckSqueeze = new(0.9f, 1.11f);
+        public Vector2 NeckSqueeze = new(0.97f, 1.03f);
         [Tooltip("The hard stop in the slot: hit pose, linear hit time, and an eased release with no overshoot.")]
         public Vector2 SnapSquash = new(1.16f, 0.82f);
         [Tooltip("Long enough that the hit pose is always drawn for at least 2 frames.")]
@@ -87,7 +83,7 @@ namespace Project.Contexts.Game.Sort
         [Tooltip("Each frame the ball stretches back over the distance it just travelled, times this, so there is never a gap between two frames for the eye to jump. 1 = it covers the whole step.")]
         public float SmearAmount = 1f;
         [Tooltip("Longest the smeared ball may get, as a multiple of its diameter.")]
-        public float MaxSmear = 2.6f;
+        public float MaxSmear = 1.15f;
         [Tooltip("How much thinner the ball gets as it stretches (0 = keeps its width).")]
         [Range(0f, 0.5f)] public float SmearThin = 0.12f;
 

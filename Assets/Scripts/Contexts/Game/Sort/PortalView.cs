@@ -11,6 +11,10 @@ namespace Project.Contexts.Game.Sort
     /// The ring is the art from ArtSource/Hole/make_hole.py: a thick ring 1 unit wide seen from above like the tubes,
     /// pivoted on the center of its face, flattened to <see cref="RingFlatten"/> of its width, with a side wall
     /// hanging under its near arc.
+    /// A portal a ball goes into faces down instead (<see cref="FacesDown"/>): the art is turned upside down, so the ring
+    /// is seen from below, its opening toward the tube under it. It draws under the ball, so the ball rises over its
+    /// near rim and the lit inner wall at the bottom of the opening and is split where the black void begins: it goes
+    /// into the black, never behind the ring.
     /// </summary>
     public sealed class PortalView
     {
@@ -33,6 +37,10 @@ namespace Project.Contexts.Game.Sort
         // The ring art is flattened to this share of its width (make_hole.py FLATTEN), and so is the ellipse where its
         // plane cuts a ball.
         private const float RingFlatten = 0.45f;
+        // The opening's width as a share of the ring's (make_hole.py OPENING), and how far the lit inner wall reaches
+        // into it, as a share of its half height (make_hole.py DEPTH): the black void is the opening shifted that far.
+        private const float Opening = 0.78f;
+        private const float TunnelDepth = 0.75f;
 
         private readonly GameObject _root;
         private readonly Transform _parent;
@@ -41,14 +49,16 @@ namespace Project.Contexts.Game.Sort
         private readonly SpriteRenderer _front;
         private readonly BallAnimationConfig _config;
         private readonly float _width;
+        private readonly bool _facesDown;
         private PrimeTween.Tween _stage;
         private PrimeTween.Tween _alive;
         private Vector2 _shape;
         private float _alpha;
 
-        public PortalView(Transform parent, Vector3 localCenter, BallAnimationConfig config, int order)
+        public PortalView(Transform parent, Vector3 localCenter, BallAnimationConfig config, int order, bool facesDown)
         {
             _config = config;
+            _facesDown = facesDown;
             _width = Width(config);
             _parent = parent;
             _center = localCenter;
@@ -69,28 +79,46 @@ namespace Project.Contexts.Game.Sort
         public static float Width(BallAnimationConfig config) => TubeArt.BallDiameter * config.PortalWidth;
 
         /// <summary>
-        /// How far an open ring's lowest point is under its center: the side wall hangs under the face's near arc, so the
-        /// lowest point is the bottom of that wall. A ball is split there (see <see cref="Edge"/>).
+        /// How far an open ring's lowest point is under its center. Facing up, the side wall hangs under the face's near
+        /// arc, so the lowest point is the bottom of that wall; facing down, it is the face's own lower arc.
         /// </summary>
-        public static float Drop(BallAnimationConfig config) =>
-            Width(config) * (RingFlatten * config.PortalRim + config.PortalWall);
+        public static float Drop(BallAnimationConfig config, bool facesDown) =>
+            Width(config) * (RingFlatten * config.PortalRim + (facesDown ? 0f : config.PortalWall));
 
         /// <summary>
-        /// The ring's lowest edge for the ball mask, in world space, at its current <see cref="Shape"/>: the ellipse at
-        /// the bottom of its side wall as (center y, center x, half width, half height); the edge is its lower arc, whose
-        /// middle is <see cref="Drop"/> under the ring's center once it is fully open. The mask only acts within that
-        /// width, so a ring still opening hides nothing beside it.
+        /// How far under an open ring's center a ball is split (see <see cref="Edge"/>). Facing up, at the ring's lowest
+        /// edge, so the ball slips behind the ring; facing down, where the black void begins at the bottom of the
+        /// opening, so the ball goes into the black right there.
         /// </summary>
-        public Vector4 Edge
+        public static float Cut(BallAnimationConfig config, bool facesDown) => facesDown
+            ? Width(config) * RingFlatten * config.PortalRim * Opening * (1f - TunnelDepth)
+            : Drop(config, false);
+
+        /// <summary>
+        /// The ellipse whose lower arc splits the ball, in world space, at its current <see cref="Shape"/>, as (center y,
+        /// center x, half width, half height): facing up, the bottom of the side wall; facing down, the black void inside
+        /// the opening. The arc's middle is <see cref="Cut"/> under the ring's center once it is fully open. The mask only
+        /// acts within that width, so a ring still opening hides nothing beside it: right for the ball going in, which is
+        /// really there.
+        /// </summary>
+        public Vector4 Edge => EdgeAt(Shape);
+
+        /// <summary>
+        /// <see cref="Edge"/> as it is once the ring is fully open, whatever its shape now. The part of a ball coming out
+        /// is cut on it, so nothing of it shows above the cut line, not even beside a ring still opening or closing.
+        /// </summary>
+        public Vector4 OpenEdge => EdgeAt(Vector2.one);
+
+        private Vector4 EdgeAt(Vector2 shape)
         {
-            get
-            {
-                var shape = Shape;
-                var center = _parent.TransformPoint(new Vector3(_center.x, _center.y - _width * _config.PortalWall * shape.y, _center.z));
-                var halfWidth = _width * _config.PortalRim;
-                var scale = _parent.lossyScale;
-                return new Vector4(center.y, center.x, halfWidth * shape.x * scale.x, halfWidth * RingFlatten * shape.y * scale.y);
-            }
+            var halfWidth = _width * _config.PortalRim * (_facesDown ? Opening : 1f);
+            // Facing down the void sits up the opening, past the lit inner wall; facing up the edge hangs a wall lower.
+            var drop = _facesDown
+                ? -halfWidth * RingFlatten * TunnelDepth * shape.y
+                : _width * _config.PortalWall * shape.y;
+            var center = _parent.TransformPoint(new Vector3(_center.x, _center.y - drop, _center.z));
+            var scale = _parent.lossyScale;
+            return new Vector4(center.y, center.x, halfWidth * shape.x * scale.x, halfWidth * RingFlatten * shape.y * scale.y);
         }
 
         /// <summary>Opens after <paramref name="delay"/> seconds: the iris, then the breath while it stays open.</summary>
@@ -182,7 +210,8 @@ namespace Project.Contexts.Game.Sort
         {
             _shape = shape;
             _alpha = alpha;
-            _root.transform.localScale = new Vector3(_width * shape.x, _width * shape.y, 1f);
+            // Facing down, the art is turned upside down: the ring seen from below.
+            _root.transform.localScale = new Vector3(_width * shape.x, _width * shape.y * (_facesDown ? -1f : 1f), 1f);
             var c = _config.PortalColor;
             _back.color = _front.color = new Color(c.r, c.g, c.b, c.a * alpha);
         }

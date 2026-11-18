@@ -5,7 +5,8 @@ namespace Project.Contexts.Game.Items
 {
     /// <summary>
     /// The selection highlight of one ball: a thin contour and a soft light around this ball only, drawn behind it, so
-    /// selected neighbours stay separate balls. Both are procedural sprites until the contour art arrives.
+    /// selected neighbours stay separate balls. Both are procedural sprites until the contour art arrives. The light is
+    /// additive, so it brightens what is behind it like real glow; the contour is alpha blended and gives it a solid edge.
     /// </summary>
     public sealed class BallHighlight
     {
@@ -16,6 +17,7 @@ namespace Project.Contexts.Game.Items
 
         private static Sprite _ringSprite;
         private static Sprite _haloSprite;
+        private static Material _additive;
 
         private readonly SpriteRenderer _contour;
         private readonly SpriteRenderer _glow;
@@ -27,6 +29,7 @@ namespace Project.Contexts.Game.Items
         {
             _contour = Create(parent, "Contour", RingSprite(), ContourOrder, sortingLayerId);
             _glow = Create(parent, "Glow", HaloSprite(), GlowOrder, sortingLayerId);
+            _glow.sharedMaterial = AdditiveMaterial();
         }
 
         /// <summary>
@@ -91,6 +94,13 @@ namespace Project.Contexts.Game.Items
             sr.sortingOrder = order;
             sr.enabled = false;
             return sr;
+        }
+
+        /// <summary>Additive sprite blending tinted by the renderer color (the same shader as the tube glass).</summary>
+        private static Material AdditiveMaterial()
+        {
+            if (_additive == null) _additive = new Material(Shader.Find("Mobile/Particles/Additive")) { name = "BallGlowAdditive" };
+            return _additive;
         }
 
         /// <summary>A thin ring.</summary>

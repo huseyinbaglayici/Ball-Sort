@@ -4,32 +4,34 @@ namespace Project.Contexts.Game.Sort
 {
     /// <summary>
     /// One ball's path through a pair of portals, measured as how far the ball's center is past the source ring's cut
-    /// line (negative before it); out of the target portal the ball is as far below the target cut line. The path never
-    /// stops, and the speed carries across each joint:
+    /// line (negative before it); out of the target portal the ball is as far below the target cut line. The speed carries
+    /// across the joint:
     /// <list type="bullet">
-    /// <item>Approach: up the tube until the ball touches the ring's edge, speeding up from rest. Its time is what is
-    /// left of the cross time after the pass, so a deep ball just travels faster.</item>
-    /// <item>Pass: from touching the source ring to all out of the target ring, at one steady speed over about the
-    /// portal pass time, so the share going into one ring is the share coming out of the other. (Slower when the ball
-    /// starts already touching the ring, so it fills the cross time.)</item>
-    /// <item>Fall: to the slot over the entry time, starting at the pass speed: a deep slot keeps speeding up, like
-    /// gravity; a near one slows down but still hits with at least the exit-keep share of that speed.</item>
+    /// <item>Toward: from where the ball is when the move starts (the selection lift frozen there, no anticipation) until
+    /// it is all in the source ring, so all out of the target ring, over <see cref="BallAnimationConfig.WarpCross"/>. It
+    /// follows an ease-in, 0.121t³ + 0.576t² + 0.303t: it sets off at once, at 0.3 times its
+    /// average speed, and is pulled faster and faster, to 1.8 times it.</item>
+    /// <item>Fall: to the slot over the entry time, starting at the speed it came out with: a deep slot keeps speeding up,
+    /// like gravity; a near one slows down but still hits with at least the exit-keep share of that speed. A cubic with
+    /// both end speeds set, kept from overshooting.</item>
     /// </list>
-    /// Approach and fall are cubics with both end speeds set, kept from overshooting.
     /// </summary>
     public readonly struct WarpPath
     {
+        // The toward curve and its slope at the end.
+        private const float TowardA = 0.121f;
+        private const float TowardB = 0.576f;
+        private const float TowardC = 0.303f;
+        private const float TowardEndSlope = 3f * TowardA + 2f * TowardB + TowardC;
+
         private readonly float _past0;
-        private readonly float _touch;
-        private readonly float _approach;
+        private readonly float _toward;
         private readonly float _radius;
-        private readonly float _passSpeed;
         private readonly float _fall;
         private readonly float _fallStart;
         private readonly float _hitSpeed;
 
-        public readonly float ApproachTime;
-        public readonly float PassTime;
+        public readonly float TowardTime;
         public readonly float FallTime;
 
         /// <param name="past0">Where the ball starts, past the source cut line (usually negative: below it).</param>
@@ -38,30 +40,28 @@ namespace Project.Contexts.Game.Sort
         {
             _past0 = past0;
             _radius = radius;
-            _touch = Mathf.Max(past0, -radius);
-            _approach = _touch - past0;
-            var cross = Mathf.Max(config.WarpCross, 0.0001f);
-            _passSpeed = Mathf.Min(2f * radius / Mathf.Max(config.PortalPass, 0.0001f),
-                (3f * _approach + radius - _touch) / cross);
-            PassTime = (radius - _touch) / _passSpeed;
-            ApproachTime = Mathf.Max(cross - PassTime, 0f);
+            _toward = Mathf.Max(radius - past0, 0f);
+            TowardTime = Mathf.Max(config.WarpCross, 0.0001f);
+            var exitSpeed = _toward * TowardEndSlope / TowardTime;
             _fall = Mathf.Max(fall, 0.0001f);
             FallTime = Mathf.Max(entry, 0.0001f);
-            _fallStart = Mathf.Min(_passSpeed, 3f * _fall / FallTime);
-            _hitSpeed = Mathf.Min(Mathf.Max(2f * _fall / FallTime - _passSpeed, Mathf.Clamp01(config.ExitKeep) * _passSpeed),
+            _fallStart = Mathf.Min(exitSpeed, 3f * _fall / FallTime);
+            _hitSpeed = Mathf.Min(Mathf.Max(2f * _fall / FallTime - _fallStart, Mathf.Clamp01(config.ExitKeep) * _fallStart),
                 3f * _fall / FallTime);
         }
 
-        public float Duration => ApproachTime + PassTime + FallTime;
+        public float Duration => TowardTime + FallTime;
 
         /// <summary>Distance past the source cut line at <paramref name="time"/> seconds into the path.</summary>
         public float PastAt(float time)
         {
-            if (time < ApproachTime)
-                return _past0 + Hermite(time / Mathf.Max(ApproachTime, 0.0001f), 0f, _approach, _passSpeed * ApproachTime);
-            if (time < ApproachTime + PassTime) return _touch + _passSpeed * (time - ApproachTime);
-            var h = Mathf.Clamp01((time - ApproachTime - PassTime) / FallTime);
-            return _radius + Hermite(h, _fallStart * FallTime, _fall, _hitSpeed * FallTime);
+            if (time < TowardTime)
+            {
+                var t = time / TowardTime;
+                return _past0 + _toward * (((TowardA * t + TowardB) * t + TowardC) * t);
+            }
+            var h = Mathf.Clamp01((time - TowardTime) / FallTime);
+            return Mathf.Max(_past0, _radius) + Hermite(h, _fallStart * FallTime, _fall, _hitSpeed * FallTime);
         }
 
         /// <summary>

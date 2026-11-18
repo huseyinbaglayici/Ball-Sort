@@ -138,7 +138,9 @@ namespace Project.Contexts.Game.Items
         /// Highlights the top <paramref name="count"/> balls all at once, so the whole group reads as selected on the
         /// first frame, then lifts them one after another, top ball first. Every ball rises by the same short distance
         /// from its slot, wherever the stack ends, so a selection always reads the same; the long way up to the portal
-        /// belongs to the move. The group keeps its stack spacing. Each ball starts from where it is now.
+        /// belongs to the move. With <see cref="BallAnimationConfig.LiftToMouth"/> (experimental) the top ball instead
+        /// always goes to the same spot at the mouth, from any depth. The group keeps its stack spacing. Each ball starts
+        /// from where it is now.
         /// </summary>
         public void Select(int count, BallAnimationConfig config)
         {
@@ -149,6 +151,8 @@ namespace Project.Contexts.Game.Items
             var top = _balls.Count - 1;
             // Every lifted ball moves the same way, so they stay in line; near the mouth the ball squeezes as it passes.
             var rise = TubeArt.SlotHeight * config.LiftHeight;
+            // Experimental: the top ball goes to the mouth spot (where a full tube's top ball lifts to), from any depth.
+            if (config.LiftToMouth) rise += TubeArt.SlotLocalPosition(TubeArt.Slots - 1).y - TubeArt.SlotLocalPosition(top).y;
             var overshoot = Vector3.up * (TubeArt.SlotHeight * config.LiftOvershoot);
             var duration = config.LiftDuration(rise + overshoot.y);
             // The whole wave ends when the top ball does: a later ball starts later and lifts faster. The stagger is

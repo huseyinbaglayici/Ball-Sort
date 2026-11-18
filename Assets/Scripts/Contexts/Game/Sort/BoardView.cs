@@ -17,13 +17,13 @@ namespace Project.Contexts.Game.Sort
     /// </summary>
     public sealed class BoardView : MonoBehaviour
     {
-        // The portal's layers sort above every tube group (idle 0, raised 10, receiving 11), so balls pass under them.
-        private const int PortalBackOrder = 20;
-        // How fast the charging ball shivers sideways, in radians per second.
-        private const float ChargeShiverRate = 180f;
+        // The target portal's layers sort above every tube group (idle 0, raised 10, receiving 11), so balls come down
+        // out from under it. The source portal sorts under the source tube (raised) and its balls but over idle tubes:
+        // a ball rises over its near rim and lit inner wall and goes into the black, never behind the ring.
+        private const int TargetPortalOrder = 20;
+        private const int SourcePortalOrder = 5;
         // Share of its frame step a ball smears by while it passes the target mouth.
         private const float MouthSmear = 0.35f;
-
         [SerializeField] private BallAnimationConfig _animation;
         // The camera is fixed, so the board is scaled to the size the layout asks of it.
         [SerializeField] private BoardLayout _layout = new();
@@ -127,17 +127,19 @@ namespace Project.Contexts.Game.Sort
             // One entry window for the whole group, whatever its size: each ball's entry and the delay to the next one.
             _animation.EntryTiming(count, out _, out var stagger);
             var lastStart = (count - 1) * stagger;
-            // Two portals per move, joined, one over each mouth. Both open on this tap, together, while the balls charge
-            // (the selection opens none), and close once the last ball of the move is through. They open with the same
+            // Two portals per move, joined, one over each mouth. Both open on this tap, together, as the balls set off
+            // (the selection opens none), and close once the last ball of the move is through: the source one first, the
+            // target one PortalCloseLag later, so it shuts behind the ball and the eye ends there. They open with the same
             // shape at the same time, and each one hides the balls only where it is drawn, so what goes into one comes out
             // of the other even while they are still opening.
-            var sourcePortal = PortalOver(source);
-            var targetPortal = PortalOver(target);
-            var allThrough = lastStart + _animation.WarpCharge + _animation.WarpCross;
-            var sourceView = NewPortal(sourcePortal);
-            var targetView = NewPortal(targetPortal);
+            // The ring a ball goes into faces down, its opening toward the tube; the one it comes out of faces up.
+            var sourcePortal = PortalOver(source, facesDown: true);
+            var targetPortal = PortalOver(target, facesDown: false);
+            var allThrough = lastStart + _animation.WarpCross;
+            var sourceView = NewPortal(sourcePortal, SourcePortalOrder, facesDown: true);
+            var targetView = NewPortal(targetPortal, TargetPortalOrder, facesDown: false);
             sourceView.Close(allThrough);
-            targetView.Close(allThrough);
+            targetView.Close(allThrough + Mathf.Max(_animation.PortalCloseLag, 0f));
             for (var i = 0; i < count; i++)
             {
                 var ball = source.Pop();
@@ -175,8 +177,8 @@ namespace Project.Contexts.Game.Sort
         }
 
         /// <summary>
-        /// One ball's move: a short charge, then a warp jump up into the source portal and down out of the target portal
-        /// in one motion (see <see cref="WarpPath"/>). The two portals are one hole, so whatever share of the ball has
+        /// One ball's move: from where it is, with no anticipation, it is pulled up into the source portal and comes down
+        /// out of the target portal in one motion (see <see cref="WarpPath"/>). The two portals are one hole, so whatever share of the ball has
         /// gone into the first is already out of the second, and the two slices always add up to one ball. Out of the
         /// target portal it keeps falling through the narrow mouth, long and thin, straight into its slot, and stops hard
         /// on the balls below. Planned from where the ball is now, so a half-finished lift or a reversed flight never
@@ -200,7 +202,7 @@ namespace Project.Contexts.Game.Sort
             // it draws there, under that tube's glass, and only shows over it once it is out of the mouth. It moves to
             // the target tube at the hand-off; its twin out of the target portal draws in the target tube meanwhile.
             ball.transform.SetParent(source.transform, true);
-            // A ball lifted into the mouth is squeezed there; the charge starts from that shape, not from round.
+            // A ball lifted into the mouth is squeezed there; the move starts from that shape, not from round.
             var startScale = ball.transform.localScale;
             ball.StopMotion();
             ball.SetFlying(true);
@@ -215,17 +217,16 @@ namespace Project.Contexts.Game.Sort
             var mouthY = MouthY(target);
             var sourceMouthY = MouthY(source);
             config.EntryTiming(count, out var entry, out _);
-            var chargeTime = config.WarpCharge;
             // Halfway through the hole (its center on the portal planes) the ball is this tall and thin (area kept).
             var deep = new Vector3(1f / config.VanishStretch, config.VanishStretch, 1f);
-            var charged = new Vector3(config.ChargeSquash.x, config.ChargeSquash.y, 1f);
-            // Each portal splits the ball at its ring's lowest edge (the bottom of the side wall), the ring's silhouette:
-            // the ring draws over the ball, so whatever is above that edge is hidden by it. Splitting there keeps the two
-            // parts adding up to one ball on screen: the share the source ring hides is the share the target ring shows.
-            var sourceCut = sourcePortal.y - PortalView.Drop(config);
-            var targetCut = targetPortal.y - PortalView.Drop(config);
+            // Each portal splits the ball on its cut line: the source where its black void begins, so the ball goes into
+            // the black there; the target at its lowest edge (the bottom of the side wall), so the ball comes down out from
+            // under it. Whatever is above a cut is hidden. Splitting there keeps the two parts adding up to one ball on
+            // screen: the share the source ring takes in is the share the target ring lets out.
+            var sourceCut = sourcePortal.y - PortalView.Cut(config, facesDown: true);
+            var targetCut = targetPortal.y - PortalView.Cut(config, facesDown: false);
             var path = new WarpPath(start.y - sourceCut, radius, targetCut - radius - end.y, entry, config);
-            var total = chargeTime + path.Duration;
+            var total = path.Duration;
             var through = false;
             var previous = start;
             // The tubes react to this ball as it leaves one mouth and enters the other; later balls of a move weaker.
@@ -241,63 +242,62 @@ namespace Project.Contexts.Game.Sort
                         var u = k * total;
                         Vector3 point;
                         var size = Vector3.one;
+                        // The twin out of the target portal rounds up while the part still going in keeps stretching.
+                        var outSize = Vector3.one;
                         // How far the center is past the source cut line (negative before it); the twin's center is as
                         // far below the target cut line.
-                        var split = false;
-                        var past = 0f;
-                        if (u < chargeTime)
+                        var past = path.PastAt(u);
+                        var twinY = targetCut - past;
+                        if (!launched && sourceCut + past >= sourceMouthY)
                         {
-                            // Anticipation: the ball gathers (grows a little) and shivers under the opening portal.
-                            var c = u / Mathf.Max(chargeTime, 0.0001f);
-                            point = start + new Vector3(Mathf.Sin(u * ChargeShiverRate) * config.ChargeShiver * c, 0f, 0f);
-                            size = Vector3.LerpUnclamped(startScale, charged, c);
+                            launched = true;
+                            source.Reactions.Launch(config, strength);
+                        }
+                        if (!swallowed && twinY <= mouthY)
+                        {
+                            swallowed = true;
+                            target.Reactions.Swallow(config, strength);
+                        }
+                        if (past < 0f)
+                        {
+                            // Going in: from the shape it had when the move started toward the plane's, squeezed
+                            // while it leaves its own mouth.
+                            var w = Mathf.Clamp01(1f + past / radius);
+                            size = Vector3.Scale(Vector3.LerpUnclamped(startScale, deep, w * w),
+                                BallItem.NeckScale(sourceCut + past, sourceMouthY, config));
+                            outSize = size;
                         }
                         else
                         {
-                            past = path.PastAt(u - chargeTime);
-                            var twinY = targetCut - past;
-                            if (!launched && sourceCut + past >= sourceMouthY)
+                            // Coming out: round again (with a small squash past round), squeezed in the target mouth.
+                            var leave = Mathf.Clamp01(past / (radius * config.VanishStretch));
+                            var round = PrimeTween.Easing.Evaluate(leave, PrimeTween.Ease.OutBack);
+                            outSize = Vector3.Scale(Vector3.LerpUnclamped(deep, Vector3.one, round),
+                                BallItem.NeckScale(twinY, mouthY, config));
+                            // The tail still going in keeps the shape it went in with: the hole pulls the whole
+                            // ball, it does not draw it out.
+                            size = deep;
+                        }
+                        // Until the twin is all out, the ball's tail is still going into the source portal.
+                        var split = past < radius * outSize.y;
+                        // The tail's bottom stays where the twin's top is, so the two still add up to one ball
+                        // and the tail is all in just as the twin is all out.
+                        if (split)
+                            point = new Vector3(start.x, sourceCut + past + radius * (size.y - outSize.y), start.z);
+                        else
+                        {
+                            // Hand-off: the ball is through the portals and goes on in the target tube.
+                            if (root.parent != target.transform) root.SetParent(target.transform, true);
+                            point = new Vector3(end.x, twinY, end.z);
+                            size = outSize;
+                            if (!through && twinY < mouthY - radius)
                             {
-                                launched = true;
-                                source.Reactions.Launch(config, strength);
+                                through = true;
+                                _haptics?.Play(HapticStrength.Light);
                             }
-                            if (!swallowed && twinY <= mouthY)
-                            {
-                                swallowed = true;
-                                target.Reactions.Swallow(config, strength);
-                            }
-                            if (past < 0f)
-                            {
-                                // Going in: it stretches toward the plane, squeezed while it leaves its own mouth.
-                                var w = Mathf.Clamp01(1f + past / radius);
-                                size = Vector3.Scale(Vector3.LerpUnclamped(charged, deep, w * w),
-                                    BallItem.NeckScale(sourceCut + past, sourceMouthY, config));
-                            }
-                            else
-                            {
-                                // Coming out: round again (with a small squash past round), squeezed in the target mouth.
-                                var leave = Mathf.Clamp01(past / (radius * config.VanishStretch));
-                                var round = PrimeTween.Easing.Evaluate(leave, PrimeTween.Ease.OutBack);
-                                size = Vector3.Scale(Vector3.LerpUnclamped(deep, Vector3.one, round),
-                                    BallItem.NeckScale(twinY, mouthY, config));
-                            }
-                            // Until the twin is all out, the ball's tail is still going into the source portal.
-                            split = past < radius * size.y;
-                            if (split) point = new Vector3(start.x, sourceCut + past, start.z);
-                            else
-                            {
-                                // Hand-off: the ball is through the portals and goes on in the target tube.
-                                if (root.parent != target.transform) root.SetParent(target.transform, true);
-                                point = new Vector3(end.x, twinY, end.z);
-                                if (!through && twinY < mouthY - radius)
-                                {
-                                    through = true;
-                                    _haptics?.Play(HapticStrength.Light);
-                                }
-                                // It smears while it passes the mouth, where it is fastest and squeezed.
-                                var nearMouth = Mathf.Abs(twinY - mouthY) < TubeArt.BallDiameter;
-                                ball.SetMotionSmear(nearMouth ? (point - previous) * MouthSmear : Vector3.zero, config);
-                            }
+                            // It smears while it passes the mouth, where it is fastest and squeezed.
+                            var nearMouth = Mathf.Abs(twinY - mouthY) < TubeArt.BallDiameter;
+                            ball.SetMotionSmear(nearMouth ? (point - previous) * MouthSmear : Vector3.zero, config);
                         }
                         t.localScale = size;
                         t.position = board.TransformPoint(point);
@@ -305,11 +305,13 @@ namespace Project.Contexts.Game.Sort
                         // (and its smear) is measured from there, not from the root left at the source portal.
                         var twin = new Vector3(end.x, targetCut - past, end.z);
                         previous = split ? twin : point;
-                        if (!split) ball.ClearPortalCut();
+                        // All out: the ball keeps the exit glow, fading as it falls away from the target edge.
+                        if (!split) ball.SetPortalTrail(targetView.OpenEdge);
                         else
                         {
                             // Each ring hides the ball only where it is drawn now: its edge follows its opening.
-                            ball.SetPortalSplit(sourceView.Edge, board.TransformPoint(twin), targetView.Edge,
+                            var exitShape = new Vector3(outSize.x / size.x, outSize.y / size.y, 1f);
+                            ball.SetPortalSplit(sourceView, board.TransformPoint(twin), exitShape, targetView,
                                 target.transform);
                         }
                     })
@@ -325,15 +327,15 @@ namespace Project.Contexts.Game.Sort
             transform.InverseTransformPoint(bottle.transform.TransformPoint(new Vector3(0f, TubeArt.MouthLocalY, 0f))).y;
 
         /// <summary>
-        /// Board-space center of the portal ring over a tube (the center of the face the balls cross), the same for both
-        /// ends of a move: it sits just over the mouth, its lowest point <see cref="BallAnimationConfig.PortalHeight"/>
-        /// above it, like a cap. A leaving ball rises out of its tube up into the ring's opening; an arriving one comes
-        /// down out of it straight into the mouth.
+        /// Board-space center of the portal ring over a tube (the center of its face), at either end of a move: it sits
+        /// just over the mouth, its lowest point <see cref="BallAnimationConfig.PortalHeight"/> above it, like a cap. A
+        /// leaving ball rises out of its tube up into the ring's opening; an arriving one comes down out of it straight
+        /// into the mouth.
         /// </summary>
-        private Vector3 PortalOver(BottleItem bottle)
+        private Vector3 PortalOver(BottleItem bottle, bool facesDown)
         {
             var x = transform.InverseTransformPoint(bottle.transform.position).x;
-            return new Vector3(x, MouthY(bottle) + _animation.PortalHeight + PortalView.Drop(_animation), 0f);
+            return new Vector3(x, MouthY(bottle) + _animation.PortalHeight + PortalView.Drop(_animation, facesDown), 0f);
         }
 
         private void Land(BallItem ball, BottleItem target, int order, Action onLanded)
@@ -382,13 +384,13 @@ namespace Project.Contexts.Game.Sort
         }
 
         /// <summary>
-        /// Opens a portal centered on <paramref name="center"/> (board space), on the plane that slices the balls. It
-        /// draws over every tube and ball, so a ball rising up into it disappears behind its lower edge.
+        /// Opens a portal centered on <paramref name="center"/> (board space), on the plane that slices the balls, sorted
+        /// at <paramref name="order"/>.
         /// </summary>
-        private PortalView NewPortal(Vector3 center)
+        private PortalView NewPortal(Vector3 center, int order, bool facesDown)
         {
             _portals.RemoveAll(portal => portal.IsGone);
-            var view = new PortalView(transform, center, _animation, PortalBackOrder);
+            var view = new PortalView(transform, center, _animation, order, facesDown);
             view.Open();
             _portals.Add(view);
             return view;
