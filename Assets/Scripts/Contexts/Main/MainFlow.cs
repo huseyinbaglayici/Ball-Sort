@@ -18,14 +18,10 @@ namespace Project.Contexts.Main
         Game
     }
 
-    /// <summary>Raised once, when Main has opened its first screen.</summary>
+    // Raised once, when Main has opened its first screen.
     public readonly struct MainReady : IEvent { }
 
-    /// <summary>
-    /// The only place that decides what the Main scene shows. Home and Game are states of the one scene, not scenes:
-    /// a switch covers the screen with the loading overlay, closes popups, opens one context, closes the other and
-    /// swaps the music.
-    /// </summary>
+    // Home and Game are states of one scene; a switch covers it with the loading overlay first.
     public sealed class MainFlow : MonoBehaviour
     {
         [SerializeField] private HomeScreen _home;
@@ -35,7 +31,7 @@ namespace Project.Contexts.Main
         private LoadingOverlay _overlay;
         private PopupService _popups;
         private PoolService _pools;
-        private AudioService _audio;
+        private AudioManager _audio;
         private bool _busy;
 
         public MainState Current => _states.CurrentKey ?? MainState.None;
@@ -45,14 +41,14 @@ namespace Project.Contexts.Main
             _overlay = Services.Get<LoadingOverlay>();
             _popups = Services.Get<PopupService>();
             _pools = Services.Get<PoolService>();
-            _audio = Services.Get<AudioService>();
+            _audio = Services.Get<AudioManager>();
 
             _states.Add(MainState.Home, new HomeState(this))
                    .Add(MainState.Game, new GameState(this));
             Services.Register(this);
         }
 
-        /// <summary>Opens the first screen at once, without the loading overlay (the splash still covers it).</summary>
+        // No loading overlay: the splash still covers the screen.
         public void Begin(MainState first)
         {
             if (Current != MainState.None) return;

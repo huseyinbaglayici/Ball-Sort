@@ -1,25 +1,24 @@
 using System.Collections.Generic;
+using Project.Core.Audio;
 using UnityEngine;
 
 namespace Project.Common.UI.PopUps
 {
-    /// <summary>
-    /// Opens popup prefabs under one overlay canvas in the Main scene, shared by every screen.
-    /// Each prefab is instantiated once and reused. One popup is shown at a time; extra requests wait in a queue.
-    /// </summary>
+    // Each prefab is instantiated once and reused; one popup shows at a time and the rest queue.
     public sealed class PopupService
     {
         private readonly Transform _root;
+        private readonly AudioManager _audio;
         private readonly Dictionary<Popup, Popup> _instances = new();
         private readonly Queue<(Popup Prefab, object Args)> _queue = new();
         private Popup _current;
 
-        public PopupService(Transform root)
+        public PopupService(Transform root, AudioManager audio)
         {
             _root = root;
+            _audio = audio;
         }
 
-        /// <summary>Shows the popup now, or after the current one closes.</summary>
         public void Show(Popup prefab, object args = null)
         {
             if (prefab == null) return;
@@ -48,6 +47,7 @@ namespace Project.Common.UI.PopUps
             }
 
             _current = popup;
+            _audio.PlayOneShotSound("open");
             await popup.ShowAsync(args);
         }
 
@@ -55,6 +55,7 @@ namespace Project.Common.UI.PopUps
         {
             if (popup != _current) return;
             _current = null;
+            _audio.PlayOneShotSound("close");
             if (_queue.Count > 0)
             {
                 var (prefab, args) = _queue.Dequeue();
