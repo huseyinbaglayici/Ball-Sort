@@ -4,15 +4,12 @@ using Project.Contexts.Game.Levels;
 
 namespace Project.Editor.LevelEditor
 {
-    /// <summary>One layout a level can show (the game picks one per try).</summary>
+    // The game picks one layout per try.
     public readonly struct LevelVariant
     {
         public readonly string Label;
         public readonly LevelData Level;
-        /// <summary>
-        /// Whether the game's catalog uses it: a level with numbered layouts (_v1, _v2, ...) ignores a plain Level_NNN
-        /// asset with the same number.
-        /// </summary>
+        // A level with numbered layouts (_v1, _v2) ignores a plain Level_NNN with the same number.
         public readonly bool InCatalog;
 
         public LevelVariant(string label, LevelData level, bool inCatalog)
@@ -23,7 +20,7 @@ namespace Project.Editor.LevelEditor
         }
     }
 
-    /// <summary>One numbered level and its layouts. Assets whose name is not Level_NNN form a group of one.</summary>
+    // Assets not named Level_NNN form a group of one.
     public sealed class LevelGroup
     {
         public int Number;
@@ -31,10 +28,7 @@ namespace Project.Editor.LevelEditor
         public readonly List<LevelVariant> Variants = new();
     }
 
-    /// <summary>
-    /// Groups level assets by the number in their name (Level_007_v1, Level_007_v2 ... = level 7), for the editor window
-    /// and the level catalog. The assets and their names stay exactly as they are.
-    /// </summary>
+    // Groups by the number in the name; assets are not renamed.
     public static class LevelGrouping
     {
         private static readonly Regex NamePattern = new(@"^Level_(\d+)(?:_v(\d+))?$");
@@ -91,7 +85,6 @@ namespace Project.Editor.LevelEditor
             return null;
         }
 
-        /// <summary>Name for a new level: one number after the highest existing level.</summary>
         public static string NextName(List<LevelGroup> groups)
         {
             var highest = 0;

@@ -2,7 +2,6 @@ using UnityEngine;
 
 namespace Project.Common.UI
 {
-    /// <summary>Fits this RectTransform to Screen.safeArea (notches, rounded corners, home bar).</summary>
     [ExecuteAlways]
     [RequireComponent(typeof(RectTransform))]
     public sealed class SafeArea : MonoBehaviour

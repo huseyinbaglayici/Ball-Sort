@@ -6,7 +6,6 @@ using UnityEngine;
 
 namespace Project.Editor.LevelEditor
 {
-    /// <summary>Finds, creates and saves level and palette assets on disk.</summary>
     public static class LevelAssetStore
     {
         public const string LevelsFolder = "Assets/Configs/Levels";
@@ -25,7 +24,7 @@ namespace Project.Editor.LevelEditor
             return levels;
         }
 
-        /// <summary>Saves under <paramref name="name"/>. An existing asset is overwritten in place so references keep working.</summary>
+        // Overwrites an existing asset in place so references keep working.
         public static LevelData Save(LevelData level, string name)
         {
             EnsureFolder();

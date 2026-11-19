@@ -4,7 +4,6 @@ using UnityEngine;
 
 namespace Project.Core.StateMachine
 {
-    /// <summary>One state of a <see cref="StateMachine{TKey}"/>; override only what it needs.</summary>
     public abstract class State
     {
         public virtual void Enter() { }
@@ -12,10 +11,7 @@ namespace Project.Core.StateMachine
         public virtual void Tick(float deltaTime) { }
     }
 
-    /// <summary>
-    /// Minimal finite state machine keyed by an enum (e.g. GameState.Playing).
-    /// Transitions requested from inside Enter/Exit are queued to keep the order predictable.
-    /// </summary>
+    // Transitions requested inside Enter/Exit are queued so the order stays predictable.
     public sealed class StateMachine<TKey> where TKey : struct, Enum
     {
         private readonly Dictionary<TKey, State> _states = new();

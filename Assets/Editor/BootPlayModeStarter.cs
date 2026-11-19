@@ -3,10 +3,7 @@ using UnityEditor.SceneManagement;
 
 namespace Project.Editor
 {
-    /// <summary>
-    /// "Always start from Boot": pressing Play in any scene still runs the Boot scene first, so services exist
-    /// before Main opens.
-    /// </summary>
+    // Play in any scene runs Boot first, so services exist before Main opens.
     [InitializeOnLoad]
     public static class BootPlayModeStarter
     {

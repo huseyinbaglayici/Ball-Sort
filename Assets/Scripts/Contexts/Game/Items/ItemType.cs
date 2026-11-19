@@ -1,8 +1,6 @@
 namespace Project.Contexts.Game.Items
 {
-    /// <summary>
-    /// Everything the board can spawn. The values are serialized in the item registry, so never renumber them.
-    /// </summary>
+    // Serialized in the item registry; never renumber.
     public enum ItemType
     {
         None = 0,

@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Project.Editor.LevelEditor
 {
-    /// <summary>Places bottles in centered rows, top row first.</summary>
+    // Centered rows, top row first.
     public static class LevelLayout
     {
         public const float BottleSpacing = 2.1f;

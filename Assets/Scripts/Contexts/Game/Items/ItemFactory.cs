@@ -4,7 +4,6 @@ using UnityEngine;
 
 namespace Project.Contexts.Game.Items
 {
-    /// <summary>Creates items by type from the registry's prefabs, through the shared pool.</summary>
     public sealed class ItemFactory
     {
         private readonly PoolService _pools;

@@ -4,11 +4,7 @@ using UnityEngine;
 
 namespace Project.Core.Save
 {
-    /// <summary>
-    /// One JSON file per model under persistentDataPath. Writes go to a temp file first and the
-    /// previous file is kept as .bak. Loading falls back to the backup when the main file is missing or corrupt,
-    /// so a crash during save loses at most the save in progress.
-    /// </summary>
+    // Writes go via a temp file and keep the previous as .bak for loading, so a crash loses at most one save.
     public sealed class SaveService
     {
         private readonly string _folder;

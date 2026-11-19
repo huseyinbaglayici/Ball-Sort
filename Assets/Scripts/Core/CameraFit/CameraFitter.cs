@@ -2,10 +2,7 @@ using UnityEngine;
 
 namespace Project.Core.CameraFit
 {
-    /// <summary>
-    /// Portrait 2D camera: keeps the design width fully visible on every aspect ratio
-    /// (tall phones get more vertical space, tablets keep the design height as a minimum).
-    /// </summary>
+    // Keeps the design width visible; tall phones get extra height, tablets keep the design height.
     [ExecuteAlways]
     [RequireComponent(typeof(Camera))]
     public sealed class CameraFitter : MonoBehaviour

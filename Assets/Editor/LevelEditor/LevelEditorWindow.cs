@@ -7,10 +7,6 @@ using UnityEngine;
 
 namespace Project.Editor.LevelEditor
 {
-    /// <summary>
-    /// Lists level assets, previews the selected one and paints slots with a brush.
-    /// Drawing, parsing, layout and disk access live in their own classes; this window only wires them to the UI.
-    /// </summary>
     public sealed class LevelEditorWindow : EditorWindow
     {
         private const float ListWidth = 180f;
@@ -234,7 +230,7 @@ namespace Project.Editor.LevelEditor
                 AssetDatabase.StopAssetEditing();
             }
             AssetDatabase.SaveAssets();
-            // Imported levels are playable at once; a level made with New starts empty and joins at the next rebuild.
+            // Imported levels are playable at once; one made with New joins at the next rebuild.
             LevelCatalogBuilder.Rebuild();
             _level = null;
             Refresh();

@@ -5,7 +5,6 @@ using UnityEngine;
 
 namespace Project.Common.UI
 {
-    /// <summary>Sets a TMP text from a localization key and refreshes when the language changes.</summary>
     [RequireComponent(typeof(TMP_Text))]
     public sealed class LocalizedText : MonoBehaviour
     {

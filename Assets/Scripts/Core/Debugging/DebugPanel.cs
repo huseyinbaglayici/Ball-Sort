@@ -5,11 +5,7 @@ using UnityEngine.InputSystem;
 
 namespace Project.Core.Debugging
 {
-    /// <summary>
-    /// Lightweight in-game debug overlay (development builds and Editor only).
-    /// Shows FPS and frame time; open the panel with F1 or a three-finger tap.
-    /// Features add their own buttons: DebugPanel.AddAction("Win level", () => ...).
-    /// </summary>
+    // Development builds and Editor only; F1 or a three-finger tap opens it.
     public sealed class DebugPanel : MonoBehaviour
     {
         private static readonly List<(string Label, Action Action)> Actions = new();

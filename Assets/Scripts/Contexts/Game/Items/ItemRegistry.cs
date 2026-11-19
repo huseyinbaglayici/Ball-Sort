@@ -5,10 +5,7 @@ using UnityEngine;
 
 namespace Project.Contexts.Game.Items
 {
-    /// <summary>
-    /// Data table: item type -> prefab and pool size. Designers tune WarmCount/MaxCount here,
-    /// code only asks for a type.
-    /// </summary>
+    // Item type -> prefab and pool sizes.
     [CreateAssetMenu(menuName = "Project/Item Registry", fileName = "ItemRegistry")]
     public sealed class ItemRegistry : ScriptableObject
     {

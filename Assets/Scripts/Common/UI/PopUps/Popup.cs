@@ -4,10 +4,7 @@ using UnityEngine;
 
 namespace Project.Common.UI.PopUps
 {
-    /// <summary>
-    /// Base class for every popup prefab. The prefab root needs a CanvasGroup (fade + input block)
-    /// and a child "content" transform that scales in. Subclasses fill their UI in <see cref="OnShow"/>.
-    /// </summary>
+    // The prefab root needs a CanvasGroup and a "content" child that scales in.
     [RequireComponent(typeof(CanvasGroup))]
     public abstract class Popup : MonoBehaviour
     {
@@ -37,7 +34,7 @@ namespace Project.Common.UI.PopUps
             _group.blocksRaycasts = true;
         }
 
-        /// <summary>Closes this popup with its out animation; safe to call twice.</summary>
+        // Safe to call twice.
         public async void Close()
         {
             if (!IsOpen) return;

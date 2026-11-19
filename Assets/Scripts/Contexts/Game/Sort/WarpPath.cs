@@ -2,23 +2,10 @@ using UnityEngine;
 
 namespace Project.Contexts.Game.Sort
 {
-    /// <summary>
-    /// One ball's path through a pair of portals, measured as how far the ball's center is past the source ring's cut
-    /// line (negative before it); out of the target portal the ball is as far below the target cut line. The speed carries
-    /// across the joint:
-    /// <list type="bullet">
-    /// <item>Toward: from where the ball is when the move starts (the selection lift frozen there, no anticipation) until
-    /// it is all in the source ring, so all out of the target ring, over <see cref="BallAnimationConfig.WarpCross"/>. It
-    /// follows an ease-in, 0.121t³ + 0.576t² + 0.303t: it sets off at once, at 0.3 times its
-    /// average speed, and is pulled faster and faster, to 1.8 times it.</item>
-    /// <item>Fall: to the slot over the entry time, starting at the speed it came out with: a deep slot keeps speeding up,
-    /// like gravity; a near one slows down but still hits with at least the exit-keep share of that speed. A cubic with
-    /// both end speeds set, kept from overshooting.</item>
-    /// </list>
-    /// </summary>
+    // Distance past the source cut equals distance below the target cut; speed is continuous across both phases.
     public readonly struct WarpPath
     {
-        // The toward curve and its slope at the end.
+        // Ease-in: starts at 0.3x the average speed and ends at 1.8x (the end slope).
         private const float TowardA = 0.121f;
         private const float TowardB = 0.576f;
         private const float TowardC = 0.303f;
@@ -34,8 +21,7 @@ namespace Project.Contexts.Game.Sort
         public readonly float TowardTime;
         public readonly float FallTime;
 
-        /// <param name="past0">Where the ball starts, past the source cut line (usually negative: below it).</param>
-        /// <param name="fall">Distance from all out of the target ring down to the slot.</param>
+        // fall: distance from fully out of the target ring down to the slot.
         public WarpPath(float past0, float radius, float fall, float entry, BallAnimationConfig config)
         {
             _past0 = past0;
@@ -52,7 +38,6 @@ namespace Project.Contexts.Game.Sort
 
         public float Duration => TowardTime + FallTime;
 
-        /// <summary>Distance past the source cut line at <paramref name="time"/> seconds into the path.</summary>
         public float PastAt(float time)
         {
             if (time < TowardTime)
@@ -64,10 +49,7 @@ namespace Project.Contexts.Game.Sort
             return Mathf.Max(_past0, _radius) + Hermite(h, _fallStart * FallTime, _fall, _hitSpeed * FallTime);
         }
 
-        /// <summary>
-        /// Cubic from 0 to <paramref name="distance"/> over h in 0..1, with the start and end speeds given as distance per
-        /// whole span (speed times duration).
-        /// </summary>
+        // Speeds are given per whole span (speed times duration).
         private static float Hermite(float h, float startSpeed, float distance, float endSpeed)
         {
             var h2 = h * h;

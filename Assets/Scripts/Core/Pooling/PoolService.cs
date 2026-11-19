@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace Project.Core.Pooling
 {
-    /// <summary>Read-only view of a pool, used by the Pool Monitor window.</summary>
+    // Read-only view for the Pool Monitor window.
     public readonly struct PoolStats
     {
         public readonly string Name;
@@ -23,10 +23,7 @@ namespace Project.Core.Pooling
         }
     }
 
-    /// <summary>
-    /// Owns one <see cref="ComponentPool{T}"/> per prefab. Pools are created when a context warms them up,
-    /// or lazily on first spawn.
-    /// </summary>
+    // One pool per prefab, created on prewarm or lazily on first spawn.
     public sealed class PoolService : IDisposable
     {
         private const int DefaultMaxCount = 16;
@@ -39,7 +36,6 @@ namespace Project.Core.Pooling
             _root = root;
         }
 
-        /// <summary>Warms one prefab, e.g. from an item registry's warm/max counts.</summary>
         public void Prewarm(GameObject prefab, int warmCount, int maxCount)
         {
             if (prefab == null) return;
@@ -66,7 +62,6 @@ namespace Project.Core.Pooling
             UnityEngine.Object.Destroy(instance.gameObject);
         }
 
-        /// <summary>Returns every spawned object, e.g. when a level ends.</summary>
         public void DespawnAll()
         {
             foreach (var pool in _byPrefab.Values) pool.ReturnAll();

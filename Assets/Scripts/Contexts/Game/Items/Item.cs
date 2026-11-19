@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Project.Contexts.Game.Items
 {
-    /// <summary>Base of everything the board spawns from the pool: bottles, ball units and later blockers.</summary>
+    // Base for everything the board spawns from the pool.
     public abstract class Item : MonoBehaviour, IPoolable
     {
         public virtual void OnSpawn() { }

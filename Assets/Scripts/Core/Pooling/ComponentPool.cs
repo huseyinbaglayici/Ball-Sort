@@ -3,14 +3,13 @@ using UnityEngine;
 
 namespace Project.Core.Pooling
 {
-    /// <summary>Optional callbacks for pooled objects.</summary>
     public interface IPoolable
     {
         void OnSpawn();
         void OnDespawn();
     }
 
-    /// <summary>Added to every pooled instance; remembers its owner and its slot in the in-use array.</summary>
+    // Remembers the owning pool and the slot in its in-use array.
     [DisallowMultipleComponent]
     public sealed class PoolHandle : MonoBehaviour
     {
@@ -19,11 +18,7 @@ namespace Project.Core.Pooling
         internal IPoolable[] Callbacks;
     }
 
-    /// <summary>
-    /// Fixed-capacity pool for one prefab. Arrays are allocated up front, Get/Return are O(1)
-    /// (swap-remove from the in-use array), and the pool doubles its capacity with a warning
-    /// when <see cref="MaxCount"/> is exceeded, so a wrong config shows up in the log instead of a crash.
-    /// </summary>
+    // Get/Return are O(1) swap-remove; past MaxCount capacity doubles with a warning instead of failing.
     public sealed class ComponentPool<T> where T : Component
     {
         private readonly T _prefab;
@@ -82,7 +77,7 @@ namespace Project.Core.Pooling
             return item;
         }
 
-        /// <returns>false if the object is not currently spawned from this pool.</returns>
+        // False if the object is not currently spawned from this pool.
         public bool Return(T item)
         {
             if (item == null) return false;

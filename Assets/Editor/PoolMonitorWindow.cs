@@ -6,7 +6,6 @@ using UnityEngine;
 
 namespace Project.Editor
 {
-    /// <summary>Live view of every pool while playing: in use / available / capacity / grow count.</summary>
     public sealed class PoolMonitorWindow : EditorWindow
     {
         private readonly List<PoolStats> _stats = new();

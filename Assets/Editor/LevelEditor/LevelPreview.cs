@@ -4,7 +4,6 @@ using UnityEngine;
 
 namespace Project.Editor.LevelEditor
 {
-    /// <summary>Draws a level's bottles scaled into a rect and reports which slot was clicked.</summary>
     public static class LevelPreview
     {
         public readonly struct SlotHit

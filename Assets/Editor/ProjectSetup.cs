@@ -5,10 +5,7 @@ using UnityEngine;
 
 namespace Project.Editor
 {
-    /// <summary>
-    /// Applies the 2D mobile defaults (Gamma, portrait, IL2CPP, ARM64,
-    /// sorting layers) and the git-friendly editor settings. Safe to run more than once.
-    /// </summary>
+    // Safe to run more than once.
     public static class ProjectSetup
     {
         private const string TagManagerPath = "ProjectSettings/TagManager.asset";
@@ -16,7 +13,6 @@ namespace Project.Editor
         [MenuItem("Tools/Project Setup/Apply 2D Mobile Defaults")]
         public static void Apply()
         {
-            // Rendering and screen
             PlayerSettings.colorSpace = ColorSpace.Gamma;
             PlayerSettings.defaultInterfaceOrientation = UIOrientation.Portrait;
             PlayerSettings.allowedAutorotateToPortrait = false;
@@ -24,15 +20,12 @@ namespace Project.Editor
             PlayerSettings.allowedAutorotateToLandscapeLeft = false;
             PlayerSettings.allowedAutorotateToLandscapeRight = false;
 
-            // Android build
             PlayerSettings.SetScriptingBackend(NamedBuildTarget.Android, ScriptingImplementation.IL2CPP);
             PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64;
 
-            // Git-friendly project serialization
             EditorSettings.serializationMode = SerializationMode.ForceText;
             VersionControlSettings.mode = "Visible Meta Files";
 
-            // Sorting layers: Background, Default, Gameplay, FX, HUD, UI, Foreground
             EnsureSortingLayer("Background", 0);
             EnsureSortingLayer("Gameplay", int.MaxValue);
             EnsureSortingLayer("FX", int.MaxValue);

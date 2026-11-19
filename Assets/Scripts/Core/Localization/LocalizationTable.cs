@@ -4,10 +4,7 @@ using UnityEngine;
 
 namespace Project.Core.Localization
 {
-    /// <summary>
-    /// Key → text per language. One asset per language keeps diffs small and lets translators
-    /// work on separate files. <see cref="LanguageCode"/> uses ISO codes ("en", "tr").
-    /// </summary>
+    // One asset per language keeps diffs small and lets translators work on separate files.
     [CreateAssetMenu(menuName = "Project/Localization Table", fileName = "Localization_en")]
     public sealed class LocalizationTable : ScriptableObject
     {

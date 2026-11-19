@@ -4,18 +4,14 @@ using UnityEngine;
 
 namespace Project.Core.Events
 {
-    /// <summary>Marker for event payloads. Use small structs so raising an event does not allocate.</summary>
+    // Use small structs so raising does not allocate.
     public interface IEvent { }
 
-    /// <summary>
-    /// Typed, synchronous event bus: EventBus&lt;LevelWon&gt;.Raise(new LevelWon(...)).
-    /// Handlers may subscribe or unsubscribe while the event is being raised, and may raise it again.
-    /// </summary>
+    // Synchronous. Handlers may subscribe, unsubscribe or raise again during a raise.
     public static class EventBus<T> where T : struct, IEvent
     {
         private static readonly List<Action<T>> Handlers = new();
-        // One handler snapshot per nesting depth, so a handler that raises the same event does not disturb the outer
-        // raise; reused, so raising does not allocate.
+        // One reused handler snapshot per nesting depth, so a nested raise does not disturb the outer one.
         private static readonly List<List<Action<T>>> Snapshots = new();
         private static int _depth;
 
@@ -56,7 +52,7 @@ namespace Project.Core.Events
         }
     }
 
-    /// <summary>Clears every bus at the start of Play (needed when Editor domain reload is disabled).</summary>
+    // Needed when Editor domain reload is disabled.
     internal static class EventBusReset
     {
         private static readonly List<Action> Clearers = new();

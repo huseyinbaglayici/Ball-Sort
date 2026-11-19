@@ -5,17 +5,11 @@ using UnityEngine;
 
 namespace Project.Contexts.Game.Items
 {
-    /// <summary>
-    /// The tube's reactions to what happens to it (selected, refused, a ball leaving, entering, landing, completed):
-    /// short poses that add up instead of cutting each other. They move the art and the resting balls together,
-    /// squashing from the tube's bottom; the tube root never moves, so a ball in flight under it is not pulled around.
-    /// A pose is an offset from rest: (scale x, scale y, drop, sideways shift).
-    /// </summary>
+    // Additive poses from the tube's bottom; the root never moves so flying balls under it stay put.
     public sealed class TubeReactions
     {
-        // Share of the locked press spent pressing; the rest is the release.
         private const float LockedPressShare = 0.4f;
-        // After the launch kick the tube springs up by this share of the kick's drop.
+        // Share of the launch kick's drop the tube springs back up.
         private const float RecoilSpringBack = 0.3f;
 
         private readonly List<Reaction> _running = new();
@@ -31,19 +25,17 @@ namespace Project.Contexts.Game.Items
             _content = content;
         }
 
-        /// <summary>Tapped to pick its balls: a quick press down, as if pushing them up, and a release.</summary>
         public void Select(BallAnimationConfig config) =>
             Add(0f, 1f, Vector4.zero,
                 (Pose(config.SelectPress - Vector2.one, config.SelectDrop), config.SelectPressDuration, config.SquashCurve),
                 (Vector4.zero, config.SelectReleaseDuration, config.RecoverCurve));
 
-        /// <summary>Its lifted balls settle back in after <paramref name="delay"/>: a small catch.</summary>
         public void Catch(BallAnimationConfig config, float delay) =>
             Add(delay, 1f, Vector4.zero,
                 (Pose(config.CatchSquash - Vector2.one, 0f), config.CatchInDuration, config.SquashCurve),
                 (Vector4.zero, config.CatchOutDuration, config.RecoverCurve));
 
-        /// <summary>Tapped as a target that cannot take the selected balls: a short sideways "no".</summary>
+        // Target can't take the selected balls.
         public void Reject(BallAnimationConfig config)
         {
             var amount = config.RejectShake;
@@ -52,16 +44,13 @@ namespace Project.Contexts.Game.Items
                 u => new Vector4(0f, 0f, 0f, amount * Mathf.Sin(Mathf.PI * 2f * cycles * u) * (1f - u)));
         }
 
-        /// <summary>Tapped while it cannot be picked (empty, completed or busy): a small press, nothing more.</summary>
+        // Tapped while empty, completed or busy.
         public void Locked(BallAnimationConfig config) =>
             Add(0f, 1f, Vector4.zero,
                 (Pose(config.LockedPress - Vector2.one, 0f), config.LockedDuration * LockedPressShare, config.SquashCurve),
                 (Vector4.zero, config.LockedDuration * (1f - LockedPressShare), config.RecoverCurve));
 
-        /// <summary>
-        /// A ball shoots out of the mouth: the tube kicks back down and wide, springs up and settles. Later balls of the
-        /// same move kick weaker (<paramref name="strength"/>).
-        /// </summary>
+        // Later balls of the same move pass a lower strength.
         public void Launch(BallAnimationConfig config, float strength) =>
             Add(0f, strength, Vector4.zero,
                 (Pose(config.RecoilSquash - Vector2.one, config.RecoilDrop), config.RecoilHit, config.SquashCurve),
@@ -69,19 +58,16 @@ namespace Project.Contexts.Game.Items
                     config.StretchCurve),
                 (Vector4.zero, config.RecoilRecover, config.RecoverCurve));
 
-        /// <summary>A ball goes into the mouth: the tube widens for a moment, like a gulp.</summary>
         public void Swallow(BallAnimationConfig config, float strength) =>
             Add(0f, strength, Vector4.zero,
                 (new Vector4(config.SwallowWiden, 0f, 0f, 0f), config.SwallowIn, config.LiftCurve),
                 (Vector4.zero, config.SwallowOut, config.RecoverCurve));
 
-        /// <summary>A ball lands in its slot: a small impact squash. Later balls of the same move land softer.</summary>
         public void Impact(BallAnimationConfig config, float strength) =>
             Add(0f, strength, Vector4.zero,
                 (Pose(config.ImpactSquash - Vector2.one, 0f), config.ImpactIn, config.SquashCurve),
                 (Vector4.zero, config.ImpactOut, config.RecoverCurve));
 
-        /// <summary>Completed: after the last impact settles, a small victory hop, landing with a squash.</summary>
         public void Complete(BallAnimationConfig config) =>
             Add(config.CompleteDelay, 1f, Vector4.zero,
                 (Pose(Vector2.zero, -config.CompleteHop), config.CompleteRise, config.LiftCurve),
@@ -89,7 +75,7 @@ namespace Project.Contexts.Game.Items
                 (Pose(config.CompleteSquash - Vector2.one, 0f), config.CompleteSquashIn, config.SquashCurve),
                 (Vector4.zero, config.CompleteSquashOut, config.RecoverCurve));
 
-        /// <summary>Applies the sum of the running reactions; finished ones drop out. Call once per frame.</summary>
+        // Call once per frame.
         public void Tick()
         {
             if (_running.Count == 0 && !_deformed) return;
@@ -109,7 +95,6 @@ namespace Project.Contexts.Game.Items
             Apply(pose);
         }
 
-        /// <summary>Stops every reaction and puts the tube back at rest.</summary>
         public void Clear()
         {
             _running.Clear();
@@ -118,10 +103,7 @@ namespace Project.Contexts.Game.Items
 
         private static Vector4 Pose(Vector2 scaleOffset, float drop) => new(scaleOffset.x, scaleOffset.y, drop, 0f);
 
-        /// <summary>
-        /// One reaction, starting after <paramref name="delay"/>: from <paramref name="from"/> through each pose in turn,
-        /// every step with its own time and curve; the last pose should be rest. Scaled by <paramref name="strength"/>.
-        /// </summary>
+        // Steps through each pose with its own duration and curve; the last pose should be rest.
         private void Add(float delay, float strength, Vector4 from,
             params (Vector4 pose, float duration, AnimationCurve curve)[] steps)
         {
@@ -150,10 +132,6 @@ namespace Project.Contexts.Game.Items
             _running.Add(new Reaction(Time.time + Mathf.Max(delay, 0f), length, at));
         }
 
-        /// <summary>
-        /// Deforms the art and the resting balls from the tube's bottom: scaled, pushed down by the drop and shifted
-        /// sideways.
-        /// </summary>
         private void Apply(Vector4 pose)
         {
             var scale = new Vector3(1f + pose.x, 1f + pose.y, 1f);

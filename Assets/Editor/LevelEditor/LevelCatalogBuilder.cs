@@ -4,10 +4,7 @@ using UnityEngine;
 
 namespace Project.Editor.LevelEditor
 {
-    /// <summary>
-    /// Groups the level assets by number into the <see cref="LevelCatalog"/> the game reads (see <see cref="LevelGrouping"/>).
-    /// Names follow the importer: Level_007 (one layout) or Level_007_v1, Level_007_v2 (several layouts).
-    /// </summary>
+    // Names: Level_007 for one layout, Level_007_v1, Level_007_v2 for several.
     public static class LevelCatalogBuilder
     {
         public const string CatalogPath = "Assets/Configs/LevelCatalog.asset";

@@ -7,10 +7,7 @@ using UnityEngine.UI;
 
 namespace Project.Contexts.Application
 {
-    /// <summary>
-    /// The Boot scene (build index 0). Loads Main in single mode and shows its progress; it survives that load,
-    /// waits until Main has opened its first screen, then fades out and destroys itself.
-    /// </summary>
+    // Boot scene: loads Main, waits for its first screen, then fades out and destroys itself.
     public sealed class Splash : MonoBehaviour
     {
         [SerializeField] private CanvasGroup _group;

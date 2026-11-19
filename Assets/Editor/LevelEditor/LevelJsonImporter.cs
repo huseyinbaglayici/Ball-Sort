@@ -5,10 +5,7 @@ using UnityEngine;
 
 namespace Project.Editor.LevelEditor
 {
-    /// <summary>
-    /// Parses the levels JSON (levels[] → variants[] → bottles[] → slots[]) into unsaved <see cref="LevelData"/> objects.
-    /// A null slot means empty. Fields the game does not model (outItems, levelOrder, flags) are ignored.
-    /// </summary>
+    // A null slot is empty; outItems, levelOrder and flags are ignored.
     public static class LevelJsonImporter
     {
         public readonly struct ImportedLevel

@@ -3,10 +3,7 @@ using System.Collections.Generic;
 
 namespace Project.Core.Services
 {
-    /// <summary>
-    /// Application-wide service registry. The Bootstrapper registers every service explicitly,
-    /// in order, so the dependency graph is readable in one place (no reflection, IL2CPP-safe).
-    /// </summary>
+    // Registered explicitly and in order: no reflection, so it is IL2CPP-safe.
     public static class Services
     {
         private static readonly Dictionary<Type, object> Registry = new();
@@ -44,7 +41,7 @@ namespace Project.Core.Services
             Registry.Clear();
         }
 
-        // Domain reload can be disabled in the Editor; make sure statics start clean every Play.
+        // Editor domain reload may be disabled, so reset statics every Play.
         [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetOnPlay() => Registry.Clear();
     }
