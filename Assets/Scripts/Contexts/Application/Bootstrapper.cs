@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using Project.Common.UI;
 using Project.Common.UI.PopUps;
+using Project.Contexts.Application.Economy;
+using Project.Contexts.Game;
 using Project.Contexts.Main;
 using Project.Core.Audio;
 using Project.Core.Debugging;
@@ -15,22 +17,17 @@ using UnityEngine.SceneManagement;
 
 namespace Project.Contexts.Application
 {
-    /// <summary>
-    /// Composition root in the Main scene. Creates every service in dependency order and registers it before any
-    /// other object in the scene wakes up, then opens the first screen. Main is never unloaded, so everything here
-    /// (camera, EventSystem, popup canvas, audio, pools) lives for the whole session.
-    /// </summary>
+    // Composition root: registers every service first; Main is never unloaded, so they live all session.
     [DefaultExecutionOrder(-1000)]
     public sealed class Bootstrapper : MonoBehaviour
     {
         [Header("Scene objects")]
-        [SerializeField] private AudioService _audio;
+        [SerializeField] private AudioManager _audio;
         [SerializeField] private LoadingOverlay _loadingOverlay;
         [SerializeField] private Transform _popupRoot;
         [SerializeField] private Transform _poolRoot;
 
         [Header("Data")]
-        [SerializeField] private AudioLibrary _audioLibrary;
         [SerializeField] private List<LocalizationTable> _localizationTables = new();
         [SerializeField] private int _targetFrameRate = 60;
 
@@ -39,17 +36,30 @@ namespace Project.Contexts.Application
             UnityEngine.Application.targetFrameRate = _targetFrameRate;
 
             var save = new SaveService();
-            var settings = new SettingsService(save);
-            _audio.Initialize(_audioLibrary, settings.Model.MusicMuted, settings.Model.SfxMuted);
+            _audio.Initialize();
+            var haptics = new HapticModule();
+            var localization = new LocalizationService(_localizationTables);
 
             Services.Register(save);
-            Services.Register(settings);
             Services.Register(_audio);
-            Services.Register(new HapticService(settings.Model.HapticsEnabled));
-            Services.Register(new LocalizationService(_localizationTables, settings.Model.Language));
+            Services.Register(haptics);
+            Services.Register(localization);
+            Services.Register(new SettingsService(save, _audio, haptics, localization));
             Services.Register(new PoolService(_poolRoot));
-            Services.Register(new PopupService(_popupRoot));
-            Services.Register(new ProgressService(save));
+            Services.Register(new PopupService(_popupRoot, _audio));
+
+            // Campaign meta and economy share one save file so a win is written in one go.
+            var playerData = new PlayerData(save);
+            var wallet = new WalletService(playerData);
+            var boosters = new BoosterInventory(playerData, wallet);
+            var lives = new LivesService(playerData);
+            Services.Register(playerData);
+            Services.Register(wallet);
+            Services.Register(boosters);
+            Services.Register(lives);
+            Services.Register(new MonetizationService(playerData, lives));
+            Services.Register(new ProgressService(playerData, wallet, boosters, lives));
+            Services.Register(new ContinueService(playerData, wallet));
             Services.Register(_loadingOverlay);
 
             RegisterDebugActions();
@@ -57,7 +67,6 @@ namespace Project.Contexts.Application
 
         private void Start()
         {
-            // A new player (level 1) goes straight into the first level; everyone else lands on Home.
             var first = Services.Get<ProgressService>().Level == 1 ? MainState.Game : MainState.Home;
             Services.Get<MainFlow>().Begin(first);
         }
@@ -67,16 +76,28 @@ namespace Project.Contexts.Application
         private static void RegisterDebugActions()
         {
             DebugPanel.AddAction("Go Home", () => _ = Services.Get<MainFlow>().GoHomeAsync());
-            DebugPanel.AddAction("Add 100 coins", () => Services.Get<ProgressService>().AddCoins(100));
+            DebugPanel.AddAction("Add 100 coins", () => Services.Get<WalletService>().Add(100));
+            DebugPanel.AddAction("Spend a life", () => Services.Get<LivesService>().TrySpend());
+            DebugPanel.AddAction("Unlimited lives 30 min", () => Services.Get<LivesService>().GrantUnlimited(30));
+            DebugPanel.AddAction("Toggle rewarded ad failure", () =>
+            {
+                var ads = Services.Get<MonetizationService>();
+                ads.SimulateRewardedFailure = !ads.SimulateRewardedFailure;
+                Debug.Log($"[Ads] Rewarded failure: {ads.SimulateRewardedFailure}");
+            });
+            DebugPanel.AddAction("Grant No Ads", () => Services.Get<MonetizationService>().GrantNoAds());
+            DebugPanel.AddAction("Toggle ad group A/B", () =>
+            {
+                var ads = Services.Get<MonetizationService>();
+                ads.SetGroup(ads.Group.Name == "A" ? 1 : 0);
+                Debug.Log($"[Ads] Interstitial group {ads.Group.Name}: from L{ads.Group.StartLevel}, " +
+                          $"{ads.Group.Points} wins and {ads.Group.ActiveSeconds} s between ads.");
+            });
             DebugPanel.AddAction("Reset progress", () => Services.Get<ProgressService>().ResetProgress());
             DebugPanel.AddAction("Toggle language", () =>
             {
-                var loc = Services.Get<LocalizationService>();
-                var next = loc.LanguageCode == "en" ? "tr" : "en";
-                loc.SetLanguage(next);
-                var settings = Services.Get<SettingsService>();
-                settings.Model.Language = next;
-                settings.Save();
+                var next = Services.Get<LocalizationService>().LanguageCode == "en" ? "tr" : "en";
+                Services.Get<SettingsService>().SetLanguage(next);
             });
             DebugPanel.AddAction("Log loaded scenes", () =>
             {

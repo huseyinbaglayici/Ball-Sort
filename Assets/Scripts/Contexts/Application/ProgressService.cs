@@ -1,68 +1,172 @@
 using System;
+using System.Collections.Generic;
+using Project.Contexts.Application.Economy;
 using Project.Core.Events;
-using Project.Core.Save;
 
 namespace Project.Contexts.Application
 {
-    [Serializable]
-    public sealed class ProgressModel
+    // Empty (FirstWin false) for a non-campaign win.
+    public readonly struct LevelResult
     {
-        public int Version = 1;
-        public int Level = 1;
-        public int Coins;
+        public readonly int Level;
+        public readonly bool FirstWin;
+        public readonly LevelDifficulty Difficulty;
+        public readonly int BaseCoins;
+        public readonly RoadReward Road;
+        public readonly int MetaPeriod;
+        public readonly bool MetaChanged;
+        public readonly bool CampaignFinal;
+
+        public LevelResult(int level, bool firstWin, int baseCoins, RoadReward road, int metaPeriod, bool metaChanged,
+            bool campaignFinal)
+        {
+            Level = level;
+            FirstWin = firstWin;
+            Difficulty = CampaignRules.DifficultyOf(level);
+            BaseCoins = baseCoins;
+            Road = road;
+            MetaPeriod = metaPeriod;
+            MetaChanged = metaChanged;
+            CampaignFinal = campaignFinal;
+        }
+
+        public int TotalCoins => BaseCoins + Road.Coins;
     }
 
-    public readonly struct CoinsChanged : IEvent
-    {
-        public readonly int Coins;
-        public CoinsChanged(int coins) => Coins = coins;
-    }
-
-    /// <summary>
-    /// Player progress (level, coins), saved after every change, and the tries of the current level in this session.
-    /// </summary>
+    // The campaign is linear, so levels won are 1 to Level - 1; replays and undo never change it.
     public sealed class ProgressService
     {
-        private const string Key = "progress";
-        private readonly SaveService _save;
-        private readonly ProgressModel _model;
+        private readonly PlayerData _data;
+        private readonly WalletService _wallet;
+        private readonly BoosterInventory _boosters;
+        private readonly LivesService _lives;
+        private readonly Func<int, int, int> _random;
+        private int _doubleLevel;
 
-        public ProgressService(SaveService save)
+        // random: int in [min, max); Unity's Random.Range by default.
+        public ProgressService(PlayerData data, WalletService wallet, BoosterInventory boosters, LivesService lives,
+            Func<int, int, int> random = null)
         {
-            _save = save;
-            _model = save.Load<ProgressModel>(Key);
+            if (random == null) random = (min, max) => UnityEngine.Random.Range(min, max);
+            _random = random;
+            _data = data;
+            _wallet = wallet;
+            _boosters = boosters;
+            _lives = lives;
+            _boosters.GrantOpenings(Level);
         }
 
-        public int Level => _model.Level;
-        public int Coins => _model.Coins;
+        public int Level => _data.Model.Level;
 
-        /// <summary>0 for the first try of the current level, +1 for every failed or restarted try. Not saved.</summary>
-        public int Attempt { get; private set; }
+        public int LevelsWon => Level - 1;
+        public int MetaPeriod => CampaignRules.MetaPeriod(LevelsWon);
+        public bool IsCampaignFinished => CampaignRules.IsCampaignFinal(LevelsWon);
 
-        /// <summary>The current try is over without a win; the next one is a retry.</summary>
-        public void FailAttempt() => Attempt++;
+        public bool IsUnlocked(Feature feature) => LevelsWon >= CampaignRules.UnlockLevel(feature);
 
-        public void CompleteLevel(int reward)
+        // 0 on the first try, +1 per try that ended without a win.
+        public int Attempt => _data.Model.RetryCount;
+
+        public void FailAttempt()
         {
-            _model.Level++;
-            Attempt = 0;
-            AddCoins(reward);
+            _data.Model.RetryCount++;
+            _data.Save();
         }
 
-        public void AddCoins(int amount)
+        // A new try starts with every PickVariant.
+        public int TryId => _data.Model.TryId;
+
+        // Try n uses variant n; once all were played, a random one other than the last.
+        public int PickVariant(int variantCount)
         {
-            _model.Coins = Math.Max(0, _model.Coins + amount);
-            _save.Save(Key, _model);
-            EventBus<CoinsChanged>.Raise(new CoinsChanged(_model.Coins));
+            var model = _data.Model;
+            model.TryId++;
+            if (variantCount <= 0)
+            {
+                _data.Save();
+                return 0;
+            }
+
+            int pick;
+            if (model.RetryCount < variantCount)
+            {
+                pick = model.RetryCount;
+            }
+            else
+            {
+                var pool = new List<int>(variantCount);
+                for (var i = 0; i < variantCount; i++) pool.Add(i);
+                pool.Remove(model.LastVariant);
+                pick = pool.Count == 0 ? 0 : pool[_random(0, 100) % pool.Count];
+            }
+
+            model.LastVariant = pick;
+            _data.Save();
+            return pick;
         }
 
+        // Coins, road reward, next level and opening boosters go in one save before LevelCompleted.
+        public LevelResult CompleteLevel()
+        {
+            var level = Level;
+            if (!CampaignRules.IsCampaignLevel(level)) return default;
+
+            var periodBefore = MetaPeriod;
+            var road = CampaignRules.RoadRewardAt(level);
+            using (_data.Batch())
+            {
+                _data.Model.Level = level + 1;
+                _data.Model.RetryCount = 0;
+                _data.Model.LastVariant = 0;
+                _wallet.Add(CampaignRules.FirstWinCoins(level) + road.Coins);
+                foreach (var type in CampaignRules.AllBoosters) _boosters.Add(type, road.Boosters(type));
+                _lives.GrantUnlimited(road.UnlimitedLifeMinutes);
+                _boosters.GrantOpenings(Level);
+            }
+
+            var final = IsCampaignFinished;
+            var result = new LevelResult(level, true, CampaignRules.FirstWinCoins(level), road, MetaPeriod,
+                MetaPeriod != periodBefore || final, final);
+            _doubleLevel = level >= CampaignRules.UnlockLevel(Feature.RewardedDouble) ? level : 0;
+
+            EventBus<LevelCompleted>.Raise(new LevelCompleted(result));
+            return result;
+        }
+
+        // Offered once, from level 16, for base coins only.
+        public bool CanDoubleReward(in LevelResult result) => result.FirstWin && _doubleLevel == result.Level;
+
+        public bool ClaimDoubleReward(in LevelResult result)
+        {
+            if (!CanDoubleReward(result)) return false;
+            _doubleLevel = 0;
+            _wallet.Add(result.BaseCoins);
+            return true;
+        }
+
+        // Debug: back to a new player's save.
         public void ResetProgress()
         {
-            _model.Level = 1;
-            _model.Coins = 0;
-            Attempt = 0;
-            _save.Save(Key, _model);
-            EventBus<CoinsChanged>.Raise(new CoinsChanged(0));
+            _doubleLevel = 0;
+            var model = _data.Model;
+            using (_data.Batch())
+            {
+                model.Level = 1;
+                model.RetryCount = 0;
+                model.LastVariant = 0;
+                model.BoosterStock = new int[3];
+                model.OpeningGranted = new bool[3];
+                model.Lives = new LivesModel();
+                model.NoAds = false;
+                model.FirstInterstitialSeen = false;
+                _wallet.TrySpend(_wallet.Coins);
+                _wallet.Add(CampaignRules.StartingCoins);
+                _lives.Refresh();
+                _boosters.GrantOpenings(Level);
+            }
+            foreach (var type in CampaignRules.AllBoosters)
+                EventBus<BoosterStockChanged>.Raise(new BoosterStockChanged(type, _boosters.Stock(type)));
+            EventBus<LivesChanged>.Raise(new LivesChanged(_lives.Count, _lives.IsUnlimited));
         }
     }
 }

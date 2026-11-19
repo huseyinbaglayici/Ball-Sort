@@ -10,10 +10,7 @@ namespace Project.Core.Localization
         public LanguageChanged(string languageCode) => LanguageCode = languageCode;
     }
 
-    /// <summary>
-    /// Resolves keys for the current language and falls back to the first table (default language),
-    /// then to the key itself, so a missing translation is visible but never blank.
-    /// </summary>
+    // Falls back to the first table, then to the key, so a missing translation is never blank.
     public sealed class LocalizationService
     {
         private readonly Dictionary<string, Dictionary<string, string>> _tables = new();
@@ -23,14 +20,15 @@ namespace Project.Core.Localization
 
         public string LanguageCode { get; private set; }
 
-        public LocalizationService(IReadOnlyList<LocalizationTable> tables, string preferredCode)
+        // Starts in the device language, or the first table's when there is none for it.
+        public LocalizationService(IReadOnlyList<LocalizationTable> tables)
         {
             foreach (var table in tables)
                 if (table != null) _tables[table.LanguageCode] = table.BuildLookup();
 
             _fallbackCode = tables.Count > 0 && tables[0] != null ? tables[0].LanguageCode : "en";
             _tables.TryGetValue(_fallbackCode, out _fallback);
-            SetLanguage(string.IsNullOrEmpty(preferredCode) ? SystemLanguageCode() : preferredCode, raise: false);
+            SetLanguage(SystemLanguageCode(), raise: false);
         }
 
         public string Get(string key)

@@ -15,7 +15,7 @@ MonoBehaviour:
   _languageCode: tr
   _entries:
   - Key: home.title
-    Value: Template 2D
+    Value: Orbit Sort
   - Key: home.play
     Value: Oyna
   - Key: home.level
@@ -36,3 +36,135 @@ MonoBehaviour:
     Value: Devam
   - Key: common.retry
     Value: Tekrar dene
+  - Key: common.home
+    Value: 'Ana ekran'
+  - Key: common.ok
+    Value: 'Tamam'
+  - Key: game.restart
+    Value: 'Yeniden'
+  - Key: lives.full
+    Value: 'Can {0}/{1}'
+  - Key: lives.refill
+    Value: 'Can {0}/{1} · {2}'
+  - Key: lives.unlimited
+    Value: 'Sınırsız can · {0}'
+  - Key: lives.out_title
+    Value: 'Canın kalmadı'
+  - Key: lives.out_body
+    Value: 'Sonraki can {0} sonra'
+  - Key: booster.undo
+    Value: 'Geri Al'
+  - Key: booster.extra_tube
+    Value: 'Ekstra Tüp'
+  - Key: booster.free_move
+    Value: 'Serbest Hamle'
+  - Key: reward.coins
+    Value: '+{0} coin'
+  - Key: reward.unlimited
+    Value: '{0} dk sınırsız can'
+  - Key: level.hard
+    Value: 'Zor'
+  - Key: level.super_hard
+    Value: 'Çok Zor'
+  - Key: result.base
+    Value: 'Bölüm ödülü: +{0}'
+  - Key: result.road
+    Value: 'Yol ödülü: {0}'
+  - Key: result.double
+    Value: '2x coin (reklam)'
+  - Key: meta.period
+    Value: 'Dönem {0} · sonraki {1}. bölümden sonra'
+  - Key: meta.period_title
+    Value: 'Yeni dönem!'
+  - Key: meta.period_body
+    Value: 'Dönem {0} başlıyor.'
+  - Key: meta.final_title
+    Value: 'Kampanya tamamlandı'
+  - Key: meta.final_body
+    Value: '100 bölümün hepsi kazanıldı.'
+  - Key: home.starter_pack
+    Value: 'Başlangıç paketi'
+  - Key: home.challenge
+    Value: 'Challenge'
+  - Key: offer.starter_title
+    Value: 'Başlangıç paketi'
+  - Key: offer.preview_body
+    Value: 'Mağaza önizlemesi: bu sürümde satın alma kapalı.'
+  - Key: challenge.title
+    Value: 'Haftalık challenge'
+  - Key: challenge.soon_body
+    Value: 'Yakında.'
+  - Key: lives.ad
+    Value: '+1 can (reklam)'
+  - Key: fail.bomb
+    Value: 'Bomba patladı'
+  - Key: fail.no_move
+    Value: 'Hamle kalmadı'
+  - Key: fail.checking
+    Value: 'Kurtarma aranıyor…'
+  - Key: fail.no_offer
+    Value: 'Bu tahta için doğrulanmış kurtarma yok.'
+  - Key: undo.offer_stock
+    Value: 'Geri Al · {0} hak'
+  - Key: undo.offer_coins
+    Value: 'Geri Al · {0} gold'
+  - Key: continue.offer
+    Value: '{0} gold · 4''lü tüp{1}'
+  - Key: continue.bomb
+    Value: ' + {0} bombaya +{1}'
+  - Key: continue.not_enough
+    Value: 'Devam için {0} gold gerekir'
+  - Key: game.restart_life
+    Value: 'Yeniden · 1 can'
+  - Key: color.0
+    Value: 'kırmızı'
+  - Key: color.1
+    Value: 'mavi'
+  - Key: color.2
+    Value: 'yeşil'
+  - Key: color.3
+    Value: 'sarı'
+  - Key: color.4
+    Value: 'mor'
+  - Key: color.5
+    Value: 'turuncu'
+  - Key: color.6
+    Value: 'turkuaz'
+  - Key: color.7
+    Value: 'pembe'
+  - Key: color.8
+    Value: 'bordo'
+  - Key: color.9
+    Value: 'beyaz'
+  - Key: color.10
+    Value: 'koyu yeşil'
+  - Key: color.11
+    Value: 'kahverengi'
+  - Key: booster.no_coins_title
+    Value: 'Yetersiz gold'
+  - Key: booster.no_coins_body
+    Value: 'Bu booster için {0} gold gerekiyor.'
+  - Key: nav.home
+    Value: 'Ana Ekran'
+  - Key: nav.soon_title
+    Value: 'Yakında'
+  - Key: nav.soon_body
+    Value: 'Bu ekran henüz oyunda yok.'
+  - Key: quit.title
+    Value: 'Emin misiniz?'
+  - Key: quit.body
+    Value: '1 can kaybedeceksiniz!'
+  - Key: quit.exit
+    Value: 'Çıkış Yap'
+  - Key: result.failed
+    Value: 'Seviye Başarısız Oldu!'
+  - Key: result.complete
+    Value: 'Seviye Tamamlandı!'
+  - Key: result.rewards
+    Value: 'Ödüller:'
+  - Key: lives.full_short
+    Value: 'Dolu'
+  - Key: road.title
+    Value: 'Yol ödülü'
+  - Key: road.body
+    Value: '{0}. seviyeyi geç, kazan: {1}'

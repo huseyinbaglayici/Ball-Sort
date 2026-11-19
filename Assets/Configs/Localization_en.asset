@@ -15,7 +15,7 @@ MonoBehaviour:
   _languageCode: en
   _entries:
   - Key: home.title
-    Value: Template 2D
+    Value: Orbit Sort
   - Key: home.play
     Value: Play
   - Key: home.level
@@ -36,3 +36,135 @@ MonoBehaviour:
     Value: Continue
   - Key: common.retry
     Value: Try again
+  - Key: common.home
+    Value: 'Home'
+  - Key: common.ok
+    Value: 'OK'
+  - Key: game.restart
+    Value: 'Restart'
+  - Key: lives.full
+    Value: 'Lives {0}/{1}'
+  - Key: lives.refill
+    Value: 'Lives {0}/{1} · {2}'
+  - Key: lives.unlimited
+    Value: 'Unlimited lives · {0}'
+  - Key: lives.out_title
+    Value: 'Out of lives'
+  - Key: lives.out_body
+    Value: 'Next life in {0}'
+  - Key: booster.undo
+    Value: 'Undo'
+  - Key: booster.extra_tube
+    Value: 'Extra Tube'
+  - Key: booster.free_move
+    Value: 'Free Move'
+  - Key: reward.coins
+    Value: '+{0} coins'
+  - Key: reward.unlimited
+    Value: '{0} min unlimited lives'
+  - Key: level.hard
+    Value: 'Hard'
+  - Key: level.super_hard
+    Value: 'Super Hard'
+  - Key: result.base
+    Value: 'Level reward: +{0}'
+  - Key: result.road
+    Value: 'Road reward: {0}'
+  - Key: result.double
+    Value: '2x coins (ad)'
+  - Key: meta.period
+    Value: 'Period {0} · next after level {1}'
+  - Key: meta.period_title
+    Value: 'New period!'
+  - Key: meta.period_body
+    Value: 'Period {0} begins.'
+  - Key: meta.final_title
+    Value: 'Campaign complete'
+  - Key: meta.final_body
+    Value: 'All 100 levels won.'
+  - Key: home.starter_pack
+    Value: 'Starter pack'
+  - Key: home.challenge
+    Value: 'Challenge'
+  - Key: offer.starter_title
+    Value: 'Starter pack'
+  - Key: offer.preview_body
+    Value: 'Store preview: purchases are off in this build.'
+  - Key: challenge.title
+    Value: 'Weekly challenge'
+  - Key: challenge.soon_body
+    Value: 'Coming soon.'
+  - Key: lives.ad
+    Value: '+1 life (ad)'
+  - Key: fail.bomb
+    Value: 'A bomb exploded'
+  - Key: fail.no_move
+    Value: 'No moves left'
+  - Key: fail.checking
+    Value: 'Looking for a rescue…'
+  - Key: fail.no_offer
+    Value: 'No verified rescue for this board.'
+  - Key: undo.offer_stock
+    Value: 'Undo · {0} left'
+  - Key: undo.offer_coins
+    Value: 'Undo · {0} gold'
+  - Key: continue.offer
+    Value: '{0} gold · 4-slot tube{1}'
+  - Key: continue.bomb
+    Value: ' + {0} bomb +{1}'
+  - Key: continue.not_enough
+    Value: 'Continue needs {0} gold'
+  - Key: game.restart_life
+    Value: 'Restart · 1 life'
+  - Key: color.0
+    Value: 'red'
+  - Key: color.1
+    Value: 'blue'
+  - Key: color.2
+    Value: 'green'
+  - Key: color.3
+    Value: 'yellow'
+  - Key: color.4
+    Value: 'purple'
+  - Key: color.5
+    Value: 'orange'
+  - Key: color.6
+    Value: 'turquoise'
+  - Key: color.7
+    Value: 'pink'
+  - Key: color.8
+    Value: 'wine'
+  - Key: color.9
+    Value: 'white'
+  - Key: color.10
+    Value: 'dark green'
+  - Key: color.11
+    Value: 'brown'
+  - Key: booster.no_coins_title
+    Value: 'Not enough gold'
+  - Key: booster.no_coins_body
+    Value: 'You need {0} gold for this booster.'
+  - Key: nav.home
+    Value: 'Home'
+  - Key: nav.soon_title
+    Value: 'Coming soon'
+  - Key: nav.soon_body
+    Value: 'This screen is not in the game yet.'
+  - Key: quit.title
+    Value: 'Are you sure?'
+  - Key: quit.body
+    Value: 'You will lose 1 life!'
+  - Key: quit.exit
+    Value: 'Exit'
+  - Key: result.failed
+    Value: 'Level Failed!'
+  - Key: result.complete
+    Value: 'Level Complete!'
+  - Key: result.rewards
+    Value: 'Rewards:'
+  - Key: lives.full_short
+    Value: 'Full'
+  - Key: road.title
+    Value: 'Road reward'
+  - Key: road.body
+    Value: 'Win level {0} to get: {1}'
