@@ -34,3 +34,367 @@ MonoBehaviour:
   - Id: music_game
     Clip: {fileID: 0}
     Volume: 1
+  _events:
+  - Id: select
+    Bus: Board
+    Clips:
+    - {fileID: 8300000, guid: d73bc6f9d64ea524fb8c7e0ea6043e72, type: 3}
+    - {fileID: 8300000, guid: 06aad9b870115fc46b364029979001b1, type: 3}
+    - {fileID: 8300000, guid: 2a2f2f3436258ed419277bfed0761da8, type: 3}
+    - {fileID: 8300000, guid: 3cb770c71713c104e9186cce2c1352d6, type: 3}
+    - {fileID: 8300000, guid: 02123963739a73c43a9f59a03ff3f1ad, type: 3}
+  - Id: land
+    Bus: Board
+    Clips:
+    - {fileID: 8300000, guid: dbd78455db2bf2a42b12b3f34a2fe6eb, type: 3}
+    - {fileID: 8300000, guid: ca119ea4f98a13c44b4bd8cdd6d82004, type: 3}
+    - {fileID: 8300000, guid: d5cc50574ce88da4a8156ecd60de18bc, type: 3}
+    - {fileID: 8300000, guid: d1f287179d3a85a41913562fed12b442, type: 3}
+    - {fileID: 8300000, guid: 4d8ae7a25af56d44fa87a3a8b492d6a5, type: 3}
+  - Id: land_last
+    Bus: Board
+    Clips:
+    - {fileID: 8300000, guid: 0e91cf730441c5d4fb17da69cc98c36c, type: 3}
+    - {fileID: 8300000, guid: 3a9e3ad20e10d4b4c9edc404e4befc47, type: 3}
+    - {fileID: 8300000, guid: 520ec89454967a148900f2ce4fe21f63, type: 3}
+    - {fileID: 8300000, guid: ec7a703b9a1e83b48a3ded1b6a9f8bda, type: 3}
+    - {fileID: 8300000, guid: 044b8ea05da0a7f42a79d85a6c98edde, type: 3}
+  - Id: invalid
+    Bus: Board
+    Clips:
+    - {fileID: 8300000, guid: d2da94dd56284da4a953a3a09d7bd2a3, type: 3}
+  - Id: deselect
+    Bus: Board
+    Clips:
+    - {fileID: 8300000, guid: db2638c5d2340724786158a3e3d893ea, type: 3}
+  - Id: undo
+    Bus: Booster
+    Clips:
+    - {fileID: 8300000, guid: fcdf7ac87671b5a479a78760f4f9009b, type: 3}
+    - {fileID: 8300000, guid: 02b0af8e8451a1a43b4e1ff4c514c2fb, type: 3}
+    - {fileID: 8300000, guid: 2e8023bdbfeb5564090af82f68cbb568, type: 3}
+  - Id: extra_tube
+    Bus: Booster
+    Clips:
+    - {fileID: 8300000, guid: 94cf8b5a10bde4e4990760f2a75e3c71, type: 3}
+    - {fileID: 8300000, guid: 24bc00e052ad28745af07b1bc9c9a647, type: 3}
+    - {fileID: 8300000, guid: c5c1c1200a92ed244a07c2b0b24a1663, type: 3}
+  - Id: free_move
+    Bus: Booster
+    Clips:
+    - {fileID: 8300000, guid: b33dad4500403014ebd6a132c48b011b, type: 3}
+    - {fileID: 8300000, guid: 6655f4efbf3674a4888881efb95f8f20, type: 3}
+    - {fileID: 8300000, guid: 6257da50ed506444cbc53f1d097c59bf, type: 3}
+  - Id: unlock
+    Bus: Mechanic
+    Clips:
+    - {fileID: 8300000, guid: 2aa7c58cfd71c6246a8034e331fee10f, type: 3}
+    - {fileID: 8300000, guid: 42c868ce79740634cbfd3f27e6b3f4ef, type: 3}
+  - Id: hidden
+    Bus: Mechanic
+    Clips:
+    - {fileID: 8300000, guid: dd726d9b4224970449e6f354f75103fa, type: 3}
+    - {fileID: 8300000, guid: 3c97ac4e09e22f14a811171f4a4655ae, type: 3}
+    - {fileID: 8300000, guid: 0d62d8ea8205d7a498fe464185099722, type: 3}
+  - Id: cover
+    Bus: Mechanic
+    Clips:
+    - {fileID: 8300000, guid: 8bf70223f8d08924f9a19ac90390b642, type: 3}
+  - Id: tube_4
+    Bus: Mechanic
+    Clips:
+    - {fileID: 8300000, guid: a4eaaa3fd1f1e5d42aa0e924d73898f7, type: 3}
+  - Id: tube_8
+    Bus: Mechanic
+    Clips:
+    - {fileID: 8300000, guid: e06c7de541d7e084bb6674e0ca83606a, type: 3}
+  - Id: tube_12
+    Bus: Mechanic
+    Clips:
+    - {fileID: 8300000, guid: 863fed73282d51446b7bc61ad2a35a28, type: 3}
+  - Id: tube_16
+    Bus: Mechanic
+    Clips:
+    - {fileID: 8300000, guid: 4f38b5e942f4ade44aaaf44bb93e4478, type: 3}
+  - Id: bomb_arm
+    Bus: Mechanic
+    Clips:
+    - {fileID: 8300000, guid: 7228e026fbe7ed74f9302edffc0c1964, type: 3}
+  - Id: bomb_low
+    Bus: Mechanic
+    Clips:
+    - {fileID: 8300000, guid: 2fa4ad72bfe4d524fa19c7b93ac6effc, type: 3}
+  - Id: bomb_safe
+    Bus: Mechanic
+    Clips:
+    - {fileID: 8300000, guid: 0e6c049a288cca047a01da127e9fc28c, type: 3}
+    - {fileID: 8300000, guid: ed932d6d94617404f87c3133d2c3ef6a, type: 3}
+    - {fileID: 8300000, guid: 2b84bab995c2c2b429b45b88c18b2639, type: 3}
+  - Id: bomb_burst
+    Bus: Mechanic
+    Clips:
+    - {fileID: 8300000, guid: 8c9326f40ff4b314a9b36e77b269738e, type: 3}
+  - Id: release
+    Bus: Mechanic
+    Clips:
+    - {fileID: 8300000, guid: 5dfe972327d16bc4698982969f9104e0, type: 3}
+  - Id: win
+    Bus: Flow
+    Clips:
+    - {fileID: 8300000, guid: bdb325ef4b167cf48ad874eaf3b3d466, type: 3}
+    - {fileID: 8300000, guid: 20d589c2b3ea11a4b9ae69d4463f9d02, type: 3}
+    - {fileID: 8300000, guid: e6179da140301564d81c43b32b85ace3, type: 3}
+  - Id: win_hard
+    Bus: Flow
+    Clips:
+    - {fileID: 8300000, guid: 5279e588778eb694495241ea1d234b70, type: 3}
+    - {fileID: 8300000, guid: 3d45c46af38a63a42aa313248178e133, type: 3}
+  - Id: win_super
+    Bus: Flow
+    Clips:
+    - {fileID: 8300000, guid: ef5a4b75bbe7ecc40b730afb0a0a7d24, type: 3}
+    - {fileID: 8300000, guid: 52a00dd78c6a83349bc9e63102d881fc, type: 3}
+  - Id: fail
+    Bus: Flow
+    Clips:
+    - {fileID: 8300000, guid: 41ef4a654aaf61c41b04ababfa29675c, type: 3}
+    - {fileID: 8300000, guid: f3a53310a92a6ff41a3d7e5f20d222c0, type: 3}
+    - {fileID: 8300000, guid: 85eb0da9d2f2c8540b7eadf921ec713f, type: 3}
+  - Id: start
+    Bus: Flow
+    Clips:
+    - {fileID: 8300000, guid: 8f2404bb380dbff4ebc6da35b92c730d, type: 3}
+  - Id: retry
+    Bus: Flow
+    Clips:
+    - {fileID: 8300000, guid: 6fc5ebcf95dc96a4880eeb6470f11363, type: 3}
+  - Id: continue
+    Bus: Flow
+    Clips:
+    - {fileID: 8300000, guid: 789ae8a7dd27b0c438fbf8b694d2a7fc, type: 3}
+  - Id: cargo
+    Bus: Mechanic
+    Clips:
+    - {fileID: 8300000, guid: 14a90c1d63aff704da9526bd143c654a, type: 3}
+  - Id: coin
+    Bus: Reward
+    Clips:
+    - {fileID: 8300000, guid: 943934563f4a1f54993a31464494ce19, type: 3}
+    - {fileID: 8300000, guid: ae765da6c354273499ffe9df89ffc0e8, type: 3}
+    - {fileID: 8300000, guid: 68c99f5bde670384e876eecdf78ad16c, type: 3}
+  - Id: road
+    Bus: Reward
+    Clips:
+    - {fileID: 8300000, guid: 9125cc54280decd42a3813695efde009, type: 3}
+    - {fileID: 8300000, guid: 8e57a3642f3ad294ba2f266585415dff, type: 3}
+    - {fileID: 8300000, guid: 8dcd19cdf51f93f458ec9de7b4e64c89, type: 3}
+  - Id: daily
+    Bus: Reward
+    Clips:
+    - {fileID: 8300000, guid: 3fe8e1f4de43c0446a09086b2684405d, type: 3}
+    - {fileID: 8300000, guid: a256d2f3c416c324ebacd1ea571512b3, type: 3}
+    - {fileID: 8300000, guid: 509e05f7736203547b54a8d3fe50a611, type: 3}
+  - Id: daily_streak
+    Bus: Reward
+    Clips:
+    - {fileID: 8300000, guid: 5fcb3dec993ed9148b84f139408f8e85, type: 3}
+    - {fileID: 8300000, guid: 7894339be820ef34c89e0fc296f9d160, type: 3}
+    - {fileID: 8300000, guid: 9bbf2f48b64874f4889f5369feb2d9a8, type: 3}
+  - Id: life
+    Bus: Reward
+    Clips:
+    - {fileID: 8300000, guid: 67a7a772760127f41be601a7a643feb7, type: 3}
+    - {fileID: 8300000, guid: f19ace61382b0824e9588bd1dda8bd06, type: 3}
+    - {fileID: 8300000, guid: a13ad85b68746e040856a42ad84a3c65, type: 3}
+  - Id: unlimited
+    Bus: Reward
+    Clips:
+    - {fileID: 8300000, guid: d71b8f349c8dc62418b8b57393d5dce7, type: 3}
+    - {fileID: 8300000, guid: 09fb0f0332fe8ca42b9f0880c610b1c6, type: 3}
+    - {fileID: 8300000, guid: 8124fe3160bf4c249a048b5cff0b574a, type: 3}
+  - Id: meta
+    Bus: Reward
+    Clips:
+    - {fileID: 8300000, guid: 19ab77751cdb9064fbad1987a471d795, type: 3}
+  - Id: challenge_join
+    Bus: Reward
+    Clips:
+    - {fileID: 8300000, guid: 73668cfb33842104dbf2411b0f5c2029, type: 3}
+  - Id: challenge_step
+    Bus: Reward
+    Clips:
+    - {fileID: 8300000, guid: e4db57a766a2e0c4bbca661b16037735, type: 3}
+  - Id: challenge_prize
+    Bus: Reward
+    Clips:
+    - {fileID: 8300000, guid: 4f40f594524b4e24f94116efe05afc78, type: 3}
+    - {fileID: 8300000, guid: d2e2d520fbe2e11428ff4813c099e49b, type: 3}
+    - {fileID: 8300000, guid: 091e4a21d7444e945bb9b2133f350626, type: 3}
+  - Id: tap
+    Bus: UI
+    Clips:
+    - {fileID: 8300000, guid: dc8d110f3318c52468da8abee8815945, type: 3}
+    - {fileID: 8300000, guid: 9a076b9035896494084e608e94bcb05c, type: 3}
+    - {fileID: 8300000, guid: 674a6629ffeb22e4e81d45a4e61690e7, type: 3}
+    - {fileID: 8300000, guid: d9614504f5ccbb04da04a44e5ebc5959, type: 3}
+  - Id: open
+    Bus: UI
+    Clips:
+    - {fileID: 8300000, guid: 1edb39a50af662b46a72fd344b2e3d00, type: 3}
+    - {fileID: 8300000, guid: ab7d681070920484abb4af3b899a2119, type: 3}
+    - {fileID: 8300000, guid: 90cbe8c074fe72041913e9a5138994e3, type: 3}
+  - Id: close
+    Bus: UI
+    Clips:
+    - {fileID: 8300000, guid: 20b14ec3458d6a04da7ff2308b3fd2dc, type: 3}
+    - {fileID: 8300000, guid: 542e1910383f1ae439bb157f8f4da113, type: 3}
+    - {fileID: 8300000, guid: 33123511c26406349af86154eadc3fc5, type: 3}
+  - Id: deny
+    Bus: UI
+    Clips:
+    - {fileID: 8300000, guid: 585beb1bb4de8ce42993a7ce848ea979, type: 3}
+    - {fileID: 8300000, guid: 568754e79c63c0e48909a83a2be3a29d, type: 3}
+    - {fileID: 8300000, guid: 7dc2dc5af1f531b4090b8d82230aa0e3, type: 3}
+  - Id: toggle
+    Bus: UI
+    Clips:
+    - {fileID: 8300000, guid: 536622d1a85419e4481cd4843af9b45b, type: 3}
+    - {fileID: 8300000, guid: e849482dedb257340b6e903ac1a107a9, type: 3}
+    - {fileID: 8300000, guid: d4e9ebed932d91b47bc25b605712ec95, type: 3}
+  - Id: key_surface
+    Bus: Mechanic
+    Clips:
+    - {fileID: 8300000, guid: c60c608f253cb7646884926a435ff6bb, type: 3}
+  - Id: tube_unseal
+    Bus: Mechanic
+    Clips:
+    - {fileID: 8300000, guid: 55f683bc3ae87334a99805e5342c5c3b, type: 3}
+  - Id: free_cancel
+    Bus: Booster
+    Clips:
+    - {fileID: 8300000, guid: 56fa87c23499f0d468a4340bce61fd0f, type: 3}
+  - Id: free_commit
+    Bus: Booster
+    Clips:
+    - {fileID: 8300000, guid: 45af3ed74f21e054a818c808d4d332f9, type: 3}
+  - Id: tool_grant
+    Bus: Reward
+    Clips:
+    - {fileID: 8300000, guid: 5eaba8ea92604704a86c5d57cf20e7b8, type: 3}
+    - {fileID: 8300000, guid: 9377dcbaa65d386489ad4e03efe6a356, type: 3}
+    - {fileID: 8300000, guid: 1956470b03848df41b78ed705f51f058, type: 3}
+  - Id: multi_grant
+    Bus: Reward
+    Clips:
+    - {fileID: 8300000, guid: adead73a7c206c044975590395c97b2e, type: 3}
+    - {fileID: 8300000, guid: af48da1b1e3e31c4eb9a8694e7a8a28f, type: 3}
+    - {fileID: 8300000, guid: a56ae5677ec200645831a576bfec2e9a, type: 3}
+  - Id: goal_change
+    Bus: Flow
+    Clips:
+    - {fileID: 8300000, guid: 70eac9482a6b24a4a9a72b486592fead, type: 3}
+  - Id: pause
+    Bus: UI
+    Clips:
+    - {fileID: 8300000, guid: 8393bc74cc32d494bbf4e3c8615d1827, type: 3}
+  - Id: resume
+    Bus: UI
+    Clips:
+    - {fileID: 8300000, guid: 2762a2dd6edccb447a251b2257773701, type: 3}
+  - Id: select_single
+    Bus: Board
+    Clips:
+    - {fileID: 8300000, guid: be10b35f8ff44ef4bb2c46627f051615, type: 3}
+    - {fileID: 8300000, guid: 91ef2404a7b1dc047b97019f6b126fcd, type: 3}
+    - {fileID: 8300000, guid: defac32e7442f5148a4d3b243ce404d3, type: 3}
+    - {fileID: 8300000, guid: 52cbf188c732e1d42bd421ab47887f8d, type: 3}
+  - Id: select_group
+    Bus: Board
+    Clips:
+    - {fileID: 8300000, guid: 863e323a3a3847b4cbc6526b70ed5162, type: 3}
+    - {fileID: 8300000, guid: a0b1709c545585f4aba89f7ef6ae826b, type: 3}
+    - {fileID: 8300000, guid: 45be3b6f00c21644f8abb9027407d650, type: 3}
+    - {fileID: 8300000, guid: 5e6097c5395851847826092c13c06d90, type: 3}
+  - Id: select_tail
+    Bus: Board
+    Clips:
+    - {fileID: 8300000, guid: 1358f28c0528ed0409c755b7e069b4ad, type: 3}
+    - {fileID: 8300000, guid: a9e58161002c8c14f8bc8d9c7ff8d9a5, type: 3}
+    - {fileID: 8300000, guid: 1954678877ebb0a428c277ee230fee68, type: 3}
+    - {fileID: 8300000, guid: 897e538efa54b0f4282643bca9149887, type: 3}
+  - Id: land_empty
+    Bus: Board
+    Clips:
+    - {fileID: 8300000, guid: 36b693101890f5d4fa66ef1d3f04cfb3, type: 3}
+    - {fileID: 8300000, guid: 6e984c61e2ad8d5499728ebcee6a31f0, type: 3}
+    - {fileID: 8300000, guid: 6390320d29d94c24383c3cbcbce828ba, type: 3}
+    - {fileID: 8300000, guid: 0314ae14d2691c34ab4895a9110cf1dc, type: 3}
+  - Id: land_stack
+    Bus: Board
+    Clips:
+    - {fileID: 8300000, guid: 287e7d8036186d64b9a54f574528c95e, type: 3}
+    - {fileID: 8300000, guid: 26173fa66e8107a40bec68adbc9db37f, type: 3}
+    - {fileID: 8300000, guid: 2eee73b6aa04d3e459a30d60b1d93b4e, type: 3}
+    - {fileID: 8300000, guid: 5ff44a61c436d454c8a7d3aa250bedac, type: 3}
+  - Id: land_partial
+    Bus: Board
+    Clips:
+    - {fileID: 8300000, guid: 8f9af54697890894e98fec062de10c75, type: 3}
+    - {fileID: 8300000, guid: ad2d8db246807b548a64b51f0746a432, type: 3}
+    - {fileID: 8300000, guid: cfa9dfe4b2f6f824e8ea1a4bf084f0f5, type: 3}
+    - {fileID: 8300000, guid: 1f31f9e23b4235a4bb3f694fd4fed246, type: 3}
+  - Id: land_tower
+    Bus: Board
+    Clips:
+    - {fileID: 8300000, guid: 17c70443956bad14db2aa6c43eaa488c, type: 3}
+    - {fileID: 8300000, guid: 31eed3fc34f9b1e4fb4c0a377b3ff452, type: 3}
+    - {fileID: 8300000, guid: 04426406687d7ba4f88b679bfc6e0538, type: 3}
+    - {fileID: 8300000, guid: c543e00c5391c4c4a8b4e9e3c14f2570, type: 3}
+  - Id: life_refill
+    Bus: Reward
+    Clips:
+    - {fileID: 8300000, guid: 863120894b0074b47b28408e22c1d9ee, type: 3}
+    - {fileID: 8300000, guid: 0f887f4b75392764db50e2b5878f4dce, type: 3}
+    - {fileID: 8300000, guid: 0933729a3ffda2647b75aa489e7a71c9, type: 3}
+  - Id: life_spent
+    Bus: Reward
+    Clips:
+    - {fileID: 8300000, guid: 947cd38c669de65478f48e2399bb4ab8, type: 3}
+    - {fileID: 8300000, guid: 4623351c1a69b1046ba14d238dbb184b, type: 3}
+    - {fileID: 8300000, guid: 9f071c81a006f9b4b9eb2555cf8e722b, type: 3}
+  - Id: unlimited_end
+    Bus: Reward
+    Clips:
+    - {fileID: 8300000, guid: 86e22e1e6d00a564ca2707cb4b61e15c, type: 3}
+    - {fileID: 8300000, guid: cba70671ffc5e494abea7b6041ce0a26, type: 3}
+    - {fileID: 8300000, guid: dc45a27586f296b4c9c25fc9a52522ab, type: 3}
+  - Id: coin_double
+    Bus: Reward
+    Clips:
+    - {fileID: 8300000, guid: 20cee7f4858eca848a0f2ed7ef950cfe, type: 3}
+    - {fileID: 8300000, guid: 4bcc077311d23b745bd199d1ddde3686, type: 3}
+    - {fileID: 8300000, guid: 799f93ac2e58cf146ab58a4a93d3daf3, type: 3}
+  - Id: tool_pair
+    Bus: Reward
+    Clips:
+    - {fileID: 8300000, guid: 4c7a5d9efc76bee49a217d31c763bdb1, type: 3}
+    - {fileID: 8300000, guid: a26ba6347b43df849a98f99c20f9f562, type: 3}
+    - {fileID: 8300000, guid: a7ad42f5f62534a46b1a2047088808d6, type: 3}
+  - Id: tap_primary
+    Bus: UI
+    Clips:
+    - {fileID: 8300000, guid: 8ce020421f3361c419de8701cf95ff8a, type: 3}
+    - {fileID: 8300000, guid: a201261e267ad024c87ea29ec8de34af, type: 3}
+    - {fileID: 8300000, guid: 65c9ce0653192404aa7b2ac8c99f9fa0, type: 3}
+  - Id: tap_back
+    Bus: UI
+    Clips:
+    - {fileID: 8300000, guid: 6f5d3d78fbe5ab94ea31265c985a8b37, type: 3}
+    - {fileID: 8300000, guid: c8e8a6d04a4f1c349997a7a850f42337, type: 3}
+    - {fileID: 8300000, guid: 5bbbeb71b4b55594798c8f15821b3bad, type: 3}
+  - Id: tap_claim
+    Bus: UI
+    Clips:
+    - {fileID: 8300000, guid: 3a78f332c84f4814fb2b06a94f82e4eb, type: 3}
+    - {fileID: 8300000, guid: 46b17ca6cbd5ca14fa3b194a9ea9860e, type: 3}
+    - {fileID: 8300000, guid: 1eef0f1718dc2fc4a88d68b560258de8, type: 3}

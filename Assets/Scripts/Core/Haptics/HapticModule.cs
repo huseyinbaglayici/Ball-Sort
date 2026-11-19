@@ -2,20 +2,20 @@ using UnityEngine;
 
 namespace Project.Core.Haptics
 {
-    public enum HapticStrength
+    // One vibration per frame, strongest wins; iOS only has Handheld.Vibrate, so only Heavy uses it.
+    public sealed class HapticModule
     {
-        Light,
-        Medium,
-        Heavy
-    }
+        public enum HapticType
+        {
+            Light,
+            Medium,
+            Heavy
+        }
 
-    /// <summary>
-    /// Short vibrations for UI and game feedback. Android 8+ uses VibrationEffect with an amplitude, older Android
-    /// vibrates for a fixed time, and iOS uses Handheld.Vibrate (Heavy only, to avoid long buzzes).
-    /// </summary>
-    public sealed class HapticService
-    {
         public bool Enabled { get; set; }
+
+        private int _playedFrame = -1;
+        private HapticType _playedType;
 
 #if UNITY_ANDROID && !UNITY_EDITOR
         private readonly AndroidJavaObject _vibrator;
@@ -23,9 +23,8 @@ namespace Project.Core.Haptics
         private readonly bool _supportsEffects;
 #endif
 
-        public HapticService(bool enabled)
+        public HapticModule()
         {
-            Enabled = enabled;
 #if UNITY_ANDROID && !UNITY_EDITOR
             try
             {
@@ -43,15 +42,18 @@ namespace Project.Core.Haptics
 #endif
         }
 
-        public void Play(HapticStrength strength)
+        public void Haptic(HapticType type)
         {
             if (!Enabled) return;
+            if (_playedFrame == Time.frameCount && type <= _playedType) return;
+            _playedFrame = Time.frameCount;
+            _playedType = type;
 #if UNITY_ANDROID && !UNITY_EDITOR
             if (_vibrator == null) return;
-            var (ms, amplitude) = strength switch
+            var (ms, amplitude) = type switch
             {
-                HapticStrength.Light => (15L, 60),
-                HapticStrength.Medium => (25L, 140),
+                HapticType.Light => (15L, 60),
+                HapticType.Medium => (25L, 140),
                 _ => (40L, 255)
             };
             if (_supportsEffects)
@@ -64,13 +66,12 @@ namespace Project.Core.Haptics
                 _vibrator.Call("vibrate", ms);
             }
 #elif UNITY_IOS && !UNITY_EDITOR
-            if (strength == HapticStrength.Heavy) Handheld.Vibrate();
+            if (type == HapticType.Heavy) Handheld.Vibrate();
 #endif
         }
 
 #if UNITY_ANDROID
-        // Never called. Unity adds the VIBRATE permission to the Android manifest only when
-        // it finds a Handheld.Vibrate reference in the compiled code.
+        // Never called; Unity adds the VIBRATE permission only if Handheld.Vibrate is referenced.
         private static void KeepVibratePermission() => Handheld.Vibrate();
 #endif
     }

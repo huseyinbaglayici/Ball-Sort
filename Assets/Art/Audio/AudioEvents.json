@@ -1,0 +1,635 @@
+{
+ "events": [
+  {
+   "id": "select",
+   "bus": "Board",
+   "label": "Orb kalkışı · parmak ve ince cam",
+   "files": [
+    "Assets/Art/Audio/Board/select_01.wav",
+    "Assets/Art/Audio/Board/select_02.wav",
+    "Assets/Art/Audio/Board/select_03.wav",
+    "Assets/Art/Audio/Board/select_04.wav",
+    "Assets/Art/Audio/Board/select_05.wav"
+   ]
+  },
+  {
+   "id": "land",
+   "bus": "Board",
+   "label": "Ara top iner",
+   "files": [
+    "Assets/Art/Audio/Board/land_01.wav",
+    "Assets/Art/Audio/Board/land_02.wav",
+    "Assets/Art/Audio/Board/land_03.wav",
+    "Assets/Art/Audio/Board/land_04.wav",
+    "Assets/Art/Audio/Board/land_05.wav"
+   ]
+  },
+  {
+   "id": "land_last",
+   "bus": "Board",
+   "label": "Son top oturur",
+   "files": [
+    "Assets/Art/Audio/Board/land_last_01.wav",
+    "Assets/Art/Audio/Board/land_last_02.wav",
+    "Assets/Art/Audio/Board/land_last_03.wav",
+    "Assets/Art/Audio/Board/land_last_04.wav",
+    "Assets/Art/Audio/Board/land_last_05.wav"
+   ]
+  },
+  {
+   "id": "invalid",
+   "bus": "Board",
+   "label": "Uygunsuz hedef",
+   "files": [
+    "Assets/Art/Audio/Board/invalid_01.wav"
+   ]
+  },
+  {
+   "id": "deselect",
+   "bus": "Board",
+   "label": "Seçim bırakılır",
+   "files": [
+    "Assets/Art/Audio/Board/deselect_01.wav"
+   ]
+  },
+  {
+   "id": "undo",
+   "bus": "Booster",
+   "label": "Geri sarılan makara",
+   "files": [
+    "Assets/Art/Audio/Booster/undo_01.wav",
+    "Assets/Art/Audio/Booster/undo_02.wav",
+    "Assets/Art/Audio/Booster/undo_03.wav"
+   ]
+  },
+  {
+   "id": "extra_tube",
+   "bus": "Booster",
+   "label": "Tüp kızağa oturur",
+   "files": [
+    "Assets/Art/Audio/Booster/extra_tube_01.wav",
+    "Assets/Art/Audio/Booster/extra_tube_02.wav",
+    "Assets/Art/Audio/Booster/extra_tube_03.wav"
+   ]
+  },
+  {
+   "id": "free_move",
+   "bus": "Booster",
+   "label": "Mıknatıs serbest",
+   "files": [
+    "Assets/Art/Audio/Booster/free_move_01.wav",
+    "Assets/Art/Audio/Booster/free_move_02.wav",
+    "Assets/Art/Audio/Booster/free_move_03.wav"
+   ]
+  },
+  {
+   "id": "unlock",
+   "bus": "Mechanic",
+   "label": "Kutu · mandal, yay ve kapak",
+   "files": [
+    "Assets/Art/Audio/Mechanic/unlock_01.wav",
+    "Assets/Art/Audio/Mechanic/unlock_02.wav"
+   ]
+  },
+  {
+   "id": "hidden",
+   "bus": "Mechanic",
+   "label": "Gizli orb · taş kabuk, kırıklar ve ışık",
+   "files": [
+    "Assets/Art/Audio/Mechanic/hidden_01.wav",
+    "Assets/Art/Audio/Mechanic/hidden_02.wav",
+    "Assets/Art/Audio/Mechanic/hidden_03.wav"
+   ]
+  },
+  {
+   "id": "cover",
+   "bus": "Mechanic",
+   "label": "Örtü sıyrılır",
+   "files": [
+    "Assets/Art/Audio/Mechanic/cover_01.wav"
+   ]
+  },
+  {
+   "id": "tube_4",
+   "bus": "Mechanic",
+   "label": "4 yuvalı tüp · conta, kilit, kapak",
+   "files": [
+    "Assets/Art/Audio/Mechanic/tube_4_01.wav"
+   ]
+  },
+  {
+   "id": "tube_8",
+   "bus": "Mechanic",
+   "label": "8 yuvalı tüp · conta, kilit, kapak",
+   "files": [
+    "Assets/Art/Audio/Mechanic/tube_8_01.wav"
+   ]
+  },
+  {
+   "id": "tube_12",
+   "bus": "Mechanic",
+   "label": "12 yuvalı tüp · conta, kilit, kapak",
+   "files": [
+    "Assets/Art/Audio/Mechanic/tube_12_01.wav"
+   ]
+  },
+  {
+   "id": "tube_16",
+   "bus": "Mechanic",
+   "label": "16 yuvalı tüp · conta, kilit, kapak",
+   "files": [
+    "Assets/Art/Audio/Mechanic/tube_16_01.wav"
+   ]
+  },
+  {
+   "id": "bomb_arm",
+   "bus": "Mechanic",
+   "label": "Fitil kavrar",
+   "files": [
+    "Assets/Art/Audio/Mechanic/bomb_arm_01.wav"
+   ]
+  },
+  {
+   "id": "bomb_low",
+   "bus": "Mechanic",
+   "label": "Son iki hamle",
+   "files": [
+    "Assets/Art/Audio/Mechanic/bomb_low_01.wav"
+   ]
+  },
+  {
+   "id": "bomb_safe",
+   "bus": "Mechanic",
+   "label": "Fitil söner · nefes ve rahatlama",
+   "files": [
+    "Assets/Art/Audio/Mechanic/bomb_safe_01.wav",
+    "Assets/Art/Audio/Mechanic/bomb_safe_02.wav",
+    "Assets/Art/Audio/Mechanic/bomb_safe_03.wav"
+   ]
+  },
+  {
+   "id": "bomb_burst",
+   "bus": "Mechanic",
+   "label": "Bomba · basınç boşalır",
+   "files": [
+    "Assets/Art/Audio/Mechanic/bomb_burst_01.wav"
+   ]
+  },
+  {
+   "id": "release",
+   "bus": "Mechanic",
+   "label": "Kaide kurtulur",
+   "files": [
+    "Assets/Art/Audio/Mechanic/release_01.wav"
+   ]
+  },
+  {
+   "id": "win",
+   "bus": "Flow",
+   "label": "Normal zafer",
+   "files": [
+    "Assets/Art/Audio/Flow/win_01.wav",
+    "Assets/Art/Audio/Flow/win_02.wav",
+    "Assets/Art/Audio/Flow/win_03.wav"
+   ]
+  },
+  {
+   "id": "win_hard",
+   "bus": "Flow",
+   "label": "Hard zafer",
+   "files": [
+    "Assets/Art/Audio/Flow/win_hard_01.wav",
+    "Assets/Art/Audio/Flow/win_hard_02.wav"
+   ]
+  },
+  {
+   "id": "win_super",
+   "bus": "Flow",
+   "label": "Super Hard zafer",
+   "files": [
+    "Assets/Art/Audio/Flow/win_super_01.wav",
+    "Assets/Art/Audio/Flow/win_super_02.wav"
+   ]
+  },
+  {
+   "id": "fail",
+   "bus": "Flow",
+   "label": "Hamlesiz tahta",
+   "files": [
+    "Assets/Art/Audio/Flow/fail_01.wav",
+    "Assets/Art/Audio/Flow/fail_02.wav",
+    "Assets/Art/Audio/Flow/fail_03.wav"
+   ]
+  },
+  {
+   "id": "start",
+   "bus": "Flow",
+   "label": "Başlangıç",
+   "files": [
+    "Assets/Art/Audio/Flow/start_01.wav"
+   ]
+  },
+  {
+   "id": "retry",
+   "bus": "Flow",
+   "label": "Yeniden dene",
+   "files": [
+    "Assets/Art/Audio/Flow/retry_01.wav"
+   ]
+  },
+  {
+   "id": "continue",
+   "bus": "Flow",
+   "label": "Kurtarma kızağı",
+   "files": [
+    "Assets/Art/Audio/Flow/continue_01.wav"
+   ]
+  },
+  {
+   "id": "cargo",
+   "bus": "Mechanic",
+   "label": "Kapsül kalkışı",
+   "files": [
+    "Assets/Art/Audio/Mechanic/cargo_01.wav"
+   ]
+  },
+  {
+   "id": "coin",
+   "bus": "Reward",
+   "label": "Altın",
+   "files": [
+    "Assets/Art/Audio/Reward/coin_01.wav",
+    "Assets/Art/Audio/Reward/coin_02.wav",
+    "Assets/Art/Audio/Reward/coin_03.wav"
+   ]
+  },
+  {
+   "id": "road",
+   "bus": "Reward",
+   "label": "Yol ödülü",
+   "files": [
+    "Assets/Art/Audio/Reward/road_01.wav",
+    "Assets/Art/Audio/Reward/road_02.wav",
+    "Assets/Art/Audio/Reward/road_03.wav"
+   ]
+  },
+  {
+   "id": "daily",
+   "bus": "Reward",
+   "label": "Günlük ödül",
+   "files": [
+    "Assets/Art/Audio/Reward/daily_01.wav",
+    "Assets/Art/Audio/Reward/daily_02.wav",
+    "Assets/Art/Audio/Reward/daily_03.wav"
+   ]
+  },
+  {
+   "id": "daily_streak",
+   "bus": "Reward",
+   "label": "Günlük seri",
+   "files": [
+    "Assets/Art/Audio/Reward/daily_streak_01.wav",
+    "Assets/Art/Audio/Reward/daily_streak_02.wav",
+    "Assets/Art/Audio/Reward/daily_streak_03.wav"
+   ]
+  },
+  {
+   "id": "life",
+   "bus": "Reward",
+   "label": "Bir can",
+   "files": [
+    "Assets/Art/Audio/Reward/life_01.wav",
+    "Assets/Art/Audio/Reward/life_02.wav",
+    "Assets/Art/Audio/Reward/life_03.wav"
+   ]
+  },
+  {
+   "id": "unlimited",
+   "bus": "Reward",
+   "label": "Sonsuz can",
+   "files": [
+    "Assets/Art/Audio/Reward/unlimited_01.wav",
+    "Assets/Art/Audio/Reward/unlimited_02.wav",
+    "Assets/Art/Audio/Reward/unlimited_03.wav"
+   ]
+  },
+  {
+   "id": "meta",
+   "bus": "Reward",
+   "label": "Meta değişimi",
+   "files": [
+    "Assets/Art/Audio/Reward/meta_01.wav"
+   ]
+  },
+  {
+   "id": "challenge_join",
+   "bus": "Reward",
+   "label": "Challenge katılımı",
+   "files": [
+    "Assets/Art/Audio/Reward/challenge_join_01.wav"
+   ]
+  },
+  {
+   "id": "challenge_step",
+   "bus": "Reward",
+   "label": "Challenge aşaması",
+   "files": [
+    "Assets/Art/Audio/Reward/challenge_step_01.wav"
+   ]
+  },
+  {
+   "id": "challenge_prize",
+   "bus": "Reward",
+   "label": "Challenge ödülü",
+   "files": [
+    "Assets/Art/Audio/Reward/challenge_prize_01.wav",
+    "Assets/Art/Audio/Reward/challenge_prize_02.wav",
+    "Assets/Art/Audio/Reward/challenge_prize_03.wav"
+   ]
+  },
+  {
+   "id": "tap",
+   "bus": "UI",
+   "label": "tap",
+   "files": [
+    "Assets/Art/Audio/UI/tap_01.wav",
+    "Assets/Art/Audio/UI/tap_02.wav",
+    "Assets/Art/Audio/UI/tap_03.wav",
+    "Assets/Art/Audio/UI/tap_04.wav"
+   ]
+  },
+  {
+   "id": "open",
+   "bus": "UI",
+   "label": "open",
+   "files": [
+    "Assets/Art/Audio/UI/open_01.wav",
+    "Assets/Art/Audio/UI/open_02.wav",
+    "Assets/Art/Audio/UI/open_03.wav"
+   ]
+  },
+  {
+   "id": "close",
+   "bus": "UI",
+   "label": "close",
+   "files": [
+    "Assets/Art/Audio/UI/close_01.wav",
+    "Assets/Art/Audio/UI/close_02.wav",
+    "Assets/Art/Audio/UI/close_03.wav"
+   ]
+  },
+  {
+   "id": "deny",
+   "bus": "UI",
+   "label": "deny",
+   "files": [
+    "Assets/Art/Audio/UI/deny_01.wav",
+    "Assets/Art/Audio/UI/deny_02.wav",
+    "Assets/Art/Audio/UI/deny_03.wav"
+   ]
+  },
+  {
+   "id": "toggle",
+   "bus": "UI",
+   "label": "toggle",
+   "files": [
+    "Assets/Art/Audio/UI/toggle_01.wav",
+    "Assets/Art/Audio/UI/toggle_02.wav",
+    "Assets/Art/Audio/UI/toggle_03.wav"
+   ]
+  },
+  {
+   "id": "key_surface",
+   "bus": "Mechanic",
+   "label": "Anahtar görünür · kutudan ayrı sunum için",
+   "files": [
+    "Assets/Art/Audio/Mechanic/key_surface_01.wav"
+   ]
+  },
+  {
+   "id": "tube_unseal",
+   "bus": "Mechanic",
+   "label": "Geri Al ile kapak açılır · Undo içinde alternatif katman",
+   "files": [
+    "Assets/Art/Audio/Mechanic/tube_unseal_01.wav"
+   ]
+  },
+  {
+   "id": "free_cancel",
+   "bus": "Booster",
+   "label": "Free Move modu kapanır",
+   "files": [
+    "Assets/Art/Audio/Booster/free_cancel_01.wav"
+   ]
+  },
+  {
+   "id": "free_commit",
+   "bus": "Booster",
+   "label": "Free Move · yola çıkış vurgusu",
+   "files": [
+    "Assets/Art/Audio/Booster/free_commit_01.wav"
+   ]
+  },
+  {
+   "id": "tool_grant",
+   "bus": "Reward",
+   "label": "Booster stoğu teslim edildi",
+   "files": [
+    "Assets/Art/Audio/Reward/tool_grant_01.wav",
+    "Assets/Art/Audio/Reward/tool_grant_02.wav",
+    "Assets/Art/Audio/Reward/tool_grant_03.wav"
+   ]
+  },
+  {
+   "id": "multi_grant",
+   "bus": "Reward",
+   "label": "İkili yol ödülü tek paket olarak açıldı",
+   "files": [
+    "Assets/Art/Audio/Reward/multi_grant_01.wav",
+    "Assets/Art/Audio/Reward/multi_grant_02.wav",
+    "Assets/Art/Audio/Reward/multi_grant_03.wav"
+   ]
+  },
+  {
+   "id": "goal_change",
+   "bus": "Flow",
+   "label": "Tahliyeden klasik hedefe geçiş",
+   "files": [
+    "Assets/Art/Audio/Flow/goal_change_01.wav"
+   ]
+  },
+  {
+   "id": "pause",
+   "bus": "UI",
+   "label": "Oyun duraklatılır",
+   "files": [
+    "Assets/Art/Audio/UI/pause_01.wav"
+   ]
+  },
+  {
+   "id": "resume",
+   "bus": "UI",
+   "label": "Oyun sürer",
+   "files": [
+    "Assets/Art/Audio/UI/resume_01.wav"
+   ]
+  },
+  {
+   "id": "select_single",
+   "bus": "Board",
+   "label": "Tek orbun kalkışı",
+   "files": [
+    "Assets/Art/Audio/Board/select_single_01.wav",
+    "Assets/Art/Audio/Board/select_single_02.wav",
+    "Assets/Art/Audio/Board/select_single_03.wav",
+    "Assets/Art/Audio/Board/select_single_04.wav"
+   ]
+  },
+  {
+   "id": "select_group",
+   "bus": "Board",
+   "label": "Grupta ara orb",
+   "files": [
+    "Assets/Art/Audio/Board/select_group_01.wav",
+    "Assets/Art/Audio/Board/select_group_02.wav",
+    "Assets/Art/Audio/Board/select_group_03.wav",
+    "Assets/Art/Audio/Board/select_group_04.wav"
+   ]
+  },
+  {
+   "id": "select_tail",
+   "bus": "Board",
+   "label": "Grubun son orbunun kalkışı",
+   "files": [
+    "Assets/Art/Audio/Board/select_tail_01.wav",
+    "Assets/Art/Audio/Board/select_tail_02.wav",
+    "Assets/Art/Audio/Board/select_tail_03.wav",
+    "Assets/Art/Audio/Board/select_tail_04.wav"
+   ]
+  },
+  {
+   "id": "land_empty",
+   "bus": "Board",
+   "label": "Boş tüpte ilk temas",
+   "files": [
+    "Assets/Art/Audio/Board/land_empty_01.wav",
+    "Assets/Art/Audio/Board/land_empty_02.wav",
+    "Assets/Art/Audio/Board/land_empty_03.wav",
+    "Assets/Art/Audio/Board/land_empty_04.wav"
+   ]
+  },
+  {
+   "id": "land_stack",
+   "bus": "Board",
+   "label": "Başka orbun üzerine temas",
+   "files": [
+    "Assets/Art/Audio/Board/land_stack_01.wav",
+    "Assets/Art/Audio/Board/land_stack_02.wav",
+    "Assets/Art/Audio/Board/land_stack_03.wav",
+    "Assets/Art/Audio/Board/land_stack_04.wav"
+   ]
+  },
+  {
+   "id": "land_partial",
+   "bus": "Board",
+   "label": "Kısmi aktarımın son teması",
+   "files": [
+    "Assets/Art/Audio/Board/land_partial_01.wav",
+    "Assets/Art/Audio/Board/land_partial_02.wav",
+    "Assets/Art/Audio/Board/land_partial_03.wav",
+    "Assets/Art/Audio/Board/land_partial_04.wav"
+   ]
+  },
+  {
+   "id": "land_tower",
+   "bus": "Board",
+   "label": "Uzun tüpte ara temas",
+   "files": [
+    "Assets/Art/Audio/Board/land_tower_01.wav",
+    "Assets/Art/Audio/Board/land_tower_02.wav",
+    "Assets/Art/Audio/Board/land_tower_03.wav",
+    "Assets/Art/Audio/Board/land_tower_04.wav"
+   ]
+  },
+  {
+   "id": "life_refill",
+   "bus": "Reward",
+   "label": "Doğal dolum · panel açıkken",
+   "files": [
+    "Assets/Art/Audio/Reward/life_refill_01.wav",
+    "Assets/Art/Audio/Reward/life_refill_02.wav",
+    "Assets/Art/Audio/Reward/life_refill_03.wav"
+   ]
+  },
+  {
+   "id": "life_spent",
+   "bus": "Reward",
+   "label": "Son can harcandı · panelde",
+   "files": [
+    "Assets/Art/Audio/Reward/life_spent_01.wav",
+    "Assets/Art/Audio/Reward/life_spent_02.wav",
+    "Assets/Art/Audio/Reward/life_spent_03.wav"
+   ]
+  },
+  {
+   "id": "unlimited_end",
+   "bus": "Reward",
+   "label": "Sonsuz can süresi bitti · panelde",
+   "files": [
+    "Assets/Art/Audio/Reward/unlimited_end_01.wav",
+    "Assets/Art/Audio/Reward/unlimited_end_02.wav",
+    "Assets/Art/Audio/Reward/unlimited_end_03.wav"
+   ]
+  },
+  {
+   "id": "coin_double",
+   "bus": "Reward",
+   "label": "2× ilk galibiyet altını teslim edildi",
+   "files": [
+    "Assets/Art/Audio/Reward/coin_double_01.wav",
+    "Assets/Art/Audio/Reward/coin_double_02.wav",
+    "Assets/Art/Audio/Reward/coin_double_03.wav"
+   ]
+  },
+  {
+   "id": "tool_pair",
+   "bus": "Reward",
+   "label": "İki booster stoğa işlendi",
+   "files": [
+    "Assets/Art/Audio/Reward/tool_pair_01.wav",
+    "Assets/Art/Audio/Reward/tool_pair_02.wav",
+    "Assets/Art/Audio/Reward/tool_pair_03.wav"
+   ]
+  },
+  {
+   "id": "tap_primary",
+   "bus": "UI",
+   "label": "Ana eylem kabulü",
+   "files": [
+    "Assets/Art/Audio/UI/tap_primary_01.wav",
+    "Assets/Art/Audio/UI/tap_primary_02.wav",
+    "Assets/Art/Audio/UI/tap_primary_03.wav"
+   ]
+  },
+  {
+   "id": "tap_back",
+   "bus": "UI",
+   "label": "Geri gezinme",
+   "files": [
+    "Assets/Art/Audio/UI/tap_back_01.wav",
+    "Assets/Art/Audio/UI/tap_back_02.wav",
+    "Assets/Art/Audio/UI/tap_back_03.wav"
+   ]
+  },
+  {
+   "id": "tap_claim",
+   "bus": "UI",
+   "label": "Ödül düğmesi basımı",
+   "files": [
+    "Assets/Art/Audio/UI/tap_claim_01.wav",
+    "Assets/Art/Audio/UI/tap_claim_02.wav",
+    "Assets/Art/Audio/UI/tap_claim_03.wav"
+   ]
+  }
+ ]
+}

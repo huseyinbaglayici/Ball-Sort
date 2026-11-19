@@ -4,10 +4,7 @@ using UnityEngine;
 
 namespace Project.Core.Audio
 {
-    /// <summary>
-    /// Maps string ids ("ui_click", "music_home") to clips so code never references clips directly.
-    /// An entry may exist without a clip yet: it documents a sound the game expects and plays nothing.
-    /// </summary>
+    // Events are rebuilt from AudioEvents.json by the editor importer; empty hand-set entries play nothing.
     [CreateAssetMenu(menuName = "Project/Audio Library", fileName = "AudioLibrary")]
     public sealed class AudioLibrary : ScriptableObject
     {
@@ -19,9 +16,20 @@ namespace Project.Core.Audio
             [Range(0f, 1f)] public float Volume;
         }
 
+        [Serializable]
+        public struct EventEntry
+        {
+            public string Id;
+            public string Bus;
+            public AudioClip[] Clips;
+        }
+
         [SerializeField] private List<Entry> _entries = new();
+        [SerializeField] private List<EventEntry> _events = new();
 
         private Dictionary<string, Entry> _lookup;
+
+        public IReadOnlyList<EventEntry> Events => _events;
 
         public bool TryGet(string id, out Entry entry)
         {
@@ -33,6 +41,11 @@ namespace Project.Core.Audio
             }
             return _lookup.TryGetValue(id, out entry);
         }
+
+#if UNITY_EDITOR
+        // Editor importer only.
+        public void SetEvents(List<EventEntry> events) => _events = events;
+#endif
 
         private void OnValidate() => _lookup = null;
     }
