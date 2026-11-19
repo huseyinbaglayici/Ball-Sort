@@ -1,7 +1,4 @@
-# -------------------------------
-# Unity generated (anchored to the project root, so folders such as
-# Assets/**/Build or Assets/**/Logs are NOT ignored by accident)
-# -------------------------------
+# Unity generated, anchored to the project root
 /[Ll]ibrary/
 /[Tt]emp/
 /[Oo]bj/
@@ -36,9 +33,7 @@ crashlytics-build.properties
 /[Aa]ssets/[Ss]treamingAssets/aa.meta
 /[Aa]ssets/[Ss]treamingAssets/aa/*
 
-# -------------------------------
 # IDE files
-# -------------------------------
 .idea/
 .vs/
 .vscode/
@@ -62,7 +57,8 @@ crashlytics-build.properties
 *.opendb
 *.VC.db
 
-# Gradle cache and exported Android/OBJ output
+# Gradle cache and Android build output
+/.utmp/
 .gradle/
 ExportedObj/
 
