@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 7cb1711dac273414e8a384bc1599c59d
+guid: c03963975bd49b741ba151c855d688d5
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 3315126344230521952
-    second: Tube_Stopper_0
+      213: -5657133197272037305
+    second: Tube_End_Piece_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -113,13 +113,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Tube_Stopper_0
+      name: Tube_End_Piece_0
       rect:
         serializedVersion: 2
-        x: 72
-        y: 846
-        width: 240
-        height: 154
+        x: 24
+        y: 8
+        width: 336
+        height: 130
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -128,8 +128,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 06c466588d1b10e20800000000000000
-      internalID: 3315126344230521952
+      spriteID: 748c7817453dd71b0800000000000000
+      internalID: -5657133197272037305
       vertices: []
       indices: 
       edges: []
@@ -148,7 +148,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      Tube_Stopper_0: 3315126344230521952
+      Tube_End_Piece_0: -5657133197272037305
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

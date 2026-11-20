@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 4d7ca7a3f830a2e4b95052a34401e651
+guid: 02a42d90a7abe9b4989451648af6fdbd
 TextureImporter:
   internalIDToNameTable:
   - first:
@@ -116,10 +116,10 @@ TextureImporter:
       name: Tube_RimFront_0
       rect:
         serializedVersion: 2
-        x: 80
-        y: 846
-        width: 224
-        height: 110
+        x: 22
+        y: 888
+        width: 341
+        height: 96
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}

@@ -5,8 +5,8 @@ import numpy as np
 from PIL import Image
 
 # Opening of the 384x1024 cap, measured from the art; the lip highlight sits just below this arc.
-CX, CY = 192.0, 36.0
-A, B = 136.0, 16.0
+CX, CY = 193.5, 41.0
+A, B = 135.0, 20.0
 FEATHER = 1.0  # px of soft edge along the cut
 
 

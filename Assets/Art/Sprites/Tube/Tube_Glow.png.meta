@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: ce6a04a6a5146c04ea2833559a510d39
+guid: c5476c7bb1d49334694c0fc66eb82434
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 5969748713047483463
-    second: Orb_Core_Hidden_0
+      213: -5326136987679503302
+    second: Tube_Glow_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -48,11 +48,11 @@ TextureImporter:
   compressionQuality: 50
   spriteMode: 1
   spriteExtrude: 1
-  spriteMeshType: 1
+  spriteMeshType: 0
   alignment: 0
   spritePivot: {x: 0.5, y: 0.5}
-  spritePixelsToUnits: 185.86957
-  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spritePixelsToUnits: 190
+  spriteBorder: {x: 0, y: 154, z: 0, w: 150}
   spriteGenerateFallbackPhysicsShape: 1
   alphaUsage: 1
   alphaIsTransparency: 1
@@ -75,7 +75,7 @@ TextureImporter:
     maxTextureSize: 2048
     resizeAlgorithm: 0
     textureFormat: -1
-    textureCompression: 2
+    textureCompression: 0
     compressionQuality: 50
     crunchedCompression: 0
     allowsAlphaSplitting: 0
@@ -113,13 +113,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Orb_Core_Hidden_0
+      name: Tube_Glow_0
       rect:
         serializedVersion: 2
-        x: 52
-        y: 52
-        width: 152
-        height: 151
+        x: 12
+        y: 64
+        width: 360
+        height: 862
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -128,8 +128,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 7446a8f43dec8d250800000000000000
-      internalID: 5969748713047483463
+      spriteID: a3c4b48f0a2c516b0800000000000000
+      internalID: -5326136987679503302
       vertices: []
       indices: 
       edges: []
@@ -148,7 +148,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      Orb_Core_Hidden_0: 5969748713047483463
+      Tube_Glow_0: -5326136987679503302
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

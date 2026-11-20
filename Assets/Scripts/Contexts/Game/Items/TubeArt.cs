@@ -12,19 +12,26 @@ namespace Project.Contexts.Game.Items
 
         private const float CenterPx = 512f;
         private const float BottomPx = 1014f;
+        // Top of the empty cap.
         private const float MouthPx = 10f;
-        // Widest point: the mouth's top gold band.
-        private const float WidthPx = 342f;
+        // Widest point: the empty cap.
+        private const float WidthPx = 339f;
 
-        // Balls are 184 px, the largest that fits four with a 3 px gap, so they never overlap at rest or lifted.
-        public const float OrbSpherePx = 180f;
-        private const float BallPx = 184f;
+        private const float BallPx = 200f;
         private const float BallGapPx = 3f;
         private const float SlotSpacingPx = BallPx + BallGapPx;
-        private const float BottomSlotPx = 897f - BallPx / 2f;
+        private const float BottomSlotPx = 840f;
 
-        // The completed cap (384x384, centered pivot) sits 492 px above the tube art's center.
-        private const float CapOffsetPx = 492f;
+        // The orb art is drawn with a 181 px sphere; scaled up to BallPx until art at that size replaces it.
+        public const float OrbArtScale = 1.105f;
+        public const float OrbPixelsPerUnit = PixelsPerUnit / OrbArtScale;
+
+        // The completed cap (384x384, centered pivot) sits 512 px above the tube art's center.
+        private const float CapOffsetPx = 512f;
+
+        // Glass rows above and below these stay fixed when a tube stretches.
+        public const float GlassTopBorderPx = 150f;
+        public const float GlassBottomBorderPx = 154f;
 
         public const float SlotHeight = SlotSpacingPx / PixelsPerUnit;
 
@@ -51,24 +58,40 @@ namespace Project.Contexts.Game.Items
         // Art bottom relative to a bottle's origin, so tubes sit where Sort.BoardLayout expects them.
         public const float BottomFromOrigin = -0.1385f;
 
-        // Ball light 0, glow 1, body 2-7 + BallSortingSpan per stack place (top 25), +20 flying; all under FrontOrder.
-        public const int BallSortingSpan = 6;
+        // Ball light 0, glow 1, body 2-6 + BallSortingSpan per stack place (top 21), +20 flying; all under FrontOrder.
+        public const int BallSortingSpan = 5;
         public const int BackOrder = -10;
-        // Under the balls so the mouth's back rim and inside stay behind them.
-        public const int MouthOrder = -5;
-        // Glass is drawn twice, under and over the balls; the halves sum to the original art where there is no ball.
+        public const int EndPieceOrder = -9;
+        // Front glass is drawn twice, under and over the balls; the shares add up to the art where no ball is.
         public const int GlassBehindOrder = -3;
         public const int FrontOrder = 50;
         public const float GlassOverBalls = 0.05f;
-        public const int OutlineOrder = 60;
-        // Additive completion glow, over the glass and its outline.
-        public const int OutlineGlowOrder = 61;
-        // Front half of the mouth, over flying balls too, so a ball in the mouth looks half inside.
+        public const int GlowOrder = 55;
+        // Additive copy of the glow that flashes on completion.
+        public const int GlowFlashOrder = 56;
+        // The cap sits behind the balls; only its front rim (RimFront) is drawn over them.
+        public const int EmptyCapOrder = -5;
+        // Over flying balls too, so a ball in the mouth looks half inside.
         public const int RimFrontOrder = 65;
-        // Additive light behind the completed cap.
-        public const int CapGlowOrder = 69;
-        public const int StopperOrder = 70;
-        public const int GemOrder = 71;
+        public const int CompletedCapOrder = 71;
+        public const int GemOrder = 72;
+        // Ice over every tube layer, its badge orb and melt art above it.
+        public const int FrozenOrder = 80;
+        public const int FrozenBadgeOrder = 81;
+        public const int MeltOrder = 87;
+        // Ball overlays share the rim's order; their depth keeps them in a fixed order on top of the body.
+        public const int BallOverlayOrder = 6;
+        public const float BallOverlayDepth = 0.001f;
+        // Board-level groups: a shutter over idle tubes only, the blast over everything.
+        public const int ShutterGroupOrder = 1;
+        public const int BlastGroupOrder = 30;
+
+        // Obstacle art drawn for this tube and a 200 px orb.
+        public const float ArtHeightPx = 1024f;
+        public const float ArtWidthPx = 384f;
+
+        // Local y in the art's space (center origin) of a pixel row counted from the art's top.
+        public static float ArtY(float px) => (CenterPx - px) / PixelsPerUnit;
 
         // Extra mouth height for a tube not Slots balls tall (negative if shorter); the straight middle takes it.
         public static float Rise(int capacity) => (capacity - Slots) * SlotHeight;
