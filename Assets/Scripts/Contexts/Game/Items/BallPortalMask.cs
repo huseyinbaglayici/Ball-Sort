@@ -54,6 +54,7 @@ namespace Project.Contexts.Game.Items
             copy.position = exit + Vector3.Scale(_visual.position - _root.position, exitShape);
             for (var i = 0; i < _layers.Length; i++)
             {
+                _exitLayers[i].enabled = _layers[i].enabled;
                 _exitLayers[i].sprite = _layers[i].sprite;
                 _exitLayers[i].color = _layers[i].color;
                 _exitLayers[i].sortingOrder = _layers[i].sortingOrder;
