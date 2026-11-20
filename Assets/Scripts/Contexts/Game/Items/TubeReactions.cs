@@ -13,6 +13,8 @@ namespace Project.Contexts.Game.Items
         private const float RecoilSpringBack = 0.3f;
 
         private readonly List<Reaction> _running = new();
+        // Tilt in degrees around the tube's bottom, in the x of each pose.
+        private readonly List<Reaction> _tilts = new();
         private readonly Transform _art;
         private readonly Vector3 _artHome;
         private readonly Transform _content;
@@ -68,37 +70,58 @@ namespace Project.Contexts.Game.Items
                 (Pose(config.ImpactSquash - Vector2.one, 0f), config.ImpactIn, config.SquashCurve),
                 (Vector4.zero, config.ImpactOut, config.RecoverCurve));
 
-        public void Complete(BallAnimationConfig config) =>
-            Add(config.CompleteDelay, 1f, Vector4.zero,
+        // Twitch and creep up, hop, then land with a squash and stretch.
+        public void Complete(BallAnimationConfig config)
+        {
+            Add(0f, 1f, Vector4.zero,
+                (Pose(Vector2.zero, -config.CompleteChargeRise), config.CompleteChargeDuration, config.CompleteChargeCurve),
                 (Pose(Vector2.zero, -config.CompleteHop), config.CompleteRise, config.LiftCurve),
                 (Vector4.zero, config.CompleteFall, config.SquashCurve),
                 (Pose(config.CompleteSquash - Vector2.one, 0f), config.CompleteSquashIn, config.SquashCurve),
+                (Pose(config.CompleteStretch - Vector2.one, 0f), config.CompleteStretchDuration, config.StretchCurve),
                 (Vector4.zero, config.CompleteSquashOut, config.RecoverCurve));
+            var loops = Mathf.Max(config.CompleteTwitchLoops, 0);
+            var angle = config.CompleteTwitchAngle;
+            AddTilt(config.CompleteTwitchStep * 4f * loops, u => angle * Mathf.Sin(Mathf.PI * 2f * loops * u));
+        }
 
         // Call once per frame.
         public void Tick()
         {
-            if (_running.Count == 0 && !_deformed) return;
+            if (_running.Count == 0 && _tilts.Count == 0 && !_deformed) return;
             var now = Time.time;
-            var pose = Vector4.zero;
-            for (var i = _running.Count - 1; i >= 0; i--)
-            {
-                var reaction = _running[i];
-                var u = (now - reaction.Start) / reaction.Length;
-                if (u >= 1f)
-                {
-                    _running.RemoveAt(i);
-                    continue;
-                }
-                if (u > 0f) pose += reaction.At(u);
-            }
-            Apply(pose);
+            var pose = Sum(_running, now);
+            Apply(pose, Sum(_tilts, now).x);
         }
 
         public void Clear()
         {
             _running.Clear();
-            Apply(Vector4.zero);
+            _tilts.Clear();
+            Apply(Vector4.zero, 0f);
+        }
+
+        private static Vector4 Sum(List<Reaction> reactions, float now)
+        {
+            var sum = Vector4.zero;
+            for (var i = reactions.Count - 1; i >= 0; i--)
+            {
+                var reaction = reactions[i];
+                var u = (now - reaction.Start) / reaction.Length;
+                if (u >= 1f)
+                {
+                    reactions.RemoveAt(i);
+                    continue;
+                }
+                if (u > 0f) sum += reaction.At(u);
+            }
+            return sum;
+        }
+
+        private void AddTilt(float length, Func<float, float> degrees)
+        {
+            if (length <= 0f) return;
+            _tilts.Add(new Reaction(Time.time, length, u => new Vector4(degrees(u), 0f, 0f, 0f)));
         }
 
         private static Vector4 Pose(Vector2 scaleOffset, float drop) => new(scaleOffset.x, scaleOffset.y, drop, 0f);
@@ -132,14 +155,17 @@ namespace Project.Contexts.Game.Items
             _running.Add(new Reaction(Time.time + Mathf.Max(delay, 0f), length, at));
         }
 
-        private void Apply(Vector4 pose)
+        private void Apply(Vector4 pose, float tilt)
         {
             var scale = new Vector3(1f + pose.x, 1f + pose.y, 1f);
+            var rotation = Quaternion.Euler(0f, 0f, tilt);
             _art.localScale = scale;
-            _art.localPosition = new Vector3(_artHome.x + pose.w, _artHome.y * scale.y - pose.z, _artHome.z);
+            _art.localRotation = rotation;
+            _art.localPosition = rotation * new Vector3(_artHome.x + pose.w, _artHome.y * scale.y - pose.z, _artHome.z);
             _content.localScale = scale;
-            _content.localPosition = new Vector3(pose.w, -pose.z, 0f);
-            _deformed = pose != Vector4.zero;
+            _content.localRotation = rotation;
+            _content.localPosition = rotation * new Vector3(pose.w, -pose.z, 0f);
+            _deformed = pose != Vector4.zero || tilt != 0f;
         }
 
         private readonly struct Reaction

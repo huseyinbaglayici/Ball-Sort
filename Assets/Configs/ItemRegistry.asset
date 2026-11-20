@@ -25,3 +25,19 @@ MonoBehaviour:
     Prefab: {fileID: 7458867876792029902, guid: da37b44022694594bab37948a67d78e7, type: 3}
     WarmCount: 24
     MaxCount: 64
+  - Type: 8
+    Prefab: {fileID: 6521750241373970873, guid: 55fb940da1325bc4095d2c3cdeb2dd70, type: 3}
+    WarmCount: 2
+    MaxCount: 6
+  - Type: 5
+    Prefab: {fileID: 6969854683883615792, guid: cf9f1c8383cd2d84ab05e2ec6bc83725, type: 3}
+    WarmCount: 0
+    MaxCount: 8
+  - Type: 6
+    Prefab: {fileID: 6709369118555125064, guid: 4206cf45e0f005d45af75bf772f05065, type: 3}
+    WarmCount: 0
+    MaxCount: 8
+  - Type: 7
+    Prefab: {fileID: 7960171944049526040, guid: 045bbbcdc7cdf9e439c3eab0cfd89826, type: 3}
+    WarmCount: 0
+    MaxCount: 4

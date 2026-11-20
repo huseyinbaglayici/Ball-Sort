@@ -186,25 +186,146 @@ namespace Project.Contexts.Game.Sort
         [Range(0f, 1f)] public float OrbHaloAlpha;
 
         [Header("Completed bottle")]
-        [Tooltip("The cap art drops onto the mouth and settles over this time.")]
-        public float CapDuration = 0.25f;
-        [Tooltip("Completed: after the last impact settles, the cap drops and the tube gives a small victory hop, landing with a squash.")]
-        public float CompleteDelay = 0.15f;
-        [Tooltip("Hop height in board units.")]
-        public float CompleteHop = 0.3f;
+        [Tooltip("Front glass color while the tube is not completed; it is additive, so grey dims it. Completion brings it back to white.")]
+        public Color GlassRestTint = new(0.8f, 0.8f, 0.8f, 1f);
+        [Tooltip("Time for the front glass to brighten to white when the tube is completed, from the last landing.")]
+        public float GlassCompleteBrighten = 0.25f;
+        [Tooltip("Charge before the victory hop: the tube twitches and slowly rises for this long after the last landing.")]
+        public float CompleteChargeDuration = 0.65f;
+        [Tooltip("Twitch during the charge: tilt in degrees each way, time per quarter swing, and how many full swings.")]
+        public float CompleteTwitchAngle = 1f;
+        public float CompleteTwitchStep = 0.05f;
+        public int CompleteTwitchLoops = 3;
+        [Tooltip("How far the tube creeps up during the charge, in board units, easing in.")]
+        public float CompleteChargeRise = 0.27f;
+        public AnimationCurve CompleteChargeCurve = Curve(0f, 0f, 0f, 0f, 1f, 1f, 2f, 2f);
+        [Tooltip("Hop height in board units, from rest. The hop starts when the charge ends.")]
+        public float CompleteHop = 0.445f;
         public float CompleteRise = 0.28f;
         public float CompleteFall = 0.05f;
-        public Vector2 CompleteSquash = new(1.08f, 0.93f);
+        [Tooltip("Landing after the hop: squash, stretch and recover.")]
+        public Vector2 CompleteSquash = new(1.07f, 0.95f);
         public float CompleteSquashIn = 0.04f;
-        public float CompleteSquashOut = 0.15f;
+        public Vector2 CompleteStretch = new(0.97f, 1.04f);
+        public float CompleteStretchDuration = 0.07f;
+        public float CompleteSquashOut = 0.2f;
+        [Tooltip("The completed cap pops out above the mouth when the charge ends: start and peak heights over its seat, in board units.")]
+        public float CapPopStart = 0.74f;
+        public float CapPopPeak = 1.58f;
+        [Tooltip("Rise to the peak, then the slam down onto the mouth, timed to meet the tube at the top of its hop.")]
+        public float CapPopDuration = 0.2f;
+        public float CapSlamDuration = 0.1f;
+        [Tooltip("The cap appears small and fades in, stretches tall on the way up, squashes on the slam and settles.")]
+        public Vector2 CapPopScale = new(0.4f, 0.6f);
+        public Vector2 CapStretch = new(0.9f, 1.2f);
+        public float CapStretchIn = 0.1f;
+        public float CapFadeIn = 0.17f;
+        public Vector2 CapSquash = new(1.094f, 0.975f);
+        public float CapSquashIn = 0.05f;
+        public float CapSettle = 0.07f;
+
+        [Header("Completion finish")]
+        [Tooltip("The finish when a tube completes: the singularity, the essences drawn from the orbs, its palette and timing.")]
+        public FinishFxSettings Finish = new();
+        [Tooltip("After the slam the balls hop bottom to top, each landing with a soft squash: delay, height, hop time, stagger and squash share.")]
+        public float BallWaveDelay = 0.06f;
+        public float BallWaveHop = 0.1f;
+        public float BallWaveDuration = 0.16f;
+        public float BallWaveStagger = 0.04f;
+        [Range(0f, 1f)] public float BallWaveLand = 0.5f;
+        [Tooltip("When the last tube completes, the win popup waits this long so the completion plays out.")]
+        public float WinPopupDelay = 1.1f;
         [Tooltip("As the cap lands, an additive glow around the tube flashes up in this color and fades out.")]
         public Color CompleteGlowColor = new(1f, 0.858f, 0.179f, 1f);
         public float CompleteGlowIn = 0.12f;
         public float CompleteGlowHold = 0.1f;
         public float CompleteGlowOut = 0.6f;
-        [Tooltip("Additive light behind the cap: it flashes with the tube glow and then stays at the resting alpha.")]
-        public Color CapGlowColor = Color.white;
-        public float CapGlowRestAlpha = 0.35f;
+
+        [Header("Hidden ball")]
+        [Tooltip("Before it breaks the shell trembles, harder toward the end: time, peak scale, peak tilt in degrees and peak side shift in board units.")]
+        public float HiddenShakeDuration = 0.56f;
+        public float HiddenShakeScale = 1.06f;
+        public float HiddenShakeDegrees = 6f;
+        public float HiddenShakeShift = 4f / 190f;
+        [Tooltip("The shell is swapped for its break art, which grows to this scale while it fades out.")]
+        public float HiddenBreakDuration = 0.64f;
+        public float HiddenBreakScale = 1.45f;
+        [Tooltip("The real orb pops in under the break this long after the break starts, from this scale.")]
+        public float HiddenOrbDelay = 0.04f;
+        public float HiddenOrbDuration = 0.48f;
+        public float HiddenOrbFrom = 0.55f;
+
+        [Header("Frozen tube")]
+        [Tooltip("On-screen width of the needed color's orb on the ice badge, in tube units (the tube is about 1.8 wide).")]
+        public float FrozenBadgeOrbDiameter = 0.36f;
+        [Tooltip("When it melts, the ice first wobbles like jelly: time and scale amount, fading out.")]
+        public float MeltWobbleDuration = 0.8f;
+        public float MeltWobble = 0.012f;
+        public float MeltWobbleCycles = 4f;
+        [Tooltip("The ice fades to MeltHalfAlpha over MeltDuration, then out over MeltOutDuration.")]
+        public float MeltDuration = 1.5f;
+        [Range(0f, 1f)] public float MeltHalfAlpha = 0.5f;
+        public float MeltOutDuration = 0.25f;
+        [Tooltip("The melt art shows quickly as the melt starts, then fades out slowly in place.")]
+        public float MeltShardIn = 0.25f;
+        public float MeltShardOut = 2.4f;
+        [Tooltip("Once the ice is gone the balls hop bottom to top: time per ball and delay to the next.")]
+        public float MeltHopDuration = 0.64f;
+        public float MeltHopStagger = 0.36f;
+        [Tooltip("Hop height in board units after a frozen tube or shutter opens.")]
+        public float ObstacleHopHeight = 22f / 190f;
+
+        [Header("Shutter")]
+        [Tooltip("The padlock swings from its shackle, growing to this angle, while the shutter ticks sideways by ShutterRattle.")]
+        public float ShutterShakeDuration = 1.4f;
+        public float ShutterShakeDegrees = 12f;
+        public float ShutterShakeCycles = 5f;
+        public float ShutterRattle = 1.5f / 190f;
+        [Tooltip("The opened padlock drops this far, turns and fades.")]
+        public float LockDropDuration = 0.88f;
+        public float LockDropDistance = 90f / 190f;
+        public float LockDropDegrees = -20f;
+        [Tooltip("The curtain starts rolling up this long into the drop and slides up ShutterRollDistance behind the housing.")]
+        public float ShutterRollDelay = 0.44f;
+        public float ShutterRollDuration = 1.44f;
+        public float ShutterRollDistance = 850f / 190f;
+        [Tooltip("Then housing and frame fade out.")]
+        public float ShutterFadeDuration = 0.48f;
+        public float ShutterHopDuration = 0.56f;
+        public float ShutterHopStagger = 0.24f;
+        [Tooltip("The used key grows to this scale with a small overshoot, then fades.")]
+        public float KeyUseScale = 1.25f;
+        public float KeyUsePop = 0.2f;
+        public float KeyUseFade = 0.4f;
+
+        [Header("Bomb")]
+        [Tooltip("A lit bomb's red light fades in, then pulses between BombPulseMin and full; faster on the last BombFastFuse moves.")]
+        public float BombLitFadeIn = 0.24f;
+        public float BombPulsePeriod = 0.48f;
+        public float BombPulseFastPeriod = 0.22f;
+        [Range(0f, 1f)] public float BombPulseMin = 0.65f;
+        public int BombFastFuse = 2;
+        [Tooltip("Defuse: the split art pops from DefuseFrom to 1, holds, then grows to DefuseOutScale while it fades.")]
+        public float DefuseIn = 0.2f;
+        public float DefuseFrom = 0.92f;
+        public float DefuseHold = 0.2f;
+        public float DefuseOut = 0.48f;
+        public float DefuseOutScale = 1.1f;
+        [Tooltip("The orb pops in under it this long after the defuse starts, from DefuseOrbFrom.")]
+        public float DefuseOrbDelay = 0.08f;
+        public float DefuseOrbDuration = 0.4f;
+        public float DefuseOrbFrom = 0.6f;
+        [Tooltip("Explosion: the bomb trembles and swells, then the blast grows in, holds while growing a little, and fades out growing.")]
+        public float ExplodeShake = 0.64f;
+        public float ExplodeShakeScale = 1.08f;
+        public float ExplodeShakeDegrees = 8f;
+        public float ExplodeIn = 0.2f;
+        public float ExplodeFrom = 0.5f;
+        public float ExplodePeak = 1.6f;
+        public float ExplodeHold = 0.44f;
+        public float ExplodeHoldScale = 1.75f;
+        public float ExplodeOut = 0.72f;
+        public float ExplodeEndScale = 2f;
 
         [Header("Contacts")]
         [Tooltip("When a group drops back into its own tube, its balls land this far apart, bottom ball first, so each landing is heard on its own.")]

@@ -103,7 +103,16 @@ namespace Project.Core.Pooling
 
         public void ReturnAll()
         {
-            while (_inUseCount > 0) Return(_inUse[_inUseCount - 1]);
+            while (_inUseCount > 0)
+            {
+                var last = _inUseCount - 1;
+                if (Return(_inUse[last])) continue;
+                // A destroyed entry can never come back; drop it so the loop ends.
+                Debug.LogWarning($"[Pool] '{Name}' had a destroyed object marked in use; dropped it.");
+                _inUse[last] = null;
+                _inUseHandles[last] = null;
+                _inUseCount = last;
+            }
         }
 
         public void DestroyAll()

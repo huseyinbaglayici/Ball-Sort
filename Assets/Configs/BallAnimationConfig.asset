@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c5220409f5b28ca4196843cd014c1ac1, type: 3}
   m_Name: BallAnimationConfig
   m_EditorClassIdentifier: Project.Contexts::Project.Contexts.Game.Sort.BallAnimationConfig
-  LiftHeight: 1.65
+  LiftHeight: 1.55
   LiftToMouth: 1
   LiftSpeed: 30
   LiftMinDuration: 0.09
@@ -247,19 +247,209 @@ MonoBehaviour:
   GlowColor: {r: 1, g: 1, b: 1, a: 0.9}
   GlowWhiten: 0.4
   OrbHaloAlpha: 0
-  CapDuration: 0.25
-  CompleteDelay: 0.15
-  CompleteHop: 0.3
+  GlassRestTint: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  GlassCompleteBrighten: 0.25
+  CompleteChargeDuration: 0.65
+  CompleteTwitchAngle: 1
+  CompleteTwitchStep: 0.05
+  CompleteTwitchLoops: 3
+  CompleteChargeRise: 0.27
+  CompleteChargeCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 2
+      outSlope: 2
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  CompleteHop: 0.445
   CompleteRise: 0.28
   CompleteFall: 0.05
-  CompleteSquash: {x: 1.08, y: 0.93}
+  CompleteSquash: {x: 1.07, y: 0.95}
   CompleteSquashIn: 0.04
-  CompleteSquashOut: 0.15
-  CompleteGlowColor: {r: 1, g: 0.858, b: 0.179, a: 0}
+  CompleteStretch: {x: 0.97, y: 1.04}
+  CompleteStretchDuration: 0.07
+  CompleteSquashOut: 0.2
+  CapPopStart: 0.74
+  CapPopPeak: 1.58
+  CapPopDuration: 0.2
+  CapSlamDuration: 0.1
+  CapPopScale: {x: 0.4, y: 0.6}
+  CapStretch: {x: 0.9, y: 1.2}
+  CapStretchIn: 0.1
+  CapFadeIn: 0.17
+  CapSquash: {x: 1.094, y: 0.975}
+  CapSquashIn: 0.05
+  CapSettle: 0.07
+  Finish:
+    Deep: {r: 0.18039216, g: 0.11764706, b: 0.5019608, a: 1}
+    Violet: {r: 0.5019608, g: 0.28235295, b: 0.9254902, a: 1}
+    Core: {r: 0.8392157, g: 0.98039216, b: 1, a: 1}
+    Gold: {r: 1, g: 0.7882353, b: 0, a: 1}
+    GoldShare: 0.15
+    ChargeSpeedFrom: 2
+    ChargeSpeedTo: 15
+    BeadSize: 0.38
+    BeadGlowSize: 0.75
+    TrailTime: 0.16
+    TrailMaxArc: 1.9
+    TrailWidth: 0.36
+    GlowLead: 0.45
+    SingularityHeight: 0.75
+    SingularitySize: 0.7
+    FormStart: 0.05
+    FormTime: 0.5
+    Body: {r: 0.03529412, g: 0.023529412, b: 0.10980392, a: 1}
+    RimAlpha: 0.85
+    GlossAlpha: 0.35
+    LensSize: 2.6
+    LensAlpha: 0.35
+    Heat: {r: 0.9254902, g: 0.36862746, b: 0.62352943, a: 1}
+    HeatCore: {r: 1, g: 0.79607844, b: 0.5058824, a: 1}
+    HeatSize: 1.75
+    HeatAlpha: 0.55
+    PhotonSize: 1.22
+    PhotonAlpha: 0.9
+    PhotonSpin: 160
+    DiskSize: 2.1
+    DiskAspect: 0.26
+    DiskTilt: -10
+    DiskWidth: 0.08
+    AccretionSpin: 1.8
+    DiskBeadScale: 0.32
+    DiskAuraAlpha: 0.4
+    DiskDustSpacing: 0.9
+    CollapseTime: 0.12
+    WispStart: 0.1
+    WispStagger: 0.065
+    WispTime: 0.3
+    WispLag: 0.12
+    WispWidth: 0.08
+    WispSide: 0.55
+    WispLift: 0.15
+    DrainEnd: 0.65
+    DrainShare: 0.4
+    DrainTime: 0.12
+    GlowReturnTime: 0.25
+    ExhaleShrink: 0.1
+    ExhaleStretch: 0.08
+    ExhaleDrift: 0.07
+    ExhaleMinTime: 0.06
+    ExhaleRecover: 0.18
+    SoulPeel: 0.3
+    SoulStartSize: 0.3
+    SoulSize: 0.6
+    SoulEndSize: 0.35
+    SoulStretch: 0.9
+    SoulCore: 0.6
+    SoulLift: 0.35
+    SoulAlpha: 0.75
+    SoulEndAlpha: 0.3
+    SoulRise: 0.45
+    SwallowPulse: 0.16
+    SwallowTime: 0.12
+    SwallowGrowth: 0.12
+    SwallowContract: 0.12
+    SwallowLead: 0.06
+    PhotonTighten: 0.15
+    HorizonFrom: 0.25
+    HorizonTo: 0.9
+    HorizonDuration: 0.4
+    HorizonLineFrom: 0.05
+    HorizonLineTo: 0.012
+    RippleDelay: 0.1
+    RippleDuration: 0.5
+    RippleRadius: 0.8
+    RippleAlpha: 0.28
+    RippleLine: 0.05
+    ResidualSize: 0.6
+    ResidualStrength: 0.45
+    GlintSize: 0.45
+    GlintTime: 0.35
+  BallWaveDelay: 0.06
+  BallWaveHop: 0.1
+  BallWaveDuration: 0.16
+  BallWaveStagger: 0.04
+  BallWaveLand: 0.5
+  WinPopupDelay: 1.1
+  CompleteGlowColor: {r: 1, g: 0.858, b: 0.179, a: 0.85}
   CompleteGlowIn: 0.12
   CompleteGlowHold: 0.1
   CompleteGlowOut: 0.6
-  CapGlowColor: {r: 1, g: 1, b: 1, a: 0}
-  CapGlowRestAlpha: 0
-  LandSound: ball_land
-  LandPitchStep: 0.04
+  HiddenShakeDuration: 0.56
+  HiddenShakeScale: 1.06
+  HiddenShakeDegrees: 6
+  HiddenShakeShift: 0.021052632
+  HiddenBreakDuration: 0.64
+  HiddenBreakScale: 1.45
+  HiddenOrbDelay: 0.04
+  HiddenOrbDuration: 0.48
+  HiddenOrbFrom: 0.55
+  FrozenBadgeOrbDiameter: 0.36
+  MeltWobbleDuration: 0.8
+  MeltWobble: 0.012
+  MeltWobbleCycles: 4
+  MeltDuration: 1.5
+  MeltHalfAlpha: 0.5
+  MeltOutDuration: 0.25
+  MeltShardIn: 0.25
+  MeltShardOut: 2.4
+  MeltHopDuration: 0.64
+  MeltHopStagger: 0.36
+  ObstacleHopHeight: 0.11578947
+  ShutterShakeDuration: 1.4
+  ShutterShakeDegrees: 12
+  ShutterShakeCycles: 5
+  ShutterRattle: 0.007894737
+  LockDropDuration: 0.88
+  LockDropDistance: 0.47368422
+  LockDropDegrees: -20
+  ShutterRollDelay: 0.44
+  ShutterRollDuration: 1.44
+  ShutterRollDistance: 4.4736843
+  ShutterFadeDuration: 0.48
+  ShutterHopDuration: 0.56
+  ShutterHopStagger: 0.24
+  KeyUseScale: 1.25
+  KeyUsePop: 0.2
+  KeyUseFade: 0.4
+  BombLitFadeIn: 0.24
+  BombPulsePeriod: 0.48
+  BombPulseFastPeriod: 0.22
+  BombPulseMin: 0.65
+  BombFastFuse: 2
+  DefuseIn: 0.2
+  DefuseFrom: 0.92
+  DefuseHold: 0.2
+  DefuseOut: 0.48
+  DefuseOutScale: 1.1
+  DefuseOrbDelay: 0.08
+  DefuseOrbDuration: 0.4
+  DefuseOrbFrom: 0.6
+  ExplodeShake: 0.64
+  ExplodeShakeScale: 1.08
+  ExplodeShakeDegrees: 8
+  ExplodeIn: 0.2
+  ExplodeFrom: 0.5
+  ExplodePeak: 1.6
+  ExplodeHold: 0.44
+  ExplodeHoldScale: 1.75
+  ExplodeOut: 0.72
+  ExplodeEndScale: 2
+  ReturnContactStagger: 0.05

@@ -34,11 +34,15 @@ namespace Project.Contexts.Game.Sort
         private int[] _incoming = Array.Empty<int>();
         private ItemFactory _factory;
         private LevelPalette _palette;
+        // Last model synced, for reveals that wait for a cover to go.
+        private SortBoard _model;
         private AudioManager _audio;
         private HapticModule _haptics;
         private readonly List<PortalView> _portals = new();
         private readonly ObstacleMarkers _markers = new();
         private bool[] _capped = Array.Empty<bool>();
+        // Completion effect still playing beside each bottle.
+        private CompleteFx[] _fx = Array.Empty<CompleteFx>();
         // Level grid positions, then capacities of every bottle (level ones first, added ones after).
         private readonly List<Vector2> _positions = new();
         private readonly List<int> _capacities = new();
@@ -53,7 +57,10 @@ namespace Project.Contexts.Game.Sort
             _haptics = Services.Get<HapticModule>();
         }
 
-        public bool IsLocked(int bottle) => _locks[bottle] > 0 || Time.time < _settledAt;
+        // An obstacle still showing over a tube that the model already opened locks it too.
+        public bool IsLocked(int bottle) => _locks[bottle] > 0 || Time.time < _settledAt || _markers.IsCovered(bottle);
+
+        public float WinPopupDelay => _animation.WinPopupDelay;
 
         public bool IsAnimating => _flights.Count > 0 || Time.time < _settledAt;
 
@@ -62,6 +69,7 @@ namespace Project.Contexts.Game.Sort
             Clear();
             _factory = factory;
             _palette = palette;
+            _markers.Bind(factory, transform, _animation, palette, RevealUncovered);
 
             _positions.Clear();
             _capacities.Clear();
@@ -81,10 +89,11 @@ namespace Project.Contexts.Game.Sort
             _locks = new int[level.Bottles.Count];
             _incoming = new int[level.Bottles.Count];
             _capped = new bool[level.Bottles.Count];
+            _fx = new CompleteFx[level.Bottles.Count];
             for (var b = 0; b < level.Bottles.Count; b++)
             {
                 var bottle = _factory.Get<BottleItem>(ItemType.Bottle, transform);
-                bottle.Setup(b, board.Capacity(b), BottleLocal(origins[b]), rises[b]);
+                bottle.Setup(b, board.Capacity(b), BottleLocal(origins[b]), rises[b], _animation);
                 _bottles.Add(bottle);
 
                 for (var s = 0; s < board.Count(b); s++)
@@ -98,7 +107,7 @@ namespace Project.Contexts.Game.Sort
             }
 
             for (var b = 0; b < _bottles.Count; b++)
-                if (board.IsCompleted(b)) SetCompleted(b, true);
+                if (board.IsCompleted(b)) SetCompleted(b, true, celebrate: false);
             Sync(board);
         }
 
@@ -121,8 +130,9 @@ namespace Project.Contexts.Game.Sort
             Array.Resize(ref _locks, index + 1);
             Array.Resize(ref _incoming, index + 1);
             Array.Resize(ref _capped, index + 1);
+            Array.Resize(ref _fx, index + 1);
             var bottle = _factory.Get<BottleItem>(ItemType.Bottle, transform);
-            bottle.Setup(index, board.Capacity(index), BottleLocal(origins[index]), rises[index]);
+            bottle.Setup(index, board.Capacity(index), BottleLocal(origins[index]), rises[index], _animation);
             _bottles.Add(bottle);
             _settledAt = Time.time + AddDuration;
             PrimeTween.Tween.Scale(bottle.transform, 0f, 1f, AddDuration, PrimeTween.Ease.OutBack)
@@ -149,7 +159,9 @@ namespace Project.Contexts.Game.Sort
             foreach (var bottle in _bottles) PrimeTween.Tween.StopAll(bottle.transform);
             _settledAt = 0f;
             _markers.Clear();
+            _model = null;
             Array.Clear(_capped, 0, _capped.Length);
+            for (var b = 0; b < _fx.Length; b++) StopFx(b);
             _flights.Clear();
             foreach (var portal in _portals) portal.Destroy();
             _portals.Clear();
@@ -200,7 +212,11 @@ namespace Project.Contexts.Game.Sort
         public void Reject(int bottle) => _bottles[bottle].Reactions.Reject(_animation);
 
         // Tapped while it can't be picked.
-        public void Refuse(int bottle) => _bottles[bottle].Reactions.Locked(_animation);
+        public void Refuse(int bottle)
+        {
+            _bottles[bottle].Reactions.Locked(_animation);
+            _markers.Rattle(bottle);
+        }
 
         // Leftover lifted balls return silently; onDone is skipped if the last flight is cancelled (Undo, Restart).
         public void Transfer(int from, int to, int count, Action onDone, bool silent = false)
@@ -247,33 +263,72 @@ namespace Project.Contexts.Game.Sort
             source.ReturnLifted(_animation);
         }
 
-        public void SetCompleted(int bottle, bool completed)
+        // celebrate: a move just completed it, so the charge, cap pop and side effect play.
+        public void SetCompleted(int bottle, bool completed, bool celebrate = true)
         {
             if (_capped[bottle] == completed) return;
             _capped[bottle] = completed;
-            _bottles[bottle].SetCompleted(completed, _animation);
+            _bottles[bottle].SetCompleted(completed, celebrate);
+            StopFx(bottle);
+            if (completed && celebrate) PlayFx(bottle);
         }
 
-        // Syncs all but ball positions. Caps are only removed here; a new cap waits for the last landing.
-        public void Sync(SortBoard board)
+        private void PlayFx(int bottle)
         {
+            var fx = _factory.Get<CompleteFx>(ItemType.CompleteFx, transform);
+            _fx[bottle] = fx;
+            fx.Play(_bottles[bottle], _animation, done =>
+            {
+                if (_fx[bottle] == done) _fx[bottle] = null;
+                _factory.Release(done);
+            });
+        }
+
+        private void StopFx(int bottle)
+        {
+            var fx = _fx[bottle];
+            if (fx == null) return;
+            _fx[bottle] = null;
+            _factory.Release(fx);
+        }
+
+        // Syncs all but ball positions; obstacles a move removes stay until PlayObstacles (null move: show at once).
+        public void Sync(SortBoard board, MoveResult move = null)
+        {
+            _model = board;
+            _markers.Refresh(board, _bottles, move);
             for (var b = 0; b < _bottles.Count; b++)
             {
                 var balls = _bottles[b].Balls;
+                // A ball under a cover being removed is revealed once the cover is gone.
+                var covered = _markers.IsCovered(b);
                 for (var s = 0; s < balls.Count && s < board.Count(b); s++)
                 {
-                    if (balls[s].IsHidden && board.IsKnown(b, s)) Reveal(b, s);
+                    if (balls[s].IsHidden && board.IsKnown(b, s) && !covered) Reveal(b, s);
                     else if (!balls[s].IsHidden && !board.IsKnown(b, s)) balls[s].Hide();
                 }
                 if (_capped[b] && !board.IsCompleted(b)) SetCompleted(b, false);
             }
-            _markers.Refresh(board, _bottles, _palette);
         }
+
+        // The move's flights have landed: its melts, shutter openings, used keys and defuses play.
+        public void PlayObstacles(MoveResult move) => _markers.Play(move);
+
+        // A fuse ran out.
+        public void Explode() => _markers.Explode();
 
         public void Reveal(int bottle, int slot)
         {
             var ball = _bottles[bottle].Balls[slot];
-            ball.Reveal(_palette.GetOrb(ball.ColorIndex), _palette.Get(ball.ColorIndex));
+            ball.Reveal(_palette.GetOrb(ball.ColorIndex), _palette.Get(ball.ColorIndex), _animation);
+        }
+
+        private void RevealUncovered(int bottle)
+        {
+            if (_model == null || bottle >= _bottles.Count) return;
+            var balls = _bottles[bottle].Balls;
+            for (var s = 0; s < balls.Count && s < _model.Count(bottle); s++)
+                if (balls[s].IsHidden && _model.IsKnown(bottle, s)) Reveal(bottle, s);
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
@@ -287,8 +342,11 @@ namespace Project.Contexts.Game.Sort
                     Debug.LogError($"[BoardView] Bottle {b} shows {balls.Count} balls, the model has {board.Count(b)}.");
                     continue;
                 }
+                // A ball under a cover being removed waits for it to go before it is revealed.
+                var covered = _markers.IsCovered(b);
                 for (var s = 0; s < balls.Count; s++)
-                    if (balls[s].ColorIndex != board.ColorAt(b, s) || balls[s].IsHidden == board.IsKnown(b, s))
+                    if (balls[s].ColorIndex != board.ColorAt(b, s) ||
+                        balls[s].IsHidden == board.IsKnown(b, s) && !(covered && balls[s].IsHidden))
                         Debug.LogError($"[BoardView] Bottle {b} slot {s} does not match the model.");
             }
         }

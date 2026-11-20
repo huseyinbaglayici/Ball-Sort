@@ -214,7 +214,7 @@ namespace Project.Contexts.Game
             if (free) _freeArmed = false;
             _tryHasMoves = true;
             _lastMove = move;
-            _board.Sync(_model);
+            _board.Sync(_model, move);
             var reveal = MechanicSounds.OnMove(move);
             if (reveal != null) _audio.PlayOneShotSound(reveal);
             _winPending = _model.IsSolved();
@@ -233,6 +233,8 @@ namespace Project.Contexts.Game
         {
             foreach (var bottle in move.Completed)
                 if (_model.IsCompleted(bottle)) _board.SetCompleted(bottle, true);
+            _board.PlayObstacles(move);
+            if (move.Exploded && _model.IsFailed) _board.Explode();
             // The moment's mechanic sounds; Undo never comes through here, so rewound effects stay silent.
             _soundEvents.Clear();
             MechanicSounds.OnLanded(move, _model, _winPending, _soundEvents);
@@ -648,9 +650,6 @@ namespace Project.Contexts.Game
 
         private sealed class WonState : State
         {
-            // 150-220 ms after the last physical contact.
-            private const float WinCueDelay = 0.18f;
-
             private readonly GameController _c;
             public WonState(GameController controller) => _c = controller;
 
@@ -660,13 +659,17 @@ namespace Project.Contexts.Game
                 _c._ads.EndActivePlay();
                 _c._rewardedWatched = false;
                 var result = _c._progress.CompleteLevel();
-                // Win cue starts a beat after the last contact, delivery sound right after, so nothing lands on the final ball.
-                PrimeTween.Tween.Delay(_c, WinCueDelay, controller =>
-                {
-                    controller._audio.PlayOneShotSound(WinSound(result.Difficulty));
-                    controller._haptics.Haptic(HapticModule.HapticType.Heavy);
-                    PlayRewardSound(result);
-                });
+                // Popup, win cue and delivery sound wait for the last tube's completion to play out.
+                PrimeTween.Tween.Delay(this, _c._board.WinPopupDelay, state => state.ShowResult(result));
+            }
+
+            public override void Exit() => PrimeTween.Tween.StopAll(this);
+
+            private void ShowResult(LevelResult result)
+            {
+                _c._audio.PlayOneShotSound(WinSound(result.Difficulty));
+                _c._haptics.Haptic(HapticModule.HapticType.Heavy);
+                PlayRewardSound(result);
                 var options = new[] { new ResultOption(_c._loc.Get("common.continue"), () => ShowMetaTransition(result)) };
                 _c._popups.Show(_c._resultPopup, ResultArgs.Win(result, options,
                     _c._progress.CanDoubleReward(result) ? (System.Action<System.Action<bool>>)(done => DoubleReward(result, done)) : null));

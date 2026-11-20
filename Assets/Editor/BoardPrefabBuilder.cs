@@ -24,33 +24,51 @@ namespace Project.Editor
         private const string TubeFolder = "Assets/Art/Sprites/Tube";
         private const string AdditivePath = "Assets/Art/Materials/SpriteAdditive.mat";
         private const string AtlasPath = "Assets/Art/Atlases/GameplayAtlas.spriteatlasv2";
+        private const string ObstacleFolder = "Assets/Art/Sprites/Obstacles";
+        private const string CountMaterialPath = "Assets/Art/Materials/BombCount.mat";
+        // 9-slice borders of the shutter art (left, bottom, right, top).
+        private static readonly Vector4 ShutterBorder = new(62f, 0f, 62f, 0f);
+        private static readonly Vector4 HousingBorder = new(40f, 0f, 40f, 0f);
+        // The padlock's swing pivot, the top of its shackle, above its center.
+        private const float ShacklePx = 114f;
+        // Bomb counter: white with a dark navy outline, about 70% of the bomb screen's height.
+        private const float CountFontSize = 2.4f;
+        private static readonly Color CountOutline = new(0.08f, 0.07f, 0.3f, 1f);
 
         [MenuItem("Tools/Project/Create Board Prefabs")]
         public static void Create()
         {
             var skins = new OrbSkin[OrbColors.Length];
             for (var i = 0; i < OrbColors.Length; i++) skins[i] = LoadOrbSkin(OrbColors[i].name, OrbColors[i].color);
-            var hidden = LoadOrbSkin(HiddenOrb.name, HiddenOrb.color);
-            if (System.Array.Exists(skins, IsIncomplete) || IsIncomplete(hidden)) return;
+            if (System.Array.Exists(skins, IsIncomplete)) return;
             var back = ImportOrbSprite($"{OrbFolder}/Orb_Back.png");
             var front = ImportOrbSprite($"{OrbFolder}/Orb_Front.png", sharp: true);
-            var coreGlow = ImportOrbSprite($"{OrbFolder}/Orb_CoreGlow.png");
-            if (back == null || front == null || coreGlow == null) return;
-            for (var i = 0; i < skins.Length; i++) skins[i].CoreGlow = coreGlow;
+            if (back == null || front == null) return;
+            var art = ImportObstacleArt();
+            if (art == null) return;
             BuildPalette(skins);
 
             var bottle = SavePrefab(CreateBottle(), "Bottle");
-            var ball = SavePrefab(CreateBall(ItemType.Ball, back, front, skins[0], hidden), "Ball");
-            var question = SavePrefab(CreateBall(ItemType.QuestionMark, back, front, skins[0], hidden), "BallQuestionMark");
+            var ball = SavePrefab(CreateBall(ItemType.Ball, back, front, skins[0], art), "Ball");
+            var question = SavePrefab(CreateBall(ItemType.QuestionMark, back, front, skins[0], art), "BallQuestionMark");
+            var completeFx = CompleteFxBuilder.Build();
+            if (completeFx == null) return;
+            var frozen = SavePrefab(CreateFrozenTube(art, back, front, skins[0]), "FrozenTube");
+            var shutter = SavePrefab(CreateShutter(art), "Shutter");
+            var blast = SavePrefab(CreateBombBlast(art), "BombBlast");
 
             BuildRegistry(new List<(ItemType, Item, int, int)>
             {
                 (ItemType.Bottle, bottle.GetComponent<Item>(), 12, 16),
                 (ItemType.Ball, ball.GetComponent<Item>(), 40, 64),
-                (ItemType.QuestionMark, question.GetComponent<Item>(), 24, 64)
+                (ItemType.QuestionMark, question.GetComponent<Item>(), 24, 64),
+                (ItemType.CompleteFx, completeFx, 2, 6),
+                (ItemType.FrozenTube, frozen.GetComponent<Item>(), 0, 8),
+                (ItemType.Shutter, shutter.GetComponent<Item>(), 0, 8),
+                (ItemType.BombBlast, blast.GetComponent<Item>(), 0, 4)
             });
             AssetDatabase.SaveAssets();
-            Debug.Log("[BoardPrefabBuilder] Bottle, Ball, BallQuestionMark prefabs, LevelPalette and ItemRegistry are ready.");
+            Debug.Log("[BoardPrefabBuilder] Bottle, Ball, BallQuestionMark, CompleteFx, FrozenTube, Shutter, BombBlast prefabs, LevelPalette and ItemRegistry are ready.");
         }
 
         // Indexed by the color index levels store, so the order must not change.
@@ -60,8 +78,6 @@ namespace Project.Editor
             ("Violet", Hex("6C25A0")), ("Orange", Hex("E56109")), ("LightBlue", Hex("1BA3EF")), ("Pink", Hex("FC7DD8")),
             ("Wine", Hex("730456")), ("White", Hex("656CAB")), ("DarkGreen", Hex("154404")), ("Brown", Hex("7C362D"))
         };
-        // No CoreGlow: the "?" stays readable on it.
-        private static readonly (string name, Color color) HiddenOrb = ("Hidden", Hex("525769"));
         // Saturated and bright, so its saturation and value scale onto any color.
         private const string RecolorSource = "LightBlue";
         private static readonly string[] OrbColorLayers = { "OuterGlow", "Core", "InnerGlow" };
@@ -124,7 +140,7 @@ namespace Project.Editor
             }
             importer.textureType = TextureImporterType.Sprite;
             importer.spriteImportMode = SpriteImportMode.Single;
-            importer.spritePixelsPerUnit = TubeArt.OrbSpherePx / TubeArt.BallDiameter;
+            importer.spritePixelsPerUnit = TubeArt.OrbPixelsPerUnit;
             // Drawn at about half size on a phone: mipmapped and trilinear against shimmer.
             importer.mipmapEnabled = true;
             importer.alphaIsTransparency = true;
@@ -171,6 +187,9 @@ namespace Project.Editor
                 var entry = entries.GetArrayElementAtIndex(i);
                 entry.FindPropertyRelative("Name").stringValue = OrbColors[i].name;
                 entry.FindPropertyRelative("Color").colorValue = OrbColors[i].color;
+                var table = OrbColorTable.IndexOf(OrbColors[i].name);
+                entry.FindPropertyRelative("Surface").colorValue =
+                    table >= 0 ? OrbColorTable.Entries[table].Surface : OrbColors[i].color;
                 SetOrbSkin(entry.FindPropertyRelative("Orb"), skins[i]);
             }
             so.ApplyModifiedPropertiesWithoutUndo();
@@ -181,27 +200,21 @@ namespace Project.Editor
         {
             property.FindPropertyRelative(nameof(OrbSkin.OuterGlow)).objectReferenceValue = skin.OuterGlow;
             property.FindPropertyRelative(nameof(OrbSkin.Core)).objectReferenceValue = skin.Core;
-            property.FindPropertyRelative(nameof(OrbSkin.CoreGlow)).objectReferenceValue = skin.CoreGlow;
             property.FindPropertyRelative(nameof(OrbSkin.InnerGlow)).objectReferenceValue = skin.InnerGlow;
         }
 
-        // RimFront (the mouth's front half) draws over the balls, so a ball in the mouth looks half inside.
         private static GameObject CreateBottle()
         {
-            // The thin outline stays out of the compressed atlas so it never turns blocky.
-            var back = ImportTubeSprite("Tube_Back");
-            var front = ImportTubeSprite("Tube_Front");
-            var outline = ImportTubeSprite("Tube_Outline");
-            var mouth = ImportTubeSprite("Tube_Mouth");
-            var rimFront = ImportTubeSprite("Tube_RimFront");
-            var cap = ImportTubeSprite("Tube_Stopper");
-            var gem = ImportTubeSprite("Tube_Gem");
-            // Soft light survives compression, so the glows can go in the atlas.
-            WriteOutlineGlow();
-            WriteCapGlow();
-            var outlineGlow = ImportTubeSprite(OutlineGlowName, GlowResolution);
-            var capGlow = ImportTubeSprite(CapGlowName, CapGlowPx / CapGlowWidthPx);
-            BuildGameplayAtlas(back, front, mouth, rimFront, cap, gem, outlineGlow, capGlow);
+            var glassBorder = new Vector4(0f, TubeArt.GlassBottomBorderPx, 0f, TubeArt.GlassTopBorderPx);
+            var back = ImportTubeSprite("Tube_Back_Glass", glassBorder);
+            var front = ImportTubeSprite("Tube_Front_Glass", glassBorder);
+            var glow = ImportTubeSprite("Tube_Glow", glassBorder);
+            var endPiece = ImportTubeSprite("Tube_End_Piece", Vector4.zero);
+            var emptyCap = ImportTubeSprite("Tube_Empty_Cap", Vector4.zero);
+            var rimFront = ImportTubeSprite("Tube_RimFront", Vector4.zero);
+            var completedCap = ImportTubeSprite("Tube_Completed_Cap", Vector4.zero);
+            var gem = ImportTubeSprite("Tube_Completed_Gem", Vector4.zero);
+            BuildGameplayAtlas(back, front, glow, endPiece, emptyCap, rimFront, completedCap, gem);
 
             var root = new GameObject("Bottle");
             var item = root.AddComponent<BottleItem>();
@@ -212,37 +225,33 @@ namespace Project.Editor
             container.SetParent(root.transform, false);
             container.localPosition = new Vector3(0f, TubeArt.ContainerLocalY, 0f);
 
-            var backRenderer = AddSprite(container, "Back", back, TubeArt.BackOrder, null);
-            var mouthRenderer = AddSprite(container, "Mouth", mouth, TubeArt.MouthOrder, null);
-            var frontBehind = AddSprite(container, "FrontBehind", front, TubeArt.GlassBehindOrder, EnsureAdditiveMaterial());
-            frontBehind.color = new Color(1f, 1f, 1f, 1f - TubeArt.GlassOverBalls);
-            var frontRenderer = AddSprite(container, "Front", front, TubeArt.FrontOrder, EnsureAdditiveMaterial());
-            frontRenderer.color = new Color(1f, 1f, 1f, TubeArt.GlassOverBalls);
-            var outlineRenderer = AddSprite(container, "Outline", outline, TubeArt.OutlineOrder, null);
+            var additive = EnsureAdditiveMaterial();
+            var backRenderer = AddSprite(container, "BackGlass", back, TubeArt.BackOrder, null);
+            AddSprite(container, "EndPiece", endPiece, TubeArt.EndPieceOrder, null);
+            var frontBehind = AddSprite(container, "FrontGlassBehind", front, TubeArt.GlassBehindOrder, additive);
+            var frontRenderer = AddSprite(container, "FrontGlass", front, TubeArt.FrontOrder, additive);
+            var glowRenderer = AddSprite(container, "Glow", glow, TubeArt.GlowOrder, null);
+            var glowFlash = AddSprite(container, "GlowFlash", glow, TubeArt.GlowFlashOrder, additive);
+            glowFlash.enabled = false;
+            var emptyCapRenderer = AddSprite(container, "EmptyCap", emptyCap, TubeArt.EmptyCapOrder, null);
             var rimFrontRenderer = AddSprite(container, "RimFront", rimFront, TubeArt.RimFrontOrder, null);
 
-            var stopper = AddSprite(container, "Stopper", cap, TubeArt.StopperOrder, null);
-            stopper.transform.localPosition = new Vector3(0f, TubeArt.CapLocalY, 0f);
-            stopper.enabled = false;
-            var gemRenderer = AddSprite(stopper.transform, "Gem", gem, TubeArt.GemOrder, null);
+            var completedCapRenderer = AddSprite(container, "CompletedCap", completedCap, TubeArt.CompletedCapOrder, null);
+            completedCapRenderer.transform.localPosition = new Vector3(0f, TubeArt.CapLocalY, 0f);
+            completedCapRenderer.enabled = false;
+            var gemRenderer = AddSprite(completedCapRenderer.transform, "Gem", gem, TubeArt.GemOrder, null);
             gemRenderer.enabled = false;
-
-            var additive = EnsureAdditiveMaterial();
-            var outlineGlowRenderer = AddSprite(container, "OutlineGlow", outlineGlow, TubeArt.OutlineGlowOrder, additive);
-            outlineGlowRenderer.enabled = false;
-            var capGlowRenderer = AddSprite(stopper.transform, "CapGlow", capGlow, TubeArt.CapGlowOrder, additive);
-            capGlowRenderer.enabled = false;
 
             var so = new SerializedObject(item);
             so.FindProperty("_back").objectReferenceValue = backRenderer;
             so.FindProperty("_front").objectReferenceValue = frontRenderer;
-            so.FindProperty("_outline").objectReferenceValue = outlineRenderer;
-            so.FindProperty("_mouth").objectReferenceValue = mouthRenderer;
+            so.FindProperty("_frontBehind").objectReferenceValue = frontBehind;
+            so.FindProperty("_glow").objectReferenceValue = glowRenderer;
+            so.FindProperty("_glowFlash").objectReferenceValue = glowFlash;
+            so.FindProperty("_emptyCap").objectReferenceValue = emptyCapRenderer;
             so.FindProperty("_rimFront").objectReferenceValue = rimFrontRenderer;
-            so.FindProperty("_stopper").objectReferenceValue = stopper;
+            so.FindProperty("_completedCap").objectReferenceValue = completedCapRenderer;
             so.FindProperty("_gem").objectReferenceValue = gemRenderer;
-            so.FindProperty("_outlineGlow").objectReferenceValue = outlineGlowRenderer;
-            so.FindProperty("_capGlow").objectReferenceValue = capGlowRenderer;
             so.FindProperty("_collider").objectReferenceValue = collider;
             so.FindProperty("_sortingGroup").objectReferenceValue = group;
             so.ApplyModifiedPropertiesWithoutUndo();
@@ -259,93 +268,8 @@ namespace Project.Editor
             return renderer;
         }
 
-        // Padded by GlowPadPx so the blurred outline's center matches the art's.
-        private const string OutlineGlowName = "Tube_OutlineGlow";
-        private const float GlowResolution = 0.5f;
-        private const int GlowPadPx = 32;
-        private const int GlowBlurRadius = 6;
-        private const float GlowBoost = 1.8f;
-        private const string CapGlowName = "Tube_CapGlow";
-        private const int CapGlowPx = 128;
-        private const float CapGlowWidthPx = 430f;
-
-        private static void WriteOutlineGlow()
-        {
-            var source = $"{TubeFolder}/Tube_Outline.png";
-            var texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
-            texture.LoadImage(System.IO.File.ReadAllBytes(source));
-            var step = Mathf.RoundToInt(1f / GlowResolution);
-            var width = texture.width / step + GlowPadPx * 2;
-            var height = texture.height / step + GlowPadPx * 2;
-            var pixels = texture.GetPixels();
-            var alpha = new float[width * height];
-            for (var y = 0; y < texture.height / step; y++)
-            for (var x = 0; x < texture.width / step; x++)
-            {
-                var sum = 0f;
-                for (var dy = 0; dy < step; dy++)
-                for (var dx = 0; dx < step; dx++)
-                    sum += pixels[(y * step + dy) * texture.width + x * step + dx].a;
-                alpha[(y + GlowPadPx) * width + x + GlowPadPx] = sum / (step * step);
-            }
-            // Three box blurs each way approximate a gaussian.
-            for (var pass = 0; pass < 3; pass++)
-            {
-                BoxBlur(alpha, width, height, 1, width, GlowBlurRadius);
-                BoxBlur(alpha, height, width, width, 1, GlowBlurRadius);
-            }
-            var max = 0f;
-            foreach (var a in alpha) max = Mathf.Max(max, a);
-            var glow = new Color[alpha.Length];
-            for (var i = 0; i < alpha.Length; i++) glow[i] = new Color(1f, 1f, 1f, Mathf.Clamp01(alpha[i] / max * GlowBoost));
-            WriteTexture($"{TubeFolder}/{OutlineGlowName}.png", width, height, glow);
-            Object.DestroyImmediate(texture);
-        }
-
-        private static void BoxBlur(float[] values, int length, int lines, int stride, int lineStride, int radius)
-        {
-            var line = new float[length];
-            for (var l = 0; l < lines; l++)
-            {
-                var start = l * lineStride;
-                for (var i = 0; i < length; i++) line[i] = values[start + i * stride];
-                var sum = 0f;
-                for (var i = -radius; i <= radius; i++) sum += line[Mathf.Clamp(i, 0, length - 1)];
-                for (var i = 0; i < length; i++)
-                {
-                    values[start + i * stride] = sum / (radius * 2 + 1);
-                    sum += line[Mathf.Min(i + radius + 1, length - 1)] - line[Mathf.Max(i - radius, 0)];
-                }
-            }
-        }
-
-        private static void WriteCapGlow()
-        {
-            var glow = new Color[CapGlowPx * CapGlowPx];
-            var half = CapGlowPx * 0.5f;
-            for (var y = 0; y < CapGlowPx; y++)
-            for (var x = 0; x < CapGlowPx; x++)
-            {
-                var dx = (x + 0.5f - half) / half;
-                var dy = (y + 0.5f - half) / half;
-                var d = Mathf.Clamp01(Mathf.Sqrt(dx * dx + dy * dy));
-                // Soft falloff that reaches zero exactly at the edge.
-                glow[y * CapGlowPx + x] = new Color(1f, 1f, 1f, Mathf.Exp(-3f * d * d) * (1f - d * d));
-            }
-            WriteTexture($"{TubeFolder}/{CapGlowName}.png", CapGlowPx, CapGlowPx, glow);
-        }
-
-        private static void WriteTexture(string path, int width, int height, Color[] pixels)
-        {
-            var texture = new Texture2D(width, height, TextureFormat.RGBA32, false);
-            texture.SetPixels(pixels);
-            System.IO.File.WriteAllBytes(path, texture.EncodeToPNG());
-            Object.DestroyImmediate(texture);
-            AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
-        }
-
-        // Pixels per unit must match BottleItem's slot math, scaled for art made at another resolution.
-        private static Sprite ImportTubeSprite(string name, float resolution = 1f)
+        // Pixels per unit must match BottleItem's slot math; border is left, bottom, right, top in pixels.
+        private static Sprite ImportTubeSprite(string name, Vector4 border)
         {
             var path = $"{TubeFolder}/{name}.png";
             var importer = (TextureImporter)AssetImporter.GetAtPath(path);
@@ -358,7 +282,7 @@ namespace Project.Editor
             // Drawn well below source size, so mips stop thin edges aliasing; the atlas does the compressing.
             importer.textureType = TextureImporterType.Sprite;
             importer.spriteImportMode = SpriteImportMode.Single;
-            importer.spritePixelsPerUnit = TubeArt.PixelsPerUnit * resolution;
+            importer.spritePixelsPerUnit = TubeArt.PixelsPerUnit;
             importer.mipmapEnabled = true;
             importer.alphaIsTransparency = true;
             importer.filterMode = FilterMode.Trilinear;
@@ -368,8 +292,9 @@ namespace Project.Editor
             var settings = new TextureImporterSettings();
             importer.ReadTextureSettings(settings);
             settings.spriteAlignment = (int)SpriteAlignment.Center;
+            settings.spriteBorder = border;
             // A 9-slice sprite is drawn sliced for long tubes, which needs a full-rect mesh.
-            if (settings.spriteBorder != Vector4.zero) settings.spriteMeshType = SpriteMeshType.FullRect;
+            settings.spriteMeshType = border != Vector4.zero ? SpriteMeshType.FullRect : SpriteMeshType.Tight;
             importer.SetTextureSettings(settings);
             importer.SaveAndReimport();
             return AssetDatabase.LoadAssetAtPath<Sprite>(path);
@@ -420,8 +345,8 @@ namespace Project.Editor
             return material;
         }
 
-        // Six layers at sorting orders 1-6 under a Visual child that squash and smear scale.
-        private static GameObject CreateBall(ItemType type, Sprite back, Sprite front, OrbSkin sample, OrbSkin hidden)
+        // Orb layers 1-5 under a scaled Visual child, then obstacle overlays by depth: shell, key, bomb, counter.
+        private static GameObject CreateBall(ItemType type, Sprite back, Sprite front, OrbSkin sample, ObstacleSprites art)
         {
             var root = new GameObject(type == ItemType.Ball ? "Ball" : "BallQuestionMark");
             var item = root.AddComponent<BallItem>();
@@ -433,36 +358,241 @@ namespace Project.Editor
             var outerGlow = AddSprite(visual, "OuterGlow", sample.OuterGlow, 1, normal);
             var backRenderer = AddSprite(visual, "Back", back, 2, normal);
             var core = AddSprite(visual, "Core", sample.Core, 3, normal);
-            var coreGlow = AddSprite(visual, "CoreGlow", sample.CoreGlow, 4, normal);
-            var frontRenderer = AddSprite(visual, "Front", front, 5, additive);
-            var innerGlow = AddSprite(visual, "InnerGlow", sample.InnerGlow, 6, normal);
-            var layers = new List<SpriteRenderer> { outerGlow, backRenderer, core, coreGlow, frontRenderer, innerGlow };
+            var frontRenderer = AddSprite(visual, "Front", front, 4, additive);
+            var innerGlow = AddSprite(visual, "InnerGlow", sample.InnerGlow, 5, normal);
+            var layers = new List<SpriteRenderer> { outerGlow, backRenderer, core, frontRenderer, innerGlow };
 
-            GameObject mark = null;
+            SpriteRenderer shell = null, shellBreak = null;
             if (type == ItemType.QuestionMark)
             {
-                mark = new GameObject("QuestionMark");
-                mark.transform.SetParent(root.transform, false);
-                var text = mark.AddComponent<TextMeshPro>();
-                text.text = "?";
-                text.fontSize = 5f;
-                text.alignment = TextAlignmentOptions.Center;
-                text.color = Color.white;
-                text.sortingOrder = 1 + layers.Count;
-                text.rectTransform.sizeDelta = new Vector2(1f, 1f);
+                shell = AddOverlay(visual, "Shell", art.Shell, 1, normal);
+                shellBreak = AddOverlay(root.transform, "Break", art.Break, 9, normal);
             }
+            var keyRoot = new GameObject("Key").transform;
+            keyRoot.SetParent(visual, false);
+            var keyGlow = AddOverlay(keyRoot, "KeyGlow", art.KeyGlow, 2, normal);
+            var key = AddOverlay(keyRoot, "KeyMark", art.Key, 3, normal);
+            var bombBase = AddOverlay(visual, "BombBase", art.BombBase, 4, normal);
+            var bombRing = AddOverlay(visual, "BombRing", art.BombRing, 5, normal);
+            var bombFx = AddOverlay(visual, "BombFx", art.BombFx, 6, normal);
+            var defuse = AddOverlay(root.transform, "Defuse", art.Defuse, 8, normal);
+            var count = AddCount(root.transform, 7);
 
             var so = new SerializedObject(item);
             so.FindProperty("_visual").objectReferenceValue = visual;
             SetArray(so.FindProperty("_layers"), layers);
             so.FindProperty("_outerGlow").objectReferenceValue = outerGlow;
             so.FindProperty("_core").objectReferenceValue = core;
-            so.FindProperty("_coreGlow").objectReferenceValue = coreGlow;
             so.FindProperty("_innerGlow").objectReferenceValue = innerGlow;
-            so.FindProperty("_questionMark").objectReferenceValue = mark;
-            SetOrbSkin(so.FindProperty("_hiddenOrb"), hidden);
+            so.FindProperty("_shell").objectReferenceValue = shell;
+            so.FindProperty("_break").objectReferenceValue = shellBreak;
+            so.FindProperty("_keyRoot").objectReferenceValue = keyRoot;
+            so.FindProperty("_keyGlow").objectReferenceValue = keyGlow;
+            so.FindProperty("_key").objectReferenceValue = key;
+            so.FindProperty("_bombBase").objectReferenceValue = bombBase;
+            so.FindProperty("_bombRing").objectReferenceValue = bombRing;
+            so.FindProperty("_bombFx").objectReferenceValue = bombFx;
+            so.FindProperty("_defuse").objectReferenceValue = defuse;
+            so.FindProperty("_bombCount").objectReferenceValue = count;
             so.ApplyModifiedPropertiesWithoutUndo();
             return root;
+        }
+
+        // Hidden until used; step orders it among the overlays.
+        private static SpriteRenderer AddOverlay(Transform parent, string name, Sprite sprite, int step, Material material)
+        {
+            var renderer = AddSprite(parent, name, sprite, TubeArt.BallOverlayOrder, material);
+            renderer.transform.localPosition = new Vector3(0f, 0f, -step * TubeArt.BallOverlayDepth);
+            renderer.enabled = false;
+            return renderer;
+        }
+
+        // Centered on the bomb's screen.
+        private static TextMeshPro AddCount(Transform parent, int step)
+        {
+            var go = new GameObject("BombCount");
+            go.transform.SetParent(parent, false);
+            go.transform.localPosition = new Vector3(0f, 1f / TubeArt.PixelsPerUnit, -step * TubeArt.BallOverlayDepth);
+            var text = go.AddComponent<TextMeshPro>();
+            text.text = "0";
+            text.fontSize = CountFontSize;
+            text.fontStyle = FontStyles.Bold;
+            text.alignment = TextAlignmentOptions.Center;
+            text.color = Color.white;
+            text.textWrappingMode = TextWrappingModes.NoWrap;
+            text.rectTransform.sizeDelta = new Vector2(1f, 0.5f);
+            text.fontSharedMaterial = CountMaterial(text.font);
+            text.sortingOrder = TubeArt.BallOverlayOrder;
+            text.GetComponent<MeshRenderer>().enabled = false;
+            return text;
+        }
+
+        private static Material CountMaterial(TMP_FontAsset font)
+        {
+            var material = AssetDatabase.LoadAssetAtPath<Material>(CountMaterialPath);
+            if (material == null)
+            {
+                material = new Material(font.material) { name = "BombCount" };
+                AssetDatabase.CreateAsset(material, CountMaterialPath);
+            }
+            material.CopyPropertiesFromMaterial(font.material);
+            material.SetFloat(ShaderUtilities.ID_OutlineWidth, 0.3f);
+            material.SetColor(ShaderUtilities.ID_OutlineColor, CountOutline);
+            material.SetFloat(ShaderUtilities.ID_FaceDilate, 0.15f);
+            material.EnableKeyword(ShaderUtilities.Keyword_Outline);
+            EditorUtility.SetDirty(material);
+            return material;
+        }
+
+        // Ice over the tube art with the needed color's orb (all its layers) on the badge, and the melt art over both.
+        private static GameObject CreateFrozenTube(ObstacleSprites art, Sprite back, Sprite front, OrbSkin sample)
+        {
+            var root = new GameObject("FrozenTube");
+            var item = root.AddComponent<FrozenTubeItem>();
+            var ice = AddSprite(root.transform, "Ice", art.Frozen, TubeArt.FrozenOrder, null);
+            var badge = new GameObject("Badge").transform;
+            badge.SetParent(root.transform, false);
+            var normal = EnsureOrbMaterial(OrbLayerPath, BlendMode.OneMinusSrcAlpha);
+            var additive = EnsureOrbMaterial(OrbAdditivePath, BlendMode.One);
+            var order = TubeArt.FrozenBadgeOrder;
+            var outerGlow = AddSprite(badge, "OuterGlow", sample.OuterGlow, order, normal);
+            var backRenderer = AddSprite(badge, "Back", back, order + 1, normal);
+            var core = AddSprite(badge, "Core", sample.Core, order + 2, normal);
+            var frontRenderer = AddSprite(badge, "Front", front, order + 3, additive);
+            var innerGlow = AddSprite(badge, "InnerGlow", sample.InnerGlow, order + 4, normal);
+            var melt = AddSprite(root.transform, "Melt", art.Melt, TubeArt.MeltOrder, null);
+            melt.enabled = false;
+
+            var so = new SerializedObject(item);
+            so.FindProperty("_frozen").objectReferenceValue = ice;
+            so.FindProperty("_melt").objectReferenceValue = melt;
+            so.FindProperty("_badge").objectReferenceValue = badge;
+            so.FindProperty("_badgeOuterGlow").objectReferenceValue = outerGlow;
+            so.FindProperty("_badgeCore").objectReferenceValue = core;
+            so.FindProperty("_badgeInnerGlow").objectReferenceValue = innerGlow;
+            SetArray(so.FindProperty("_badgeLayers"),
+                new List<SpriteRenderer> { outerGlow, backRenderer, core, frontRenderer, innerGlow });
+            so.ApplyModifiedPropertiesWithoutUndo();
+            return root;
+        }
+
+        // Curtain, frame and housing sliced to any width, then the padlock; the curtain shows only below the housing line.
+        private static GameObject CreateShutter(ObstacleSprites art)
+        {
+            var root = new GameObject("Shutter");
+            root.AddComponent<SortingGroup>().sortingOrder = TubeArt.ShutterGroupOrder;
+            var item = root.AddComponent<ShutterItem>();
+            var curtain = AddSliced(root.transform, "Curtain", art.Curtain, 0);
+            curtain.maskInteraction = SpriteMaskInteraction.VisibleInsideMask;
+            var frame = AddSliced(root.transform, "Frame", art.Frame, 1);
+            var housing = AddSliced(root.transform, "Housing", art.Housing, 2);
+            var padlock = new GameObject("Padlock").transform;
+            padlock.SetParent(root.transform, false);
+            var lockOffset = new Vector3(0f, -ShacklePx / TubeArt.PixelsPerUnit, 0f);
+            var padlockBase = AddSprite(padlock, "Base", art.PadlockBase, 3, null);
+            padlockBase.transform.localPosition = lockOffset;
+            var padlockBody = AddSprite(padlock, "Body", art.PadlockBody, 4, null);
+            padlockBody.transform.localPosition = lockOffset;
+
+            var mask = new GameObject("Mask").AddComponent<SpriteMask>();
+            mask.transform.SetParent(root.transform, false);
+            mask.isCustomRangeActive = true;
+            mask.backSortingOrder = -1;
+            mask.frontSortingOrder = 0;
+
+            var so = new SerializedObject(item);
+            so.FindProperty("_curtain").objectReferenceValue = curtain;
+            so.FindProperty("_frame").objectReferenceValue = frame;
+            so.FindProperty("_housing").objectReferenceValue = housing;
+            so.FindProperty("_padlock").objectReferenceValue = padlock;
+            so.FindProperty("_padlockBase").objectReferenceValue = padlockBase;
+            so.FindProperty("_padlockBody").objectReferenceValue = padlockBody;
+            so.FindProperty("_mask").objectReferenceValue = mask;
+            so.ApplyModifiedPropertiesWithoutUndo();
+            return root;
+        }
+
+        private static SpriteRenderer AddSliced(Transform parent, string name, Sprite sprite, int order)
+        {
+            var renderer = AddSprite(parent, name, sprite, order, null);
+            renderer.drawMode = SpriteDrawMode.Sliced;
+            renderer.size = sprite.bounds.size;
+            return renderer;
+        }
+
+        // Drawn over everything on the board.
+        private static GameObject CreateBombBlast(ObstacleSprites art)
+        {
+            var root = new GameObject("BombBlast");
+            root.AddComponent<SortingGroup>().sortingOrder = TubeArt.BlastGroupOrder;
+            var item = root.AddComponent<BombBlastFx>();
+            var blast = AddSprite(root.transform, "Blast", art.Explode, 0, null);
+            blast.enabled = false;
+            var so = new SerializedObject(item);
+            so.FindProperty("_blast").objectReferenceValue = blast;
+            so.ApplyModifiedPropertiesWithoutUndo();
+            return root;
+        }
+
+        private sealed class ObstacleSprites
+        {
+            public Sprite Shell, Break, Key, KeyGlow, BombBase, BombRing, BombFx, Defuse, Explode;
+            public Sprite Frozen, Melt, Curtain, Frame, Housing, PadlockBase, PadlockBody;
+        }
+
+        private static ObstacleSprites ImportObstacleArt()
+        {
+            var art = new ObstacleSprites
+            {
+                Shell = ImportObstacleSprite("Orb_Hidden_Shell"),
+                Break = ImportObstacleSprite("Orb_Hidden_Break"),
+                Key = ImportObstacleSprite("Orb_Key"),
+                KeyGlow = ImportObstacleSprite("Orb_Key_Glow"),
+                BombBase = ImportObstacleSprite("Orb_Bomb_Base"),
+                BombRing = ImportObstacleSprite("Orb_Bomb_ColorRing"),
+                BombFx = ImportObstacleSprite("Orb_Bomb_ActiveFX"),
+                Defuse = ImportObstacleSprite("Orb_Bomb_Diffuse"),
+                Explode = ImportObstacleSprite("Orb_Bomb_Explode"),
+                Frozen = ImportObstacleSprite("Tube_Frozen"),
+                Melt = ImportObstacleSprite("Tube_Melt"),
+                Curtain = ImportObstacleSprite("Shutter_Curtain", ShutterBorder),
+                Frame = ImportObstacleSprite("Shutter_Frame", ShutterBorder),
+                Housing = ImportObstacleSprite("Shutter_Housing", HousingBorder),
+                PadlockBase = ImportObstacleSprite("Padlock_Base"),
+                PadlockBody = ImportObstacleSprite("Padlock_ColorBody")
+            };
+            foreach (var field in typeof(ObstacleSprites).GetFields())
+                if (field.GetValue(art) == null) return null;
+            return art;
+        }
+
+        // Tube PPU: orb art drawn for a 200 px orb then matches TubeArt.BallDiameter; compressed, outside the atlas.
+        private static Sprite ImportObstacleSprite(string name, Vector4 border = default)
+        {
+            var path = $"{ObstacleFolder}/{name}.png";
+            var importer = (TextureImporter)AssetImporter.GetAtPath(path);
+            if (importer == null)
+            {
+                Debug.LogError($"[BoardPrefabBuilder] Missing {path}.");
+                return null;
+            }
+            importer.textureType = TextureImporterType.Sprite;
+            importer.spriteImportMode = SpriteImportMode.Single;
+            importer.spritePixelsPerUnit = TubeArt.PixelsPerUnit;
+            importer.mipmapEnabled = true;
+            importer.alphaIsTransparency = true;
+            importer.filterMode = FilterMode.Trilinear;
+            importer.wrapMode = TextureWrapMode.Clamp;
+            importer.textureCompression = TextureImporterCompression.CompressedHQ;
+            var settings = new TextureImporterSettings();
+            importer.ReadTextureSettings(settings);
+            settings.spriteAlignment = (int)SpriteAlignment.Center;
+            settings.spriteBorder = border;
+            // Sliced sprites need a full-rect mesh.
+            settings.spriteMeshType = border != Vector4.zero ? SpriteMeshType.FullRect : SpriteMeshType.Tight;
+            importer.SetTextureSettings(settings);
+            importer.SaveAndReimport();
+            return AssetDatabase.LoadAssetAtPath<Sprite>(path);
         }
 
         private static void SetArray(SerializedProperty property, List<SpriteRenderer> values)
@@ -495,7 +625,8 @@ namespace Project.Editor
             for (var i = 0; i < entries.Count; i++)
             {
                 var element = list.GetArrayElementAtIndex(i);
-                element.FindPropertyRelative("Type").enumValueIndex = (int)entries[i].type;
+                // The enum's value, not its index: the values have gaps.
+                element.FindPropertyRelative("Type").intValue = (int)entries[i].type;
                 element.FindPropertyRelative("Prefab").objectReferenceValue = entries[i].prefab;
                 element.FindPropertyRelative("WarmCount").intValue = entries[i].warm;
                 element.FindPropertyRelative("MaxCount").intValue = entries[i].max;

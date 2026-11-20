@@ -17,6 +17,8 @@ namespace Project.Contexts.Game.Items
 
         public void Prewarm() => _registry.Prewarm(_pools);
 
+        public bool Has(ItemType type) => _registry.Has(type);
+
         public T Get<T>(ItemType type, Transform parent) where T : Item
         {
             var item = _pools.Spawn(_registry.GetPrefab(type), Vector3.zero, parent);

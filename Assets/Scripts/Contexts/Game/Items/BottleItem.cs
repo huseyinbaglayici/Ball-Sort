@@ -14,20 +14,20 @@ namespace Project.Contexts.Game.Items
         private const int RaisedGroupOrder = 10;
         // Above the source tube, so a flying ball never passes behind its origin.
         private const int ReceivingGroupOrder = 11;
-        private const float CapDrop = 0.35f;
         // The last ball in the selection wave still gets at least this share of the lift time.
         private const float MinWaveShare = 0.55f;
 
         [SerializeField] private SpriteRenderer _back;
         [SerializeField] private SpriteRenderer _front;
-        [SerializeField] private SpriteRenderer _outline;
-        [SerializeField] private SpriteRenderer _mouth;
+        [SerializeField] private SpriteRenderer _frontBehind;
+        [SerializeField] private SpriteRenderer _glow;
+        // Additive copy of the glow, tinted through its color.
+        [SerializeField] private SpriteRenderer _glowFlash;
+        [SerializeField] private SpriteRenderer _emptyCap;
+        // Front half of the empty cap, drawn over the balls.
         [SerializeField] private SpriteRenderer _rimFront;
-        [SerializeField] private SpriteRenderer _stopper;
+        [SerializeField] private SpriteRenderer _completedCap;
         [SerializeField] private SpriteRenderer _gem;
-        // Additive completion glows, tinted through their color.
-        [SerializeField] private SpriteRenderer _outlineGlow;
-        [SerializeField] private SpriteRenderer _capGlow;
         [SerializeField] private BoxCollider2D _collider;
         [SerializeField] private SortingGroup _sortingGroup;
 
@@ -38,12 +38,17 @@ namespace Project.Contexts.Game.Items
         private Transform _content;
         // Body sprites with their art size and position, for stretching to other capacities.
         private readonly List<(SpriteRenderer Renderer, Vector2 Size, Vector3 Position)> _body = new();
-        private Vector3 _mouthPosition;
-        private Vector3 _rimFrontPosition;
+        private Vector3 _emptyCapPosition;
+        private BallAnimationConfig _config;
+        // Tween target for the completion's scheduled ball nudges and hops, so undo stops them together.
+        private readonly object _momentClock = new();
 
         public int Index { get; private set; }
         public int Capacity { get; private set; }
         public IReadOnlyList<BallItem> Balls => _balls;
+
+        // Follows the cap through its pop, slam and the tube's hop.
+        public Transform Gem => _gem.transform;
 
         // Extra height over the TubeArt.Slots art; set by the board.
         public float Rise { get; private set; }
@@ -57,24 +62,29 @@ namespace Project.Contexts.Game.Items
 
         public TubeReactions Reactions { get; private set; }
 
+        // The art's center; tube-sized overlays parent here so they share the tube's reactions and sorting.
+        public Transform Art => _back.transform.parent;
+
+        // Hidden under a shutter, whose edge it would otherwise peek past.
+        public void SetGlowVisible(bool visible) => _glow.enabled = visible;
+
         private void Awake()
         {
             _content = new GameObject("Balls").transform;
             _content.SetParent(transform, false);
             Reactions = new TubeReactions(_back.transform.parent, _content);
 
-            foreach (Transform child in _back.transform.parent)
-                if (child.TryGetComponent<SpriteRenderer>(out var part) && part != _mouth && part != _rimFront && part != _stopper && part.sprite != null)
-                    _body.Add((part, part.sprite.bounds.size, child.localPosition));
-            _mouthPosition = _mouth.transform.localPosition;
-            _rimFrontPosition = _rimFront.transform.localPosition;
+            foreach (var part in new[] { _back, _front, _frontBehind, _glow, _glowFlash })
+                _body.Add((part, part.sprite.bounds.size, part.transform.localPosition));
+            _emptyCapPosition = _emptyCap.transform.localPosition;
         }
 
         private void LateUpdate() => Reactions.Tick();
 
         // rise is at least TubeArt.Rise(capacity), more when the tube spans board rows.
-        public void Setup(int index, int capacity, Vector2 localPosition, float rise)
+        public void Setup(int index, int capacity, Vector2 localPosition, float rise, BallAnimationConfig config)
         {
+            _config = config;
             Index = index;
             Capacity = capacity;
             Rise = rise;
@@ -90,21 +100,31 @@ namespace Project.Contexts.Game.Items
             var size = Size;
             _collider.size = size;
             _collider.offset = new Vector2(0f, size.y * 0.5f);
-            ShowCap(false, null);
+            ShowCap(false, false);
             UpdateSorting();
         }
 
-        // Body sprites draw sliced and stretch by rise with the bottom fixed; sprites without a border stretch whole.
+        // Glass sprites draw sliced and stretch by rise with the bottom fixed; the end piece stays, the cap rides up.
         private void FitArt(float rise)
         {
             foreach (var (part, size, position) in _body)
             {
-                part.drawMode = Mathf.Approximately(rise, 0f) ? SpriteDrawMode.Simple : SpriteDrawMode.Sliced;
-                if (part.drawMode == SpriteDrawMode.Sliced) part.size = new Vector2(size.x, size.y + rise);
+                // Switching to Simple turns a sliced size into scale, so restore the size first or a pooled tube stays tall.
+                if (Mathf.Approximately(rise, 0f))
+                {
+                    part.size = size;
+                    part.drawMode = SpriteDrawMode.Simple;
+                }
+                else
+                {
+                    part.drawMode = SpriteDrawMode.Sliced;
+                    part.size = new Vector2(size.x, size.y + rise);
+                }
+                part.transform.localScale = Vector3.one;
                 part.transform.localPosition = position + Vector3.up * (rise * 0.5f);
             }
-            _mouth.transform.localPosition = _mouthPosition + Vector3.up * rise;
-            _rimFront.transform.localPosition = _rimFrontPosition + Vector3.up * rise;
+            _emptyCap.transform.localPosition = _emptyCapPosition + Vector3.up * rise;
+            _rimFront.transform.localPosition = _emptyCap.transform.localPosition;
         }
 
         // Raised so lifted and flying balls are never drawn behind a neighbouring tube.
@@ -147,14 +167,49 @@ namespace Project.Contexts.Game.Items
             var top = _balls[_balls.Count - 1];
             _balls.RemoveAt(_balls.Count - 1);
             _lifted.Remove(top);
+            // A ball leaving mid-finish (Undo) gets its glow and shape back at once.
+            top.StopDrain();
             return top;
         }
 
-        // The cap waits for the last ball's impact to settle. Undo removes it at once.
-        public void SetCompleted(bool completed, BallAnimationConfig config)
+        // celebrate plays the charge, hop and cap pop; otherwise the cap is shown or removed at once (undo, level start).
+        public void SetCompleted(bool completed, bool celebrate)
         {
-            ShowCap(completed, config, completed ? config.CompleteDelay : 0f);
-            if (completed) Reactions.Complete(config);
+            StopMoment();
+            ShowCap(completed, celebrate);
+            if (!completed) Reactions.Clear();
+            else if (celebrate)
+            {
+                Reactions.Complete(_config);
+                PlayMoment();
+            }
+        }
+
+        // Orbs exhale bottom first toward the finish above; their glow dims and returns with the ball wave after the slam.
+        private void PlayMoment()
+        {
+            var c = _config;
+            var f = c.Finish;
+            var slam = c.CompleteChargeDuration + c.CapPopDuration + c.CapSlamDuration;
+            for (var i = 0; i < _balls.Count; i++)
+            {
+                var ball = _balls[i];
+                var startAt = f.DrainStart(i, _balls.Count);
+                var hopAt = slam + c.BallWaveDelay + c.BallWaveStagger * i;
+                ball.Exhale(startAt, f.ExhaleTime(_balls.Count), f.ExhaleRecover, f.ExhaleShrink, f.ExhaleStretch, f.ExhaleDrift);
+                ball.DrainGlow(startAt + f.WispTime * f.SoulPeel, f.DrainTime, f.DrainShare, hopAt, f.GlowReturnTime);
+                PrimeTween.Tween.Delay(_momentClock, hopAt, _ =>
+                {
+                    ball.Hop(c.BallWaveHop, c.BallWaveDuration, 0f);
+                    ball.Nudge(Mathf.Min(1.5f, c.BallWaveLand), c.BallWaveDuration, c);
+                });
+            }
+        }
+
+        private void StopMoment()
+        {
+            foreach (var ball in _balls) ball.StopDrain();
+            PrimeTween.Tween.StopAll(_momentClock);
         }
 
         // Lifts top first, each the same short distance; liftDelays gets each ball's start delay for lift sounds.
@@ -231,53 +286,85 @@ namespace Project.Contexts.Game.Items
         private void UpdateSorting() =>
             _sortingGroup.sortingOrder = _receiving ? ReceivingGroupOrder : _inMotion || _lifted.Count > 0 ? RaisedGroupOrder : 0;
 
-        // Cap and gem drop in as the open mouth fades out; hiding restores the open mouth at once.
-        private void ShowCap(bool show, BallAnimationConfig config, float delay = 0f)
+        // When the charge ends the empty cap fades as the completed cap pops up, stretches, slams onto the mouth and settles.
+        private void ShowCap(bool show, bool celebrate)
         {
-            var cap = _stopper.transform;
+            var cap = _completedCap.transform;
             StopCapTweens();
             var capY = TubeArt.CapLocalY + Rise;
             cap.localPosition = new Vector3(0f, capY, 0f);
-            _stopper.color = _gem.color = _mouth.color = _rimFront.color = Color.white;
-            _stopper.enabled = _gem.enabled = show;
-            _mouth.enabled = _rimFront.enabled = true;
-            _outlineGlow.enabled = _capGlow.enabled = false;
-            if (!show) return;
+            cap.localScale = Vector3.one;
+            _completedCap.color = _gem.color = _emptyCap.color = _rimFront.color = Color.white;
+            _completedCap.enabled = _gem.enabled = show;
+            _emptyCap.enabled = _rimFront.enabled = !show || celebrate;
+            _glowFlash.enabled = false;
+            TintGlass(show ? Color.white : _config.GlassRestTint);
+            if (!show || !celebrate) return;
 
-            var fade = config.CapDuration * 0.5f;
-            cap.localPosition = new Vector3(0f, capY + CapDrop, 0f);
-            _stopper.color = _gem.color = new Color(1f, 1f, 1f, 0f);
-            PrimeTween.Tween.LocalPositionY(cap, capY + CapDrop, capY, config.CapDuration,
-                PrimeTween.Ease.OutBack, startDelay: delay);
-            PrimeTween.Tween.Alpha(_stopper, 0f, 1f, fade, PrimeTween.Ease.OutQuad, startDelay: delay);
-            PrimeTween.Tween.Alpha(_gem, 0f, 1f, fade, PrimeTween.Ease.OutQuad, startDelay: delay);
-            PrimeTween.Tween.Alpha(_mouth, 1f, 0f, fade, PrimeTween.Ease.InQuad, startDelay: delay + fade);
-            PrimeTween.Tween.Alpha(_rimFront, 1f, 0f, fade, PrimeTween.Ease.InQuad, startDelay: delay + fade);
+            var c = _config;
+            TintGlass(c.GlassRestTint);
+            PrimeTween.Tween.Color(_front, Glass(Color.white, TubeArt.GlassOverBalls), c.GlassCompleteBrighten,
+                PrimeTween.Ease.OutQuad);
+            PrimeTween.Tween.Color(_frontBehind, Glass(Color.white, 1f - TubeArt.GlassOverBalls), c.GlassCompleteBrighten,
+                PrimeTween.Ease.OutQuad);
 
-            var landed = delay + config.CapDuration * 0.5f;
-            Flash(_outlineGlow, config.CompleteGlowColor, 0f, config, landed);
-            Flash(_capGlow, config.CapGlowColor, config.CapGlowRestAlpha, config, landed);
+            var delay = c.CompleteChargeDuration;
+            var landed = delay + c.CapPopDuration + c.CapSlamDuration;
+            PrimeTween.Tween.Alpha(_emptyCap, 1f, 0f, c.CapFadeIn, PrimeTween.Ease.InQuad, startDelay: delay)
+                .OnComplete(_emptyCap, empty => empty.enabled = false);
+            PrimeTween.Tween.Alpha(_rimFront, 1f, 0f, c.CapFadeIn, PrimeTween.Ease.InQuad, startDelay: delay)
+                .OnComplete(_rimFront, rim => rim.enabled = false);
+
+            _completedCap.color = _gem.color = new Color(1f, 1f, 1f, 0f);
+            cap.localPosition = new Vector3(0f, capY + c.CapPopStart, 0f);
+            cap.localScale = Scale(c.CapPopScale);
+            PrimeTween.Tween.Alpha(_completedCap, 0f, 1f, c.CapFadeIn, PrimeTween.Ease.OutQuad, startDelay: delay);
+            PrimeTween.Tween.Alpha(_gem, 0f, 1f, c.CapFadeIn, PrimeTween.Ease.OutQuad, startDelay: delay);
+            PrimeTween.Tween.LocalPositionY(cap, capY + c.CapPopStart, capY + c.CapPopPeak, c.CapPopDuration,
+                PrimeTween.Ease.OutQuad, startDelay: delay);
+            PrimeTween.Tween.LocalPositionY(cap, capY + c.CapPopPeak, capY, c.CapSlamDuration,
+                PrimeTween.Ease.InQuad, startDelay: delay + c.CapPopDuration);
+            // Tall through the flight, squash on the slam, then settle.
+            PrimeTween.Tween.Scale(cap, Scale(c.CapPopScale), Scale(c.CapStretch), c.CapStretchIn,
+                PrimeTween.Ease.OutQuad, startDelay: delay);
+            PrimeTween.Tween.Scale(cap, Scale(c.CapStretch), Scale(c.CapSquash), c.CapSquashIn,
+                PrimeTween.Ease.OutQuad, startDelay: landed);
+            PrimeTween.Tween.Scale(cap, Scale(c.CapSquash), Vector3.one, c.CapSettle,
+                PrimeTween.Ease.InOutSine, startDelay: landed + c.CapSquashIn);
+
+            Flash(_glowFlash, c.CompleteGlowColor, c, landed);
         }
 
-        private static void Flash(SpriteRenderer glow, Color color, float rest, BallAnimationConfig config, float delay)
+        private static Vector3 Scale(Vector2 xy) => new(xy.x, xy.y, 1f);
+
+        private static void Flash(SpriteRenderer glow, Color color, BallAnimationConfig config, float delay)
         {
             glow.enabled = true;
             glow.color = new Color(color.r, color.g, color.b, 0f);
             // Plain tweens on the renderer, not a sequence, so StopCapTweens catches them.
             PrimeTween.Tween.Alpha(glow, 0f, color.a, config.CompleteGlowIn, PrimeTween.Ease.OutQuad, startDelay: delay);
-            PrimeTween.Tween.Alpha(glow, color.a, rest, config.CompleteGlowOut, PrimeTween.Ease.InOutSine,
+            PrimeTween.Tween.Alpha(glow, color.a, 0f, config.CompleteGlowOut, PrimeTween.Ease.InOutSine,
                 startDelay: delay + config.CompleteGlowIn + config.CompleteGlowHold);
         }
 
+        private void TintGlass(Color tint)
+        {
+            _front.color = Glass(tint, TubeArt.GlassOverBalls);
+            _frontBehind.color = Glass(tint, 1f - TubeArt.GlassOverBalls);
+        }
+
+        private static Color Glass(Color tint, float share) => new(tint.r, tint.g, tint.b, share);
+
         private void StopCapTweens()
         {
-            PrimeTween.Tween.StopAll(_stopper.transform);
-            PrimeTween.Tween.StopAll(_stopper);
+            PrimeTween.Tween.StopAll(_completedCap.transform);
+            PrimeTween.Tween.StopAll(_completedCap);
             PrimeTween.Tween.StopAll(_gem);
-            PrimeTween.Tween.StopAll(_mouth);
+            PrimeTween.Tween.StopAll(_emptyCap);
             PrimeTween.Tween.StopAll(_rimFront);
-            PrimeTween.Tween.StopAll(_outlineGlow);
-            PrimeTween.Tween.StopAll(_capGlow);
+            PrimeTween.Tween.StopAll(_glowFlash);
+            PrimeTween.Tween.StopAll(_front);
+            PrimeTween.Tween.StopAll(_frontBehind);
         }
 
         public void OnPointerClick(PointerEventData eventData) =>
@@ -285,12 +372,15 @@ namespace Project.Contexts.Game.Items
 
         public override void OnDespawn()
         {
+            StopMoment();
             Reactions.Clear();
             PrimeTween.Tween.StopAll(transform);
             StopCapTweens();
-            _stopper.enabled = _gem.enabled = _outlineGlow.enabled = _capGlow.enabled = false;
-            _mouth.color = _rimFront.color = Color.white;
-            _mouth.enabled = _rimFront.enabled = true;
+            _completedCap.enabled = _gem.enabled = _glowFlash.enabled = false;
+            _emptyCap.color = _rimFront.color = Color.white;
+            _emptyCap.enabled = _rimFront.enabled = true;
+            _glow.enabled = true;
+            _completedCap.transform.localScale = Vector3.one;
             _inMotion = false;
             _receiving = false;
             _balls.Clear();

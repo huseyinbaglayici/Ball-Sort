@@ -24,15 +24,22 @@ namespace Project.Contexts.Game.Items
 
         public Item GetPrefab(ItemType type)
         {
-            if (_prefabs == null)
+            if (Prefabs.TryGetValue(type, out var prefab)) return prefab;
+            throw new InvalidOperationException($"ItemRegistry '{name}' has no prefab for {type}.");
+        }
+
+        public bool Has(ItemType type) => Prefabs.ContainsKey(type);
+
+        private Dictionary<ItemType, Item> Prefabs
+        {
+            get
             {
+                if (_prefabs != null) return _prefabs;
                 _prefabs = new Dictionary<ItemType, Item>();
                 foreach (var entry in _entries)
                     if (entry.Prefab != null) _prefabs[entry.Type] = entry.Prefab;
+                return _prefabs;
             }
-
-            if (_prefabs.TryGetValue(type, out var prefab)) return prefab;
-            throw new InvalidOperationException($"ItemRegistry '{name}' has no prefab for {type}.");
         }
 
         public void Prewarm(PoolService pools)
