@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Project.Contexts::Project.Contexts.Game.Levels.LevelData
   _capacity: 4
   _bottles:
-  - Position: {x: -4.7, y: 0}
+  - Position: {x: 4.7, y: 0}
     Slots:
     - Color: 0
       Kind: 0
@@ -40,7 +40,7 @@ MonoBehaviour:
       Key: 
       Fuse: 0
       FuseLit: 0
-  - Position: {x: -2.35, y: 0}
+  - Position: {x: -4.7, y: 0}
     Slots:
     - Color: 1
       Kind: 0
@@ -66,7 +66,7 @@ MonoBehaviour:
       Key: 
       Fuse: 0
       FuseLit: 0
-  - Position: {x: 0, y: 0}
+  - Position: {x: -2.35, y: 0}
     Slots:
     - Color: 2
       Kind: 0
@@ -118,7 +118,7 @@ MonoBehaviour:
       Key: 
       Fuse: 0
       FuseLit: 0
-  - Position: {x: 4.7, y: 0}
+  - Position: {x: 0, y: 0}
     Slots:
     - Color: -1
       Kind: 0

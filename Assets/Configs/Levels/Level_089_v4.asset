@@ -14,340 +14,144 @@ MonoBehaviour:
   m_EditorClassIdentifier: Project.Contexts::Project.Contexts.Game.Levels.LevelData
   _capacity: 4
   _bottles:
-  - Position: {x: 0, y: 0}
+  - Position: {x: -3.525, y: 13.6}
     Slots:
-    - Color: 11
-      Kind: 0
-      Hidden: 0
-      Key: 
-      Fuse: 8
-      FuseLit: 1
-    - Color: 11
-      Kind: 0
-      Hidden: 0
-      Key: 
-      Fuse: 6
-      FuseLit: 0
-    - Color: 11
-      Kind: 0
+    - Color: 7
+      Kind: 1
       Hidden: 0
       Key: 
       Fuse: 0
       FuseLit: 0
-    - Color: 6
-      Kind: 0
+    - Color: 9
+      Kind: 1
       Hidden: 0
       Key: 
       Fuse: 0
       FuseLit: 0
-    - Color: -1
-      Kind: 0
+    - Color: 9
+      Kind: 1
       Hidden: 0
       Key: 
       Fuse: 0
       FuseLit: 0
-    - Color: -1
-      Kind: 0
-      Hidden: 0
-      Key: 
-      Fuse: 0
-      FuseLit: 0
-    - Color: -1
-      Kind: 0
-      Hidden: 0
-      Key: 
-      Fuse: 0
-      FuseLit: 0
-    - Color: -1
-      Kind: 0
-      Hidden: 0
-      Key: 
-      Fuse: 0
-      FuseLit: 0
-    - Color: -1
-      Kind: 0
-      Hidden: 0
-      Key: 
-      Fuse: 0
-      FuseLit: 0
-    - Color: -1
-      Kind: 0
-      Hidden: 0
-      Key: 
-      Fuse: 0
-      FuseLit: 0
-    - Color: -1
-      Kind: 0
-      Hidden: 0
-      Key: 
-      Fuse: 0
-      FuseLit: 0
-    - Color: -1
-      Kind: 0
-      Hidden: 0
-      Key: 
-      Fuse: 0
-      FuseLit: 0
-    - Color: -1
-      Kind: 0
-      Hidden: 0
-      Key: 
-      Fuse: 0
-      FuseLit: 0
-    - Color: -1
-      Kind: 0
-      Hidden: 0
-      Key: 
-      Fuse: 0
-      FuseLit: 0
-    - Color: -1
-      Kind: 0
-      Hidden: 0
-      Key: 
-      Fuse: 0
-      FuseLit: 0
-    - Color: -1
-      Kind: 0
-      Hidden: 0
-      Key: 
-      Fuse: 0
-      FuseLit: 0
-  - Position: {x: 4.7, y: 10.2}
-    Slots:
-    - Color: 0
-      Kind: 0
-      Hidden: 0
-      Key: 
-      Fuse: 0
-      FuseLit: 0
-    - Color: 1
-      Kind: 0
-      Hidden: 0
-      Key: 
-      Fuse: 0
-      FuseLit: 0
-    - Color: -1
-      Kind: 0
-      Hidden: 0
-      Key: 
-      Fuse: 0
-      FuseLit: 0
-    - Color: -1
-      Kind: 0
-      Hidden: 0
-      Key: 
-      Fuse: 0
-      FuseLit: 0
-  - Position: {x: -4.7, y: 3.4}
-    Slots:
-    - Color: 0
-      Kind: 0
-      Hidden: 0
-      Key: 
-      Fuse: 0
-      FuseLit: 0
-    - Color: 1
-      Kind: 0
-      Hidden: 0
-      Key: 
-      Fuse: 0
-      FuseLit: 0
-    - Color: -1
-      Kind: 0
-      Hidden: 0
-      Key: 
-      Fuse: 0
-      FuseLit: 0
-    - Color: -1
-      Kind: 0
-      Hidden: 0
-      Key: 
-      Fuse: 0
-      FuseLit: 0
-  - Position: {x: 2.35, y: 10.2}
-    Slots:
-    - Color: 11
-      Kind: 0
-      Hidden: 0
-      Key: 
-      Fuse: 0
-      FuseLit: 0
-    - Color: 11
-      Kind: 0
-      Hidden: 0
-      Key: 
-      Fuse: 0
-      FuseLit: 0
-    - Color: 11
-      Kind: 0
-      Hidden: 0
-      Key: 
-      Fuse: 0
-      FuseLit: 0
-    - Color: 11
-      Kind: 0
-      Hidden: 0
-      Key: 
-      Fuse: 0
-      FuseLit: 0
-  - Position: {x: -2.35, y: 3.4}
-    Slots:
-    - Color: 0
-      Kind: 0
-      Hidden: 0
-      Key: 
-      Fuse: 0
-      FuseLit: 0
-    - Color: 1
-      Kind: 0
-      Hidden: 0
-      Key: 
-      Fuse: 0
-      FuseLit: 0
-    - Color: 0
-      Kind: 0
-      Hidden: 0
-      Key: 
-      Fuse: 0
-      FuseLit: 0
-    - Color: 1
-      Kind: 0
-      Hidden: 0
-      Key: 
-      Fuse: 0
-      FuseLit: 0
-  - Position: {x: 4.7, y: 3.4}
-    Slots:
-    - Color: 2
-      Kind: 0
-      Hidden: 0
-      Key: 
-      Fuse: 0
-      FuseLit: 0
-    - Color: 3
-      Kind: 0
-      Hidden: 0
-      Key: 
-      Fuse: 0
-      FuseLit: 0
-    - Color: -1
-      Kind: 0
-      Hidden: 0
-      Key: 
-      Fuse: 0
-      FuseLit: 0
-    - Color: -1
-      Kind: 0
-      Hidden: 0
-      Key: 
-      Fuse: 0
-      FuseLit: 0
-  - Position: {x: -4.7, y: -3.4}
-    Slots:
-    - Color: 2
-      Kind: 0
-      Hidden: 0
-      Key: 
-      Fuse: 0
-      FuseLit: 0
-    - Color: 3
-      Kind: 0
-      Hidden: 0
-      Key: 
-      Fuse: 0
-      FuseLit: 0
-    - Color: -1
-      Kind: 0
-      Hidden: 0
-      Key: 
-      Fuse: 0
-      FuseLit: 0
-    - Color: -1
-      Kind: 0
-      Hidden: 0
-      Key: 
-      Fuse: 0
-      FuseLit: 0
-  - Position: {x: 2.35, y: 3.4}
-    Slots:
-    - Color: 11
-      Kind: 0
-      Hidden: 0
-      Key: 
-      Fuse: 0
-      FuseLit: 0
-    - Color: 11
-      Kind: 0
-      Hidden: 0
-      Key: 
-      Fuse: 0
-      FuseLit: 0
-    - Color: 11
-      Kind: 0
-      Hidden: 0
-      Key: 
-      Fuse: 0
-      FuseLit: 0
-    - Color: 11
-      Kind: 0
-      Hidden: 0
-      Key: 
-      Fuse: 0
-      FuseLit: 0
-  - Position: {x: -2.35, y: -3.4}
-    Slots:
-    - Color: 2
-      Kind: 0
-      Hidden: 0
-      Key: 
-      Fuse: 0
-      FuseLit: 0
-    - Color: 3
-      Kind: 0
-      Hidden: 0
-      Key: 
-      Fuse: 0
-      FuseLit: 0
-    - Color: 2
-      Kind: 0
-      Hidden: 0
-      Key: 
-      Fuse: 0
-      FuseLit: 0
-    - Color: 3
-      Kind: 0
-      Hidden: 0
-      Key: 
-      Fuse: 0
-      FuseLit: 0
-  - Position: {x: -4.7, y: 10.2}
-    Slots:
     - Color: 4
       Kind: 0
       Hidden: 0
-      Key: B
+      Key: 
+      Fuse: 0
+      FuseLit: 0
+  - Position: {x: -1.175, y: 6.8}
+    Slots:
+    - Color: 1
+      Kind: 1
+      Hidden: 0
+      Key: 
+      Fuse: 0
+      FuseLit: 0
+    - Color: 10
+      Kind: 1
+      Hidden: 0
+      Key: 
+      Fuse: 0
+      FuseLit: 0
+    - Color: 11
+      Kind: 1
+      Hidden: 0
+      Key: 
+      Fuse: 0
+      FuseLit: 0
+    - Color: 7
+      Kind: 0
+      Hidden: 0
+      Key: 
+      Fuse: 0
+      FuseLit: 0
+  - Position: {x: 3.525, y: 13.6}
+    Slots:
+    - Color: 2
+      Kind: 1
+      Hidden: 0
+      Key: 
+      Fuse: 0
+      FuseLit: 0
+    - Color: 0
+      Kind: 1
+      Hidden: 0
+      Key: 
+      Fuse: 0
+      FuseLit: 0
+    - Color: 0
+      Kind: 1
+      Hidden: 0
+      Key: 
+      Fuse: 0
+      FuseLit: 0
+    - Color: 3
+      Kind: 0
+      Hidden: 0
+      Key: 
+      Fuse: 0
+      FuseLit: 0
+  - Position: {x: -1.175, y: 0}
+    Slots:
+    - Color: 11
+      Kind: 1
+      Hidden: 0
+      Key: 
+      Fuse: 0
+      FuseLit: 0
+    - Color: 11
+      Kind: 1
+      Hidden: 0
+      Key: 
+      Fuse: 0
+      FuseLit: 0
+    - Color: 7
+      Kind: 0
+      Hidden: 0
+      Key: 
+      Fuse: 0
+      FuseLit: 0
+    - Color: 3
+      Kind: 0
+      Hidden: 0
+      Key: 
+      Fuse: 0
+      FuseLit: 0
+  - Position: {x: -3.525, y: 0}
+    Slots:
+    - Color: 2
+      Kind: 1
+      Hidden: 0
+      Key: 
+      Fuse: 0
+      FuseLit: 0
+    - Color: 9
+      Kind: 1
+      Hidden: 0
+      Key: 
       Fuse: 0
       FuseLit: 0
     - Color: 5
+      Kind: 1
+      Hidden: 0
+      Key: 
+      Fuse: 0
+      FuseLit: 0
+    - Color: 9
       Kind: 0
       Hidden: 0
       Key: 
       Fuse: 0
       FuseLit: 0
-    - Color: -1
-      Kind: 0
-      Hidden: 0
-      Key: 
-      Fuse: 0
-      FuseLit: 0
-    - Color: -1
-      Kind: 0
-      Hidden: 0
-      Key: 
-      Fuse: 0
-      FuseLit: 0
-  - Position: {x: -2.35, y: 10.2}
+  - Position: {x: 1.175, y: 6.8}
     Slots:
+    - Color: 5
+      Kind: 1
+      Hidden: 0
+      Key: 
+      Fuse: 0
+      FuseLit: 0
     - Color: 4
       Kind: 0
       Hidden: 0
@@ -355,59 +159,111 @@ MonoBehaviour:
       Fuse: 0
       FuseLit: 0
     - Color: 5
+      Kind: 1
+      Hidden: 0
+      Key: 
+      Fuse: 0
+      FuseLit: 0
+    - Color: 10
       Kind: 0
       Hidden: 0
       Key: 
       Fuse: 0
       FuseLit: 0
-    - Color: -1
-      Kind: 0
-      Hidden: 0
-      Key: 
-      Fuse: 0
-      FuseLit: 0
-    - Color: -1
-      Kind: 0
-      Hidden: 0
-      Key: 
-      Fuse: 0
-      FuseLit: 0
-  - Position: {x: 2.35, y: -3.4}
+  - Position: {x: -1.175, y: 13.6}
     Slots:
-    - Color: 11
+    - Color: 3
       Kind: 0
       Hidden: 0
       Key: A
       Fuse: 0
       FuseLit: 0
-    - Color: 11
+    - Color: 6
       Kind: 0
       Hidden: 0
       Key: 
       Fuse: 0
       FuseLit: 0
-    - Color: 11
+    - Color: 6
       Kind: 0
       Hidden: 0
       Key: 
       Fuse: 0
       FuseLit: 0
-    - Color: 11
+    - Color: 6
       Kind: 0
       Hidden: 0
       Key: 
       Fuse: 0
       FuseLit: 0
-  - Position: {x: 4.7, y: -3.4}
+  - Position: {x: 1.175, y: 0}
     Slots:
-    - Color: 4
+    - Color: 11
+      Kind: 1
+      Hidden: 0
+      Key: 
+      Fuse: 0
+      FuseLit: 0
+    - Color: 10
+      Kind: 1
+      Hidden: 0
+      Key: 
+      Fuse: 0
+      FuseLit: 0
+    - Color: 8
+      Kind: 1
+      Hidden: 0
+      Key: 
+      Fuse: 0
+      FuseLit: 0
+    - Color: 1
+      Kind: 0
+      Hidden: 0
+      Key: 
+      Fuse: 0
+      FuseLit: 0
+  - Position: {x: -5.875, y: 0}
+    Slots:
+    - Color: 10
+      Kind: 1
+      Hidden: 0
+      Key: 
+      Fuse: 0
+      FuseLit: 0
+    - Color: 0
+      Kind: 1
+      Hidden: 0
+      Key: 
+      Fuse: 0
+      FuseLit: 0
+    - Color: 7
+      Kind: 0
+      Hidden: 0
+      Key: 
+      Fuse: 0
+      FuseLit: 0
+    - Color: 0
+      Kind: 0
+      Hidden: 0
+      Key: 
+      Fuse: 0
+      FuseLit: 0
+  - Position: {x: 3.525, y: 0}
+    Slots:
+    - Color: 8
       Kind: 0
       Hidden: 0
       Key: 
       Fuse: 0
       FuseLit: 0
     - Color: 5
-      Kind: 0
+      Kind: 1
+      Hidden: 0
+      Key: 
+      Fuse: 0
+      FuseLit: 0
+    - Color: 1
+      Kind: 1
       Hidden: 0
       Key: 
       Fuse: 0
@@ -418,13 +274,59 @@ MonoBehaviour:
       Key: 
       Fuse: 0
       FuseLit: 0
-    - Color: 5
+  - Position: {x: -3.525, y: 6.8}
+    Slots:
+    - Color: 8
+      Kind: 0
+      Hidden: 0
+      Key: B
+      Fuse: 0
+      FuseLit: 0
+    - Color: 4
       Kind: 0
       Hidden: 0
       Key: 
       Fuse: 0
       FuseLit: 0
-  - Position: {x: -4.7, y: -10.2}
+    - Color: 2
+      Kind: 0
+      Hidden: 0
+      Key: 
+      Fuse: 0
+      FuseLit: 0
+    - Color: 6
+      Kind: 0
+      Hidden: 0
+      Key: 
+      Fuse: 0
+      FuseLit: 0
+  - Position: {x: 3.525, y: 6.8}
+    Slots:
+    - Color: 3
+      Kind: 1
+      Hidden: 0
+      Key: 
+      Fuse: 0
+      FuseLit: 0
+    - Color: 1
+      Kind: 1
+      Hidden: 0
+      Key: 
+      Fuse: 8
+      FuseLit: 0
+    - Color: 8
+      Kind: 1
+      Hidden: 0
+      Key: 
+      Fuse: 0
+      FuseLit: 0
+    - Color: 2
+      Kind: 0
+      Hidden: 0
+      Key: 
+      Fuse: 0
+      FuseLit: 0
+  - Position: {x: 1.175, y: 13.6}
     Slots:
     - Color: -1
       Kind: 0
@@ -450,33 +352,7 @@ MonoBehaviour:
       Key: 
       Fuse: 0
       FuseLit: 0
-  - Position: {x: -2.35, y: -10.2}
-    Slots:
-    - Color: -1
-      Kind: 0
-      Hidden: 0
-      Key: 
-      Fuse: 0
-      FuseLit: 0
-    - Color: -1
-      Kind: 0
-      Hidden: 0
-      Key: 
-      Fuse: 0
-      FuseLit: 0
-    - Color: -1
-      Kind: 0
-      Hidden: 0
-      Key: 
-      Fuse: 0
-      FuseLit: 0
-    - Color: -1
-      Kind: 0
-      Hidden: 0
-      Key: 
-      Fuse: 0
-      FuseLit: 0
-  - Position: {x: 2.35, y: -10.2}
+  - Position: {x: 5.875, y: 6.8}
     Slots:
     - Color: 6
       Kind: 0
@@ -496,14 +372,36 @@ MonoBehaviour:
       Key: 
       Fuse: 0
       FuseLit: 0
-    - Color: 11
+    - Color: 6
       Kind: 0
       Hidden: 0
       Key: 
       Fuse: 0
       FuseLit: 0
-  - Position: {x: 4.7, y: -10.2}
-    Slots:
+    - Color: 6
+      Kind: 0
+      Hidden: 0
+      Key: 
+      Fuse: 0
+      FuseLit: 0
+    - Color: 6
+      Kind: 0
+      Hidden: 0
+      Key: 
+      Fuse: 0
+      FuseLit: 0
+    - Color: 6
+      Kind: 0
+      Hidden: 0
+      Key: 
+      Fuse: 0
+      FuseLit: 0
+    - Color: 6
+      Kind: 0
+      Hidden: 0
+      Key: 
+      Fuse: 0
+      FuseLit: 0
     - Color: -1
       Kind: 0
       Hidden: 0
@@ -529,20 +427,11 @@ MonoBehaviour:
       Fuse: 0
       FuseLit: 0
   _curtains:
-  - Bottle: 1
-    Color: 11
-    Need: 16
-  - Bottle: 2
-    Color: 11
-    Need: 16
-  - Bottle: 5
-    Color: 1
-    Need: 4
-  - Bottle: 6
-    Color: 11
-    Need: 16
+  - Bottle: 12
+    Color: 6
+    Need: 12
   _lockboxes:
   - Id: A
-    Bottles: 090000000a000000
+    Bottles: 0a0000000100000005000000
   - Id: B
-    Bottles: 0c000000
+    Bottles: 03000000
