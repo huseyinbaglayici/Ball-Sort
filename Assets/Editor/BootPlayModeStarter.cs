@@ -10,6 +10,8 @@ namespace Project.Editor
         private const string MenuPath = "Tools/Project/Always Start From Boot";
         private const string PrefKey = "Project.AlwaysStartFromBoot";
         private const string BootScenePath = "Assets/Scenes/Boot.unity";
+        // Debug scenes bring what they need and play on their own.
+        private const string DebugSceneFolder = "Assets/Scenes/Debug/";
 
         static BootPlayModeStarter()
         {
@@ -40,7 +42,8 @@ namespace Project.Editor
         private static void Apply()
         {
             var boot = AssetDatabase.LoadAssetAtPath<SceneAsset>(BootScenePath);
-            EditorSceneManager.playModeStartScene = Enabled ? boot : null;
+            var debug = EditorSceneManager.GetActiveScene().path.StartsWith(DebugSceneFolder);
+            EditorSceneManager.playModeStartScene = Enabled && !debug ? boot : null;
         }
 
         private static void OnPlayModeChanged(PlayModeStateChange change)
