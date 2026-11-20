@@ -74,7 +74,7 @@ namespace Project.Tests
         }
 
         [Test]
-        public void ThreeRowsWithTallTubeKeepItsColumnFree()
+        public void ThreeRowsWithTallTubeKeepTheirGridColumns()
         {
             // Level 39 v3: three rows; an 8-ball tube in the middle row, centered on the rows it spans.
             var positions = new[]
@@ -89,22 +89,22 @@ namespace Project.Tests
 
             var origins = Place(positions, capacities, 39, out var rises, out var ortho);
 
-            // Rows 6.3 apart. Bounds y -1 .. 12.6 + 5: center 8.3, offset -1.7, so y - 10.
+            // Rows 6.3 apart, columns 2.35 scaled to the 2.1 pitch. Bounds y -1 .. 12.6 + 5: center 8.3, offset -1.7.
             var top = new[] { -4.2f, -2.1f, 2.1f, 4.2f };
             var middle = new[] { -4.2f, -2.1f, 0f, 2.1f, 4.2f };
-            var bottom = new[] { -3.15f, -1.05f, 1.05f, 3.15f };
+            var bottom = top;
             for (var i = 0; i < 4; i++) AssertPoint(new Vector2(top[i], 2.6f), origins[i], $"top {i}");
             for (var i = 0; i < 5; i++) AssertPoint(new Vector2(middle[i], -3.7f), origins[4 + i], $"middle {i}");
             for (var i = 0; i < 4; i++) AssertPoint(new Vector2(bottom[i], -10f), origins[9 + i], $"bottom {i}");
 
             // Height (18.6 + 12) / 2 wins over width max(10.4 + 0.7, 13.2).
             Assert.AreEqual(15.3f, ortho, Tolerance);
-            // The tall tube reaches the row above.
-            Assert.AreEqual(6.3f, rises[6], Tolerance);
+            // The tall tube keeps its own height and stands on its row.
+            Assert.AreEqual(TubeArt.Rise(8), rises[6], Tolerance);
         }
 
         [Test]
-        public void RowAboveTallTubeSkipsPlacesNearIt()
+        public void RowAboveTallTubeKeepsItsColumnFree()
         {
             // Two rows; the tall tube is the second of four in the bottom row, so it is not centered.
             var positions = new[]
@@ -117,11 +117,12 @@ namespace Project.Tests
 
             var origins = Place(positions, capacities, 20, out _, out _);
 
-            // The top place at -2.1 is too close to the tall tube, so it and the rest move right of it.
-            var shiftX = origins[4].x + 1.05f;
-            var expected = new[] { -4.2f, 1.05f, 3.15f, 5.25f };
+            // Grid columns scaled to the 2.1 pitch; the tall tube's column stays empty in the top row.
+            var shiftX = origins[4].x;
+            var expected = new[] { -4.2f, -2.1f, 2.1f, 4.2f };
             for (var i = 0; i < 4; i++) Assert.AreEqual(expected[i], origins[i].x - shiftX, Tolerance, $"top {i}");
-            Assert.AreEqual(-3.15f, origins[5].x - shiftX, Tolerance);
+            Assert.AreEqual(-2.1f, origins[5].x - shiftX, Tolerance);
+            Assert.AreEqual(origins[5].y, origins[4].y, Tolerance);
         }
 
         [Test]

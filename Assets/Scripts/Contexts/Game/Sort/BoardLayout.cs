@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace Project.Contexts.Game.Sort
 {
-    // Rows are the level's distinct y values, bottom first; rows that tall tubes reach into pack around them.
+    // Rows are the level's distinct y values, bottom first; boards with tall tubes keep the level's grid columns.
     [Serializable]
     public sealed class BoardLayout
     {
@@ -43,7 +43,8 @@ namespace Project.Contexts.Game.Sort
         // Levels before this one spread rows of fewer than six bottles over the width of six.
         public const int SpreadBeforeLevel = 15;
 
-        // Row spacing of the level grid; a tall tube's y is the middle of the rows it spans.
+        // Spacing of the level grid; a tall tube's y is the middle of the rows it spans.
+        public const float GridPitch = 2.35f;
         public const float GridRowPitch = 6.8f;
 
         // A tall tube reaches one row up per TubeArt.Slots balls beyond the first Slots.
@@ -74,18 +75,9 @@ namespace Project.Contexts.Game.Sort
             {
                 var row = rows[r];
                 var y = r * fit.RowDistance;
-                var tall = hasTall ? TallReaching(rows, r, capacities) : null;
-                if (tall is { Count: > 0 })
+                if (hasTall)
                 {
-                    // One place per tall tube reaching up from below; a bottle closer than a pitch to one moves right.
-                    var x = float.MinValue;
-                    foreach (var b in row)
-                    {
-                        x = x <= float.MinValue ? fit.Pitch * (tall.Count + row.Count - 1) * -0.5f : x + fit.Pitch;
-                        foreach (var t in tall)
-                            if (Mathf.Abs(origins[t].x - x) + 0.001f < fit.Pitch) x = origins[t].x + fit.Pitch;
-                        origins[b] = new Vector2(x, y);
-                    }
+                    PlaceOnGrid(rows, r, y, positions, capacities, fit, origins);
                     continue;
                 }
 
@@ -111,15 +103,9 @@ namespace Project.Contexts.Game.Sort
             var height = (portrait ? fit.CameraMargin : 0f) + size.y;
             orthoSize = Mathf.Max(width / aspect * 0.5f, height * 0.5f);
 
+            // Every tube keeps its own height; a tall one stands on its row and grows into the rows above.
             rises = new float[count];
-            for (var r = 0; r < rows.Count; r++)
-                foreach (var b in rows[r])
-                {
-                    var reach = Mathf.Min(RowsAbove(capacities[b]), rows.Count - 1 - r);
-                    // A short tube (e.g. an added 2-slot one) keeps its own lower mouth.
-                    var rise = TubeArt.Rise(capacities[b]);
-                    rises[b] = reach > 0 ? Mathf.Max(rise, reach * fit.RowDistance) : rise;
-                }
+            for (var b = 0; b < count; b++) rises[b] = TubeArt.Rise(capacities[b]);
 
             KeepClearOfHud(origins, rises, ref orthoSize);
             return origins;
@@ -158,6 +144,41 @@ namespace Project.Contexts.Game.Sort
             var missing = (FullRow - n) * fit.BottleWidth;
             step = n > 1 ? (full - missing) / (n - 1) : 0f;
             start = n > 1 ? -(full * 0.5f - missing * 0.5f) : 0f;
+        }
+
+        // Level bottles keep their grid column; added ones extend the row past its ends, beside any tall tube reaching it.
+        private static void PlaceOnGrid(List<List<int>> rows, int r, float y, IReadOnlyList<Vector2> positions,
+            IReadOnlyList<int> capacities, Fit fit, Vector2[] origins)
+        {
+            var row = rows[r];
+            var scale = fit.Pitch / GridPitch;
+            float left = float.MaxValue, right = float.MinValue;
+            foreach (var b in row)
+            {
+                if (b >= positions.Count) continue;
+                origins[b] = new Vector2(positions[b].x * scale, y);
+                left = Mathf.Min(left, origins[b].x);
+                right = Mathf.Max(right, origins[b].x);
+            }
+            foreach (var t in TallReaching(rows, r, capacities))
+            {
+                left = Mathf.Min(left, origins[t].x);
+                right = Mathf.Max(right, origins[t].x);
+            }
+
+            for (var i = 0; i < row.Count; i++)
+            {
+                var b = row[i];
+                if (b < positions.Count) continue;
+                if (left > right)
+                {
+                    left = right = 0f;
+                    origins[b] = new Vector2(0f, y);
+                    continue;
+                }
+                var x = i == 0 ? left -= fit.Pitch : right += fit.Pitch;
+                origins[b] = new Vector2(x, y);
+            }
         }
 
         // Tall tubes from lower rows reaching row r, nearest row first.
