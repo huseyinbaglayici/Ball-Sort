@@ -16,6 +16,9 @@ namespace Project.Common.UI
         private Vector2 _rest;
         private bool _hasRest;
 
+        // How far the element is from its rest spot right now (zero once the slide ends).
+        public Vector2 Displacement => _rect != null && _hasRest ? _rect.anchoredPosition - _rest : Vector2.zero;
+
         private void OnEnable()
         {
             _rect = (RectTransform)transform;

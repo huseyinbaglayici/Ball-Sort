@@ -29,7 +29,7 @@ MonoBehaviour:
   - Key: game.progress
     Value: '{0} / {1}'
   - Key: result.win
-    Value: "Kazand\u0131n!"
+    Value: 'Harika!'
   - Key: result.lose
     Value: "Hamle kalmadı"
   - Key: common.continue
@@ -168,3 +168,9 @@ MonoBehaviour:
     Value: 'Yol ödülü'
   - Key: road.body
     Value: '{0}. seviyeyi geç, kazan: {1}'
+  - Key: home.play_level
+    Value: 'Oyna · Seviye {0}'
+  - Key: home.period
+    Value: 'Dönem {0}'
+  - Key: settings.title
+    Value: 'Ayarlar'

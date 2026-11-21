@@ -43,8 +43,10 @@ namespace Project.Common.UI.PopUps
         [SerializeField] private Button _close;
         [SerializeField] private DifficultyTag _header;
         [SerializeField] private GameObject _heart;
-        [SerializeField] private Color _confirmColor = new(0.30f, 0.76f, 0.34f);
-        [SerializeField] private Color _dangerColor = new(0.86f, 0.24f, 0.28f);
+        // Title ribbon: the info art, or the loss art when a life is at stake.
+        [SerializeField] private Image _ribbon;
+        [SerializeField] private Sprite _infoRibbon;
+        [SerializeField] private Sprite _lossRibbon;
 
         private MessageArgs _args;
 
@@ -68,7 +70,9 @@ namespace Project.Common.UI.PopUps
             if (_close != null) _close.gameObject.SetActive(_args.Closable);
             if (_header != null) _header.Set(_args.Header, _args.HeaderMarks);
             if (_heart != null) _heart.SetActive(_args.Heart);
-            if (_button.targetGraphic != null) _button.targetGraphic.color = _args.Heart ? _dangerColor : _confirmColor;
+            // Under the heart, or centered in the well without it.
+            _body.alignment = _args.Heart ? TextAlignmentOptions.Bottom : TextAlignmentOptions.Center;
+            if (_ribbon != null) _ribbon.sprite = _args.Heart ? _lossRibbon : _infoRibbon;
         }
     }
 }

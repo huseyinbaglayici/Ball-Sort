@@ -27,9 +27,11 @@ namespace Project.Common.UI.PopUps
             transform.SetAsLastSibling();
             IsOpen = true;
             _group.interactable = false;
+            PrimeTween.Tween.StopAll(_group);
             OnShow(args);
-            _ = TweenPresets.PopIn(_content);
-            await TweenPresets.FadeIn(_group);
+            _ = TweenPresets.PopupScaleIn(_content);
+            await TweenPresets.PopupDimIn(_group);
+            if (!IsOpen) return;
             _group.interactable = true;
             _group.blocksRaycasts = true;
         }
@@ -40,8 +42,9 @@ namespace Project.Common.UI.PopUps
             if (!IsOpen) return;
             IsOpen = false;
             _group.interactable = false;
-            _ = TweenPresets.PopOut(_content);
-            await TweenPresets.FadeOut(_group);
+            PrimeTween.Tween.StopAll(_content);
+            PrimeTween.Tween.StopAll(_group);
+            await TweenPresets.PopupDimOut(_group);
             gameObject.SetActive(false);
             OnHidden();
             Closed?.Invoke(this);
@@ -51,6 +54,8 @@ namespace Project.Common.UI.PopUps
         {
             if (!IsOpen) return;
             IsOpen = false;
+            PrimeTween.Tween.StopAll(_content);
+            PrimeTween.Tween.StopAll(_group);
             gameObject.SetActive(false);
             OnHidden();
             Closed?.Invoke(this);

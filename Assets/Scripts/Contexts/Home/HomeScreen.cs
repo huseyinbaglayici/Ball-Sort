@@ -17,21 +17,23 @@ namespace Project.Contexts.Home
         [SerializeField] private GameObject _view;
         [SerializeField] private TMP_Text _levelText;
         [SerializeField] private DifficultyTag _difficulty;
-        [SerializeField] private TMP_Text _rewardTag;
         [SerializeField] private TMP_Text _metaText;
+        [SerializeField] private JourneyRoad _road;
+        // The road-reward chest on the road.
         [SerializeField] private Button _roadButton;
-        [SerializeField] private TMP_Text _roadText;
         [SerializeField] private Button _playButton;
         [SerializeField] private Button _starterPackButton;
         [SerializeField] private Button _challengeButton;
         [SerializeField] private Button _rewardedLifeButton;
-        [SerializeField] private Button[] _comingSoon = System.Array.Empty<Button>();
+        [SerializeField] private Button _settingsButton;
+        [SerializeField] private SettingsPopup _settingsPopup;
         [SerializeField] private MessagePopup _messagePopup;
 
         private ProgressService _progress;
         private LivesService _lives;
         private MonetizationService _ads;
         private LocalizationService _localization;
+        private PopupService _popups;
 
         private void Start()
         {
@@ -39,11 +41,9 @@ namespace Project.Contexts.Home
             _lives = Services.Get<LivesService>();
             _ads = Services.Get<MonetizationService>();
             _localization = Services.Get<LocalizationService>();
+            _popups = Services.Get<PopupService>();
 
-            _playButton.onClick.AddListener(() =>
-            {
-                if (CanPlay) _ = Services.Get<MainFlow>().GoToGameAsync();
-            });
+            _playButton.onClick.AddListener(Play);
             if (_roadButton != null) _roadButton.onClick.AddListener(ShowRoadReward);
             if (_starterPackButton != null)
                 _starterPackButton.onClick.AddListener(() => ShowMessage("offer.starter_title", "offer.preview_body"));
@@ -51,8 +51,8 @@ namespace Project.Contexts.Home
                 _challengeButton.onClick.AddListener(() => ShowMessage("challenge.title", "challenge.soon_body"));
             if (_rewardedLifeButton != null)
                 _rewardedLifeButton.onClick.AddListener(() => _ads.ShowRewardedLife(_ => Refresh()));
-            foreach (var tab in _comingSoon)
-                if (tab != null) tab.onClick.AddListener(() => ShowMessage("nav.soon_title", "nav.soon_body"));
+            if (_settingsButton != null)
+                _settingsButton.onClick.AddListener(() => _popups.Show(_settingsPopup, new SettingsArgs(null, null, false)));
 
             Refresh();
         }
@@ -81,36 +81,41 @@ namespace Project.Contexts.Home
         private void OnLevelCompleted(LevelCompleted _) => Refresh();
         private void OnLanguageChanged(LanguageChanged _) => Refresh();
 
-        private bool CanPlay => !_progress.IsCampaignFinished && _lives.CanPlay;
+        // With no life left Play explains when the next one comes.
+        private void Play()
+        {
+            if (_progress.IsCampaignFinished) return;
+            if (!_lives.CanPlay)
+            {
+                _popups.Show(_messagePopup, new MessageArgs("lives.out_title",
+                    _localization.Format("lives.out_body", EconomyText.Timer(_lives.NextLifeIn)), "common.ok",
+                    closable: true, heart: true));
+                return;
+            }
+            _ = Services.Get<MainFlow>().GoToGameAsync();
+        }
 
         private void ShowMessage(string titleKey, string bodyKey) =>
-            Services.Get<PopupService>().Show(_messagePopup,
-                new MessageArgs(titleKey, _localization.Get(bodyKey), "common.ok", closable: true));
+            _popups.Show(_messagePopup, new MessageArgs(titleKey, _localization.Get(bodyKey), "common.ok", closable: true));
 
         private void Refresh()
         {
             if (_progress == null) return;
             var finished = _progress.IsCampaignFinished;
             var level = _progress.Level;
-            var difficulty = finished ? LevelDifficulty.Normal : CampaignRules.DifficultyOf(level);
-            _levelText.text = finished ? _localization.Get("meta.final_title") : _localization.Format("home.level", level);
+            _levelText.text = finished ? _localization.Get("meta.final_title") : _localization.Format("home.play_level", level);
+            _playButton.interactable = !finished;
             if (_difficulty != null)
-                _difficulty.Set(EconomyText.Difficulty(difficulty, _localization), EconomyText.DifficultyMarks(difficulty));
-            if (_rewardTag != null)
             {
-                _rewardTag.transform.parent.gameObject.SetActive(!finished);
-                _rewardTag.text = $"+{CampaignRules.FirstWinCoins(level)}";
+                var difficulty = finished ? LevelDifficulty.Normal : CampaignRules.DifficultyOf(level);
+                _difficulty.Set(EconomyText.Difficulty(difficulty, _localization), EconomyText.DifficultyMarks(difficulty));
             }
-            _playButton.interactable = CanPlay;
+            if (_road != null) _road.Show(Mathf.Min(level, CampaignRules.MaxLevel), _localization);
 
             if (_metaText != null)
                 _metaText.text = finished
-                    ? _localization.Get("meta.final_body")
-                    : _localization.Format("meta.period", _progress.MetaPeriod,
-                        CampaignRules.LevelsPerMetaPeriod * _progress.MetaPeriod);
-            var hasRoad = !finished && CampaignRules.NextRoadLevel(level) > 0;
-            if (_roadButton != null) _roadButton.gameObject.SetActive(hasRoad);
-            if (_roadText != null && hasRoad) _roadText.text = RoadProgress(level);
+                    ? _localization.Get("meta.final_title")
+                    : _localization.Format("home.period", _progress.MetaPeriod);
             if (_starterPackButton != null)
                 _starterPackButton.gameObject.SetActive(_progress.IsUnlocked(Feature.StarterPack));
             if (_challengeButton != null)
@@ -119,19 +124,12 @@ namespace Project.Contexts.Home
                 _rewardedLifeButton.gameObject.SetActive(!finished && _ads.CanOfferRewardedLife);
         }
 
-        // Levels won since the previous road reward, out of the levels between it and the next.
-        private static string RoadProgress(int level)
-        {
-            var previous = CampaignRules.PreviousRoadLevel(level);
-            return $"{level - 1 - previous}/{CampaignRules.NextRoadLevel(level) - previous}";
-        }
-
         private void ShowRoadReward()
         {
             var next = CampaignRules.NextRoadLevel(_progress.Level);
             if (next == 0) return;
             var body = _localization.Format("road.body", next, EconomyText.Road(CampaignRules.RoadRewardAt(next), _localization));
-            Services.Get<PopupService>().Show(_messagePopup, new MessageArgs("road.title", body, "common.ok", closable: true));
+            _popups.Show(_messagePopup, new MessageArgs("road.title", body, "common.ok", closable: true));
         }
     }
 }

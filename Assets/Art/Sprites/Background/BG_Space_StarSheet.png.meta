@@ -1,0 +1,2080 @@
+fileFormatVersion: 2
+guid: 2c90a62717d5f514c85c3341663c1a9a
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -756948356366596843
+    second: BG_Space_StarSheet_0
+  - first:
+      213: -8214990891500770175
+    second: BG_Space_StarSheet_1
+  - first:
+      213: -4385537672396463755
+    second: BG_Space_StarSheet_2
+  - first:
+      213: -377940791660991094
+    second: BG_Space_StarSheet_3
+  - first:
+      213: -8287087278503450090
+    second: BG_Space_StarSheet_4
+  - first:
+      213: 4416639270991939564
+    second: BG_Space_StarSheet_5
+  - first:
+      213: -2702890378667986429
+    second: BG_Space_StarSheet_6
+  - first:
+      213: -8977837678288133533
+    second: BG_Space_StarSheet_7
+  - first:
+      213: 5975079183427184610
+    second: BG_Space_StarSheet_8
+  - first:
+      213: -3025836165816431471
+    second: BG_Space_StarSheet_9
+  - first:
+      213: 4657591806061871808
+    second: BG_Space_StarSheet_10
+  - first:
+      213: 4555387545381875134
+    second: BG_Space_StarSheet_11
+  - first:
+      213: -6102854362517965912
+    second: BG_Space_StarSheet_12
+  - first:
+      213: 215264863828596782
+    second: BG_Space_StarSheet_13
+  - first:
+      213: -8093571265235047363
+    second: BG_Space_StarSheet_14
+  - first:
+      213: -6724009603292074443
+    second: BG_Space_StarSheet_15
+  - first:
+      213: -7540073271560407005
+    second: BG_Space_StarSheet_16
+  - first:
+      213: 6578315196103948670
+    second: BG_Space_StarSheet_17
+  - first:
+      213: -8095648307711375442
+    second: BG_Space_StarSheet_18
+  - first:
+      213: -6616021535686808366
+    second: BG_Space_StarSheet_19
+  - first:
+      213: 5207024917546838540
+    second: BG_Space_StarSheet_20
+  - first:
+      213: -5719066914816991382
+    second: BG_Space_StarSheet_21
+  - first:
+      213: -3249499435134359211
+    second: BG_Space_StarSheet_22
+  - first:
+      213: 5838630985603179871
+    second: BG_Space_StarSheet_23
+  - first:
+      213: -4254578317122029070
+    second: BG_Space_StarSheet_24
+  - first:
+      213: -396774250768430134
+    second: BG_Space_StarSheet_25
+  - first:
+      213: 1025999913495053408
+    second: BG_Space_StarSheet_26
+  - first:
+      213: 7479508245843785698
+    second: BG_Space_StarSheet_27
+  - first:
+      213: 8823733736878113683
+    second: BG_Space_StarSheet_28
+  - first:
+      213: -638287703148932178
+    second: BG_Space_StarSheet_29
+  - first:
+      213: -870367929482484655
+    second: BG_Space_StarSheet_30
+  - first:
+      213: 2629978253073304045
+    second: BG_Space_StarSheet_31
+  - first:
+      213: 503770052275421675
+    second: BG_Space_StarSheet_32
+  - first:
+      213: -2342206137027472972
+    second: BG_Space_StarSheet_33
+  - first:
+      213: -616775169400940208
+    second: BG_Space_StarSheet_34
+  - first:
+      213: -2692565332506454336
+    second: BG_Space_StarSheet_35
+  - first:
+      213: 5241656407827739753
+    second: BG_Space_StarSheet_36
+  - first:
+      213: -2837836416376777292
+    second: BG_Space_StarSheet_37
+  - first:
+      213: -351663696470049007
+    second: BG_Space_StarSheet_38
+  - first:
+      213: -6920267807218741027
+    second: BG_Space_StarSheet_39
+  - first:
+      213: 706700312471402338
+    second: BG_Space_StarSheet_40
+  - first:
+      213: -1001448370775966810
+    second: BG_Space_StarSheet_41
+  - first:
+      213: -1098576148068612115
+    second: BG_Space_StarSheet_42
+  - first:
+      213: 958837336093778563
+    second: BG_Space_StarSheet_43
+  - first:
+      213: 350350532082218541
+    second: BG_Space_StarSheet_44
+  - first:
+      213: 5281631657661483306
+    second: BG_Space_StarSheet_45
+  - first:
+      213: -2034216441101849030
+    second: BG_Space_StarSheet_46
+  - first:
+      213: -6836970496305585299
+    second: BG_Space_StarSheet_47
+  - first:
+      213: -4612472456287871883
+    second: BG_Space_StarSheet_48
+  - first:
+      213: -1844811858687294508
+    second: BG_Space_StarSheet_49
+  - first:
+      213: 8013264071651538562
+    second: BG_Space_StarSheet_50
+  - first:
+      213: -5829024870116958197
+    second: BG_Space_StarSheet_51
+  - first:
+      213: 6235220654141823518
+    second: BG_Space_StarSheet_52
+  - first:
+      213: -9070463022699997302
+    second: BG_Space_StarSheet_53
+  - first:
+      213: -2160710146814960636
+    second: BG_Space_StarSheet_54
+  - first:
+      213: -3219594692070228423
+    second: BG_Space_StarSheet_55
+  - first:
+      213: 1803690782654927165
+    second: BG_Space_StarSheet_56
+  - first:
+      213: -7173453837125199016
+    second: BG_Space_StarSheet_57
+  - first:
+      213: -2983113370500227477
+    second: BG_Space_StarSheet_58
+  - first:
+      213: -8629894170096428056
+    second: BG_Space_StarSheet_59
+  - first:
+      213: -7252398138391718029
+    second: BG_Space_StarSheet_60
+  - first:
+      213: 4849230271349415425
+    second: BG_Space_StarSheet_61
+  - first:
+      213: 8926970735226333619
+    second: BG_Space_StarSheet_62
+  - first:
+      213: 3530464584292264623
+    second: BG_Space_StarSheet_63
+  - first:
+      213: -3209154253644942879
+    second: BG_Space_StarSheet_64
+  - first:
+      213: 4327762998157130489
+    second: BG_Space_StarSheet_65
+  - first:
+      213: 6627655300363685892
+    second: BG_Space_StarSheet_66
+  - first:
+      213: -2686425228926650164
+    second: BG_Space_StarSheet_67
+  - first:
+      213: -1711794212442216218
+    second: BG_Space_StarSheet_68
+  - first:
+      213: -96752761220385166
+    second: BG_Space_StarSheet_69
+  - first:
+      213: 7780732640100909545
+    second: BG_Space_StarSheet_70
+  - first:
+      213: -4385562958891027903
+    second: BG_Space_StarSheet_71
+  - first:
+      213: 8151221436798478469
+    second: BG_Space_StarSheet_72
+  - first:
+      213: 53420919092950970
+    second: BG_Space_StarSheet_73
+  - first:
+      213: 6557055797227886290
+    second: BG_Space_StarSheet_74
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 1
+  spriteExtrude: 1
+  spriteMeshType: 0
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 4096
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 0
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: BG_Space_StarSheet_0
+      rect:
+        serializedVersion: 2
+        x: 2
+        y: 55
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5150479fa77ce75f0800000000000000
+      internalID: -756948356366596843
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BG_Space_StarSheet_1
+      rect:
+        serializedVersion: 2
+        x: 2
+        y: 22
+        width: 7
+        height: 17
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 18ce60f1f4d7efd80800000000000000
+      internalID: -8214990891500770175
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BG_Space_StarSheet_2
+      rect:
+        serializedVersion: 2
+        x: 5
+        y: 44
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 57127b7f8b07323c0800000000000000
+      internalID: -4385537672396463755
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BG_Space_StarSheet_3
+      rect:
+        serializedVersion: 2
+        x: 12
+        y: 22
+        width: 9
+        height: 17
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a8daae63ad841caf0800000000000000
+      internalID: -377940791660991094
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BG_Space_StarSheet_4
+      rect:
+        serializedVersion: 2
+        x: 19
+        y: 51
+        width: 11
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 61aa42ee60a5efc80800000000000000
+      internalID: -8287087278503450090
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BG_Space_StarSheet_5
+      rect:
+        serializedVersion: 2
+        x: 22
+        y: 22
+        width: 35
+        height: 17
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ce7c380440e0b4d30800000000000000
+      internalID: 4416639270991939564
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BG_Space_StarSheet_6
+      rect:
+        serializedVersion: 2
+        x: 26
+        y: 32
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3027ca865876d7ad0800000000000000
+      internalID: -2702890378667986429
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BG_Space_StarSheet_7
+      rect:
+        serializedVersion: 2
+        x: 35
+        y: 51
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 362a48eb230586380800000000000000
+      internalID: -8977837678288133533
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BG_Space_StarSheet_8
+      rect:
+        serializedVersion: 2
+        x: 38
+        y: 32
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2e722092cdebbe250800000000000000
+      internalID: 5975079183427184610
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BG_Space_StarSheet_9
+      rect:
+        serializedVersion: 2
+        x: 48
+        y: 55
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 19c4bfbe9021206d0800000000000000
+      internalID: -3025836165816431471
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BG_Space_StarSheet_10
+      rect:
+        serializedVersion: 2
+        x: 60
+        y: 51
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0c28615121713a040800000000000000
+      internalID: 4657591806061871808
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BG_Space_StarSheet_11
+      rect:
+        serializedVersion: 2
+        x: 62
+        y: 22
+        width: 7
+        height: 17
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ebda9b846dcf73f30800000000000000
+      internalID: 4555387545381875134
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BG_Space_StarSheet_12
+      rect:
+        serializedVersion: 2
+        x: 69
+        y: 55
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8a37c26aa4e4e4ba0800000000000000
+      internalID: -6102854362517965912
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BG_Space_StarSheet_13
+      rect:
+        serializedVersion: 2
+        x: 72
+        y: 22
+        width: 9
+        height: 17
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e28502dc046ccf200800000000000000
+      internalID: 215264863828596782
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BG_Space_StarSheet_14
+      rect:
+        serializedVersion: 2
+        x: 81
+        y: 53
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d3c2b5bd0dbddaf80800000000000000
+      internalID: -8093571265235047363
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BG_Space_StarSheet_15
+      rect:
+        serializedVersion: 2
+        x: 82
+        y: 22
+        width: 35
+        height: 17
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 53ee57124e48fa2a0800000000000000
+      internalID: -6724009603292074443
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BG_Space_StarSheet_16
+      rect:
+        serializedVersion: 2
+        x: 86
+        y: 32
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 328793cfe474c5790800000000000000
+      internalID: -7540073271560407005
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BG_Space_StarSheet_17
+      rect:
+        serializedVersion: 2
+        x: 95
+        y: 53
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e79745441deda4b50800000000000000
+      internalID: 6578315196103948670
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BG_Space_StarSheet_18
+      rect:
+        serializedVersion: 2
+        x: 98
+        y: 32
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ea70f58b1ca76af80800000000000000
+      internalID: -8095648307711375442
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BG_Space_StarSheet_19
+      rect:
+        serializedVersion: 2
+        x: 109
+        y: 53
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2dcad0b677b2f24a0800000000000000
+      internalID: -6616021535686808366
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BG_Space_StarSheet_20
+      rect:
+        serializedVersion: 2
+        x: 122
+        y: 22
+        width: 7
+        height: 17
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c0aacf21391134840800000000000000
+      internalID: 5207024917546838540
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BG_Space_StarSheet_21
+      rect:
+        serializedVersion: 2
+        x: 123
+        y: 53
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a6fd4af11fac1a0b0800000000000000
+      internalID: -5719066914816991382
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BG_Space_StarSheet_22
+      rect:
+        serializedVersion: 2
+        x: 132
+        y: 22
+        width: 9
+        height: 17
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 559ebf6fa7577e2d0800000000000000
+      internalID: -3249499435134359211
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BG_Space_StarSheet_23
+      rect:
+        serializedVersion: 2
+        x: 137
+        y: 53
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f55677f62fbf60150800000000000000
+      internalID: 5838630985603179871
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BG_Space_StarSheet_24
+      rect:
+        serializedVersion: 2
+        x: 142
+        y: 22
+        width: 35
+        height: 17
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2f9bcd2ff83b4f4c0800000000000000
+      internalID: -4254578317122029070
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BG_Space_StarSheet_25
+      rect:
+        serializedVersion: 2
+        x: 146
+        y: 32
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: acb0deecbef5e7af0800000000000000
+      internalID: -396774250768430134
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BG_Space_StarSheet_26
+      rect:
+        serializedVersion: 2
+        x: 151
+        y: 53
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 064447f3c751d3e00800000000000000
+      internalID: 1025999913495053408
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BG_Space_StarSheet_27
+      rect:
+        serializedVersion: 2
+        x: 158
+        y: 32
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2e7bf181f1d8cc760800000000000000
+      internalID: 7479508245843785698
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BG_Space_StarSheet_28
+      rect:
+        serializedVersion: 2
+        x: 165
+        y: 53
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 39300436513347a70800000000000000
+      internalID: 8823733736878113683
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BG_Space_StarSheet_29
+      rect:
+        serializedVersion: 2
+        x: 179
+        y: 53
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ea3de4d37b85427f0800000000000000
+      internalID: -638287703148932178
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BG_Space_StarSheet_30
+      rect:
+        serializedVersion: 2
+        x: 182
+        y: 22
+        width: 7
+        height: 17
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 154ed43caf4dbe3f0800000000000000
+      internalID: -870367929482484655
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BG_Space_StarSheet_31
+      rect:
+        serializedVersion: 2
+        x: 192
+        y: 22
+        width: 9
+        height: 17
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: de9cf65794f8f7420800000000000000
+      internalID: 2629978253073304045
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BG_Space_StarSheet_32
+      rect:
+        serializedVersion: 2
+        x: 193
+        y: 53
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: be14b568130cdf600800000000000000
+      internalID: 503770052275421675
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BG_Space_StarSheet_33
+      rect:
+        serializedVersion: 2
+        x: 202
+        y: 22
+        width: 35
+        height: 17
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4b1dcbb8defce7fd0800000000000000
+      internalID: -2342206137027472972
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BG_Space_StarSheet_34
+      rect:
+        serializedVersion: 2
+        x: 206
+        y: 32
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 05953915046c077f0800000000000000
+      internalID: -616775169400940208
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BG_Space_StarSheet_35
+      rect:
+        serializedVersion: 2
+        x: 207
+        y: 53
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0c6db6d881612aad0800000000000000
+      internalID: -2692565332506454336
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BG_Space_StarSheet_36
+      rect:
+        serializedVersion: 2
+        x: 218
+        y: 32
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 964f83f3bba1eb840800000000000000
+      internalID: 5241656407827739753
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BG_Space_StarSheet_37
+      rect:
+        serializedVersion: 2
+        x: 221
+        y: 53
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4b5d13790dafd98d0800000000000000
+      internalID: -2837836416376777292
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BG_Space_StarSheet_38
+      rect:
+        serializedVersion: 2
+        x: 235
+        y: 53
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 11f70833bb3ae1bf0800000000000000
+      internalID: -351663696470049007
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BG_Space_StarSheet_39
+      rect:
+        serializedVersion: 2
+        x: 242
+        y: 32
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: dd0d720381546ff90800000000000000
+      internalID: -6920267807218741027
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BG_Space_StarSheet_40
+      rect:
+        serializedVersion: 2
+        x: 242
+        y: 22
+        width: 43
+        height: 17
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 267f38f9034bec900800000000000000
+      internalID: 706700312471402338
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BG_Space_StarSheet_41
+      rect:
+        serializedVersion: 2
+        x: 249
+        y: 53
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6ab310f33042a12f0800000000000000
+      internalID: -1001448370775966810
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BG_Space_StarSheet_42
+      rect:
+        serializedVersion: 2
+        x: 254
+        y: 32
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: de747a750d211c0f0800000000000000
+      internalID: -1098576148068612115
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BG_Space_StarSheet_43
+      rect:
+        serializedVersion: 2
+        x: 263
+        y: 53
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 382604f1a797e4d00800000000000000
+      internalID: 958837336093778563
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BG_Space_StarSheet_44
+      rect:
+        serializedVersion: 2
+        x: 266
+        y: 32
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d2631a3e3f1bcd400800000000000000
+      internalID: 350350532082218541
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BG_Space_StarSheet_45
+      rect:
+        serializedVersion: 2
+        x: 277
+        y: 53
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a29ce5562002c4940800000000000000
+      internalID: 5281631657661483306
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BG_Space_StarSheet_46
+      rect:
+        serializedVersion: 2
+        x: 290
+        y: 22
+        width: 7
+        height: 17
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a3e6ddface205c3e0800000000000000
+      internalID: -2034216441101849030
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BG_Space_StarSheet_47
+      rect:
+        serializedVersion: 2
+        x: 291
+        y: 53
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d6321e3be833e11a0800000000000000
+      internalID: -6836970496305585299
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BG_Space_StarSheet_48
+      rect:
+        serializedVersion: 2
+        x: 300
+        y: 22
+        width: 9
+        height: 17
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 57c10ba2db43dffb0800000000000000
+      internalID: -4612472456287871883
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BG_Space_StarSheet_49
+      rect:
+        serializedVersion: 2
+        x: 305
+        y: 53
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4d304858369e566e0800000000000000
+      internalID: -1844811858687294508
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BG_Space_StarSheet_50
+      rect:
+        serializedVersion: 2
+        x: 310
+        y: 22
+        width: 35
+        height: 17
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 286b0329735d43f60800000000000000
+      internalID: 8013264071651538562
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BG_Space_StarSheet_51
+      rect:
+        serializedVersion: 2
+        x: 314
+        y: 32
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b00e2cd93c42b1fa0800000000000000
+      internalID: -5829024870116958197
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BG_Space_StarSheet_52
+      rect:
+        serializedVersion: 2
+        x: 319
+        y: 53
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e1a5d4a3624f78650800000000000000
+      internalID: 6235220654141823518
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BG_Space_StarSheet_53
+      rect:
+        serializedVersion: 2
+        x: 326
+        y: 32
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a8796af20fd3f1280800000000000000
+      internalID: -9070463022699997302
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BG_Space_StarSheet_54
+      rect:
+        serializedVersion: 2
+        x: 333
+        y: 55
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 40c1384c19d9302e0800000000000000
+      internalID: -2160710146814960636
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BG_Space_StarSheet_55
+      rect:
+        serializedVersion: 2
+        x: 345
+        y: 55
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 93ebb6a8fa3b153d0800000000000000
+      internalID: -3219594692070228423
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BG_Space_StarSheet_56
+      rect:
+        serializedVersion: 2
+        x: 350
+        y: 22
+        width: 7
+        height: 17
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d311bc0e53ff70910800000000000000
+      internalID: 1803690782654927165
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BG_Space_StarSheet_57
+      rect:
+        serializedVersion: 2
+        x: 357
+        y: 55
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 85b5d71edb5c27c90800000000000000
+      internalID: -7173453837125199016
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BG_Space_StarSheet_58
+      rect:
+        serializedVersion: 2
+        x: 360
+        y: 22
+        width: 9
+        height: 17
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b6e9d9ad13ad996d0800000000000000
+      internalID: -2983113370500227477
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BG_Space_StarSheet_59
+      rect:
+        serializedVersion: 2
+        x: 369
+        y: 55
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8eb1036b9f47c3880800000000000000
+      internalID: -8629894170096428056
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BG_Space_StarSheet_60
+      rect:
+        serializedVersion: 2
+        x: 370
+        y: 22
+        width: 35
+        height: 17
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3771577615e4a5b90800000000000000
+      internalID: -7252398138391718029
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BG_Space_StarSheet_61
+      rect:
+        serializedVersion: 2
+        x: 374
+        y: 32
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 10e5add4d3deb4340800000000000000
+      internalID: 4849230271349415425
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BG_Space_StarSheet_62
+      rect:
+        serializedVersion: 2
+        x: 381
+        y: 55
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3b929792698f2eb70800000000000000
+      internalID: 8926970735226333619
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BG_Space_StarSheet_63
+      rect:
+        serializedVersion: 2
+        x: 386
+        y: 32
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: faa66de85dabef030800000000000000
+      internalID: 3530464584292264623
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BG_Space_StarSheet_64
+      rect:
+        serializedVersion: 2
+        x: 393
+        y: 55
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1e13f0a853bc673d0800000000000000
+      internalID: -3209154253644942879
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BG_Space_StarSheet_65
+      rect:
+        serializedVersion: 2
+        x: 405
+        y: 55
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9fa3c31748d4f0c30800000000000000
+      internalID: 4327762998157130489
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BG_Space_StarSheet_66
+      rect:
+        serializedVersion: 2
+        x: 410
+        y: 22
+        width: 17
+        height: 17
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 40099ef71692afb50800000000000000
+      internalID: 6627655300363685892
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BG_Space_StarSheet_67
+      rect:
+        serializedVersion: 2
+        x: 417
+        y: 55
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: cc8fd22dc76e7bad0800000000000000
+      internalID: -2686425228926650164
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BG_Space_StarSheet_68
+      rect:
+        serializedVersion: 2
+        x: 429
+        y: 55
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6e8efc6bb3c7e38e0800000000000000
+      internalID: -1711794212442216218
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BG_Space_StarSheet_69
+      rect:
+        serializedVersion: 2
+        x: 430
+        y: 22
+        width: 77
+        height: 40
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 276bb6450e348aef0800000000000000
+      internalID: -96752761220385166
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BG_Space_StarSheet_70
+      rect:
+        serializedVersion: 2
+        x: 441
+        y: 55
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9e18081bc17bafb60800000000000000
+      internalID: 7780732640100909545
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BG_Space_StarSheet_71
+      rect:
+        serializedVersion: 2
+        x: 452
+        y: 55
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 142703f79b95323c0800000000000000
+      internalID: -4385562958891027903
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BG_Space_StarSheet_72
+      rect:
+        serializedVersion: 2
+        x: 464
+        y: 55
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5882ce1b5b4fe1170800000000000000
+      internalID: 8151221436798478469
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BG_Space_StarSheet_73
+      rect:
+        serializedVersion: 2
+        x: 476
+        y: 55
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ab73c1afa0acdb000800000000000000
+      internalID: 53420919092950970
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BG_Space_StarSheet_74
+      rect:
+        serializedVersion: 2
+        x: 488
+        y: 55
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2d61f2eb1875ffa50800000000000000
+      internalID: 6557055797227886290
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 5e97eb03825dee720800000000000000
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      BG_Space_StarSheet_0: -756948356366596843
+      BG_Space_StarSheet_1: -8214990891500770175
+      BG_Space_StarSheet_10: 4657591806061871808
+      BG_Space_StarSheet_11: 4555387545381875134
+      BG_Space_StarSheet_12: -6102854362517965912
+      BG_Space_StarSheet_13: 215264863828596782
+      BG_Space_StarSheet_14: -8093571265235047363
+      BG_Space_StarSheet_15: -6724009603292074443
+      BG_Space_StarSheet_16: -7540073271560407005
+      BG_Space_StarSheet_17: 6578315196103948670
+      BG_Space_StarSheet_18: -8095648307711375442
+      BG_Space_StarSheet_19: -6616021535686808366
+      BG_Space_StarSheet_2: -4385537672396463755
+      BG_Space_StarSheet_20: 5207024917546838540
+      BG_Space_StarSheet_21: -5719066914816991382
+      BG_Space_StarSheet_22: -3249499435134359211
+      BG_Space_StarSheet_23: 5838630985603179871
+      BG_Space_StarSheet_24: -4254578317122029070
+      BG_Space_StarSheet_25: -396774250768430134
+      BG_Space_StarSheet_26: 1025999913495053408
+      BG_Space_StarSheet_27: 7479508245843785698
+      BG_Space_StarSheet_28: 8823733736878113683
+      BG_Space_StarSheet_29: -638287703148932178
+      BG_Space_StarSheet_3: -377940791660991094
+      BG_Space_StarSheet_30: -870367929482484655
+      BG_Space_StarSheet_31: 2629978253073304045
+      BG_Space_StarSheet_32: 503770052275421675
+      BG_Space_StarSheet_33: -2342206137027472972
+      BG_Space_StarSheet_34: -616775169400940208
+      BG_Space_StarSheet_35: -2692565332506454336
+      BG_Space_StarSheet_36: 5241656407827739753
+      BG_Space_StarSheet_37: -2837836416376777292
+      BG_Space_StarSheet_38: -351663696470049007
+      BG_Space_StarSheet_39: -6920267807218741027
+      BG_Space_StarSheet_4: -8287087278503450090
+      BG_Space_StarSheet_40: 706700312471402338
+      BG_Space_StarSheet_41: -1001448370775966810
+      BG_Space_StarSheet_42: -1098576148068612115
+      BG_Space_StarSheet_43: 958837336093778563
+      BG_Space_StarSheet_44: 350350532082218541
+      BG_Space_StarSheet_45: 5281631657661483306
+      BG_Space_StarSheet_46: -2034216441101849030
+      BG_Space_StarSheet_47: -6836970496305585299
+      BG_Space_StarSheet_48: -4612472456287871883
+      BG_Space_StarSheet_49: -1844811858687294508
+      BG_Space_StarSheet_5: 4416639270991939564
+      BG_Space_StarSheet_50: 8013264071651538562
+      BG_Space_StarSheet_51: -5829024870116958197
+      BG_Space_StarSheet_52: 6235220654141823518
+      BG_Space_StarSheet_53: -9070463022699997302
+      BG_Space_StarSheet_54: -2160710146814960636
+      BG_Space_StarSheet_55: -3219594692070228423
+      BG_Space_StarSheet_56: 1803690782654927165
+      BG_Space_StarSheet_57: -7173453837125199016
+      BG_Space_StarSheet_58: -2983113370500227477
+      BG_Space_StarSheet_59: -8629894170096428056
+      BG_Space_StarSheet_6: -2702890378667986429
+      BG_Space_StarSheet_60: -7252398138391718029
+      BG_Space_StarSheet_61: 4849230271349415425
+      BG_Space_StarSheet_62: 8926970735226333619
+      BG_Space_StarSheet_63: 3530464584292264623
+      BG_Space_StarSheet_64: -3209154253644942879
+      BG_Space_StarSheet_65: 4327762998157130489
+      BG_Space_StarSheet_66: 6627655300363685892
+      BG_Space_StarSheet_67: -2686425228926650164
+      BG_Space_StarSheet_68: -1711794212442216218
+      BG_Space_StarSheet_69: -96752761220385166
+      BG_Space_StarSheet_7: -8977837678288133533
+      BG_Space_StarSheet_70: 7780732640100909545
+      BG_Space_StarSheet_71: -4385562958891027903
+      BG_Space_StarSheet_72: 8151221436798478469
+      BG_Space_StarSheet_73: 53420919092950970
+      BG_Space_StarSheet_74: 6557055797227886290
+      BG_Space_StarSheet_8: 5975079183427184610
+      BG_Space_StarSheet_9: -3025836165816431471
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

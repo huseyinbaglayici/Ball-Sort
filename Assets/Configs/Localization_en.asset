@@ -29,7 +29,7 @@ MonoBehaviour:
   - Key: game.progress
     Value: '{0} / {1}'
   - Key: result.win
-    Value: You win!
+    Value: 'Great!'
   - Key: result.lose
     Value: No moves left
   - Key: common.continue
@@ -168,3 +168,9 @@ MonoBehaviour:
     Value: 'Road reward'
   - Key: road.body
     Value: 'Win level {0} to get: {1}'
+  - Key: home.play_level
+    Value: 'Play · Level {0}'
+  - Key: home.period
+    Value: 'Period {0}'
+  - Key: settings.title
+    Value: 'Settings'

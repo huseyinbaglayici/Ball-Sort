@@ -22,9 +22,19 @@ namespace Project.Contexts.Game
             public TMP_Text LockLevel;
             // Free Move only: shown while the mode is on.
             public GameObject Armed;
+            // Optional art: base and icon, the count badge root, and the coin price pill shown at zero stock.
+            public Image Base;
+            public Image Icon;
+            public GameObject Count;
+            public GameObject Price;
+            public TMP_Text PriceText;
         }
 
         [SerializeField] private Slot[] _slots = Array.Empty<Slot>();
+        [SerializeField] private Sprite _baseUp;
+        [SerializeField] private Sprite _baseLocked;
+        [SerializeField] private Color _lockedIcon = new(0.65f, 0.64f, 0.75f);
+        [SerializeField] private Color _unavailableIcon = new(1f, 1f, 1f, 0.45f);
 
         private BoosterInventory _inventory;
         private int _level;
@@ -85,13 +95,20 @@ namespace Project.Contexts.Game
                 var stock = _inventory.Stock(type);
                 if (slot.Lock != null) slot.Lock.SetActive(!unlocked);
                 if (slot.LockLevel != null) slot.LockLevel.text = $"Lv {CampaignRules.UnlockLevel(type)}";
+                var available = unlocked && IsAvailable(type);
                 if (slot.Badge != null)
                 {
-                    slot.Badge.gameObject.SetActive(unlocked);
+                    // With a separate price pill the badge only counts stock.
+                    var count = slot.Price == null || stock > 0;
+                    (slot.Count != null ? slot.Count : slot.Badge.gameObject).SetActive(unlocked && count);
                     slot.Badge.text = stock > 0 ? stock.ToString() : BoosterInventory.Price(type).ToString();
                 }
+                if (slot.Price != null) slot.Price.SetActive(unlocked && stock == 0);
+                if (slot.PriceText != null) slot.PriceText.text = BoosterInventory.Price(type).ToString();
+                if (slot.Base != null && _baseUp != null) slot.Base.sprite = unlocked ? _baseUp : _baseLocked;
+                if (slot.Icon != null) slot.Icon.color = !unlocked ? _lockedIcon : available ? Color.white : _unavailableIcon;
                 if (slot.Armed != null) slot.Armed.SetActive(type == BoosterType.FreeMove && _freeArmed);
-                if (slot.Button != null) slot.Button.interactable = unlocked && IsAvailable(type);
+                if (slot.Button != null) slot.Button.interactable = available;
             }
         }
 

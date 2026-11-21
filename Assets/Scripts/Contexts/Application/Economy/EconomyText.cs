@@ -52,8 +52,8 @@ namespace Project.Contexts.Application.Economy
 
         public static int DifficultyMarks(LevelDifficulty difficulty) => difficulty switch
         {
-            LevelDifficulty.Hard => 2,
-            LevelDifficulty.SuperHard => 3,
+            LevelDifficulty.Hard => 1,
+            LevelDifficulty.SuperHard => 2,
             _ => 0
         };
 

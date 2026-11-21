@@ -14,6 +14,10 @@ namespace Project.Contexts.Application.Economy
         [SerializeField] private TMP_Text _lives;
         [SerializeField] private TMP_Text _livesCount;
         [SerializeField] private TMP_Text _livesTimer;
+        // Heart art: normal, or the infinite one while lives are unlimited.
+        [SerializeField] private UnityEngine.UI.Image _heart;
+        [SerializeField] private Sprite _heartSprite;
+        [SerializeField] private Sprite _unlimitedSprite;
 
         private WalletService _wallet;
         private LivesService _livesService;
@@ -65,7 +69,11 @@ namespace Project.Contexts.Application.Economy
             if (_coins != null) _coins.text = _wallet.Coins.ToString();
             if (_lives != null) _lives.text = EconomyText.Lives(_livesService, _loc);
             if (_livesCount != null) _livesCount.text = EconomyText.LivesCount(_livesService);
-            if (_livesTimer != null) _livesTimer.text = EconomyText.LivesTimer(_livesService, _loc);
+            if (_livesTimer != null)
+            {
+                _livesTimer.text = EconomyText.LivesTimer(_livesService, _loc);
+            }
+            if (_heart != null) _heart.sprite = _livesService.IsUnlimited ? _unlimitedSprite : _heartSprite;
         }
     }
 }

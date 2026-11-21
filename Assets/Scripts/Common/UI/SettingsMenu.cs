@@ -8,14 +8,16 @@ using UnityEngine.UI;
 
 namespace Project.Common.UI
 {
-    // A tap on the dim or on the settings button closes the column.
+    // Settings button with a column of round buttons over a dark tint; a tap on the tint or the button closes it.
     public sealed class SettingsMenu : MonoBehaviour
     {
         private const float ItemDuration = 0.25f;
         private const float ItemStagger = 0.06f;
         private const float SpinDuration = 0.6f;
-        private const float DimAlpha = 0.6f;
-        private static readonly Vector2 HiddenOffset = new(260f, 0f);
+        private const float DimDuration = 0.6f;
+        [SerializeField] private float _dimAlpha = 0.588f;
+        // Where the buttons slide in from, relative to their rest position.
+        [SerializeField] private Vector2 _hiddenOffset = new(371f, 0f);
 
         [SerializeField] private Button _gear;
         [SerializeField] private Button _dim;
@@ -23,8 +25,10 @@ namespace Project.Common.UI
         [SerializeField] private Button _music;
         [SerializeField] private Button _haptics;
         [SerializeField] private Button _exit;
-        [SerializeField] private Color _onColor = new(0.30f, 0.75f, 0.30f);
-        [SerializeField] private Color _offColor = new(0.45f, 0.45f, 0.50f);
+        // Off marks drawn over each switch's icon.
+        [SerializeField] private GameObject _soundOff;
+        [SerializeField] private GameObject _musicOff;
+        [SerializeField] private GameObject _hapticsOff;
 
         private SettingsService _settings;
         private HapticModule _hapticModule;
@@ -92,7 +96,7 @@ namespace Project.Common.UI
             var dimGraphic = _dim.targetGraphic;
             PrimeTween.Tween.StopAll(dimGraphic);
             _dim.gameObject.SetActive(true);
-            PrimeTween.Tween.Alpha(dimGraphic, open ? DimAlpha : 0f, ItemDuration, Ease.OutQuad, useUnscaledTime: true)
+            PrimeTween.Tween.Alpha(dimGraphic, open ? _dimAlpha : 0f, open ? DimDuration : ItemDuration, Ease.OutQuad, useUnscaledTime: true)
                 .OnComplete(this, menu =>
                 {
                     if (!menu._open) menu._dim.gameObject.SetActive(false);
@@ -103,7 +107,7 @@ namespace Project.Common.UI
                 var item = _items[i];
                 PrimeTween.Tween.StopAll(item);
                 var delay = (open ? i : _items.Length - 1 - i) * ItemStagger;
-                var hidden = _rest[i] + HiddenOffset;
+                var hidden = _rest[i] + _hiddenOffset;
                 if (open)
                 {
                     item.gameObject.SetActive(true);
@@ -128,7 +132,7 @@ namespace Project.Common.UI
             _gear.transform.localRotation = Quaternion.identity;
             PrimeTween.Tween.StopAll(_dim.targetGraphic);
             var color = _dim.targetGraphic.color;
-            color.a = open ? DimAlpha : 0f;
+            color.a = open ? _dimAlpha : 0f;
             _dim.targetGraphic.color = color;
             _dim.gameObject.SetActive(open);
             for (var i = 0; i < _items.Length; i++)
@@ -143,14 +147,14 @@ namespace Project.Common.UI
         private void Render()
         {
             if (_settings == null) return;
-            Paint(_sound, !_settings.SoundMuted);
-            Paint(_music, !_settings.MusicMuted);
-            Paint(_haptics, _settings.HapticsEnabled);
+            Mark(_soundOff, !_settings.SoundMuted);
+            Mark(_musicOff, !_settings.MusicMuted);
+            Mark(_hapticsOff, _settings.HapticsEnabled);
         }
 
-        private void Paint(Button button, bool on)
+        private static void Mark(GameObject offMark, bool on)
         {
-            if (button != null && button.targetGraphic != null) button.targetGraphic.color = on ? _onColor : _offColor;
+            if (offMark != null) offMark.SetActive(!on);
         }
     }
 }
