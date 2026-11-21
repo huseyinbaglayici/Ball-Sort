@@ -34,7 +34,7 @@ namespace Project.Contexts.Game.Sort
         public const int MaxBalls = 16;
         public const float FirstOfFourDb = -1.4f;
         public const float OtherDb = -2.8f;
-        private const int LongRun = 5;
+        private const int Run = 2;
 
         // Sound families only; Plan picks the context variants.
         public static List<OrbContact> Basic(ContactKind kind, int selected, int moved = 0)
@@ -74,8 +74,8 @@ namespace Project.Contexts.Game.Sort
 
         private static float Gain(ContactKind kind, int index, int count)
         {
-            // Runs of 5+ are pulled down in groups of four; the last landing closes at full level.
-            if (count < LongRun) return 0f;
+            // Multi-ball runs sit below the main landing in groups of four; the last landing closes at full level.
+            if (count < Run) return 0f;
             if (kind != ContactKind.Select && index == count - 1) return 0f;
             return index % 4 == 0 ? FirstOfFourDb : OtherDb;
         }

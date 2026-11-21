@@ -26,6 +26,7 @@ namespace Project.Editor
             public string id;
             public string bus;
             public string label;
+            public bool enabled = true;
             public List<string> files = new();
         }
 
@@ -74,6 +75,8 @@ namespace Project.Editor
             var missing = 0;
             foreach (var e in catalog.events)
             {
+                // A disabled event stays out of the library, so playing it is silent.
+                if (!e.enabled) continue;
                 var clips = new List<AudioClip>(e.files.Count);
                 foreach (var file in e.files)
                 {

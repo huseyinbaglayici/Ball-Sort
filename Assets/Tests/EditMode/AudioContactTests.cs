@@ -82,13 +82,20 @@ namespace Project.Tests
         }
 
         [Test]
-        public void LongRunsDuckEveryFourAndCloseAtFullLevel()
+        public void MultiBallRunsSitBelowTheMainLanding()
         {
-            Assert.IsTrue(OrbContacts.Plan(ContactKind.Transfer, 4, 4).All(c => c.GainDb == 0f));
-            var run = OrbContacts.Plan(ContactKind.Transfer, 9, 9);
-            for (var i = 0; i < run.Count - 1; i++)
-                Assert.AreEqual(i % 4 == 0 ? OrbContacts.FirstOfFourDb : OrbContacts.OtherDb, run[i].GainDb, $"contact {i}");
-            Assert.AreEqual(0f, run[^1].GainDb);
+            Assert.AreEqual(0f, OrbContacts.Plan(ContactKind.Transfer, 1, 1)[0].GainDb);
+            Assert.AreEqual(0f, OrbContacts.Plan(ContactKind.Select, 1)[0].GainDb);
+            foreach (var n in new[] { 2, 4, 9 })
+            {
+                var run = OrbContacts.Plan(ContactKind.Transfer, n, n);
+                for (var i = 0; i < run.Count - 1; i++)
+                    Assert.AreEqual(i % 4 == 0 ? OrbContacts.FirstOfFourDb : OrbContacts.OtherDb, run[i].GainDb, $"{n}: contact {i}");
+                Assert.AreEqual(0f, run[^1].GainDb);
+                var lift = OrbContacts.Plan(ContactKind.Select, n);
+                Assert.AreEqual("select_tail", lift[^1].Sound);
+                Assert.Less(lift[^1].GainDb, 0f);
+            }
         }
 
         [Test]

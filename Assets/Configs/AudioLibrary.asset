@@ -90,12 +90,6 @@ MonoBehaviour:
     Clips:
     - {fileID: 8300000, guid: 2aa7c58cfd71c6246a8034e331fee10f, type: 3}
     - {fileID: 8300000, guid: 42c868ce79740634cbfd3f27e6b3f4ef, type: 3}
-  - Id: hidden
-    Bus: Mechanic
-    Clips:
-    - {fileID: 8300000, guid: dd726d9b4224970449e6f354f75103fa, type: 3}
-    - {fileID: 8300000, guid: 3c97ac4e09e22f14a811171f4a4655ae, type: 3}
-    - {fileID: 8300000, guid: 0d62d8ea8205d7a498fe464185099722, type: 3}
   - Id: cover
     Bus: Mechanic
     Clips:
