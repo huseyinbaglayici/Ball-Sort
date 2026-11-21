@@ -25,6 +25,15 @@ namespace Project.Contexts.Game.Items
         [SerializeField] private SpriteRenderer _padlockBase;
         [SerializeField] private SpriteRenderer _padlockBody;
         [SerializeField] private SpriteMask _mask;
+        // Open FX: orbit ring halves and glows round the lock, the seam and its spill, the rim glow and the sparks.
+        [SerializeField] private SpriteRenderer _ringNear;
+        [SerializeField] private SpriteRenderer _ringFar;
+        [SerializeField] private SpriteRenderer _glowNear;
+        [SerializeField] private SpriteRenderer _glowFar;
+        [SerializeField] private SpriteRenderer _seam;
+        [SerializeField] private SpriteRenderer _spill;
+        [SerializeField] private SpriteRenderer _rimGlow;
+        [SerializeField] private ParticleSystem _sparks;
 
         private static Sprite _maskSprite;
         private Transform _first;
@@ -36,6 +45,13 @@ namespace Project.Contexts.Game.Items
         private PrimeTween.Sequence _play;
         private PrimeTween.Tween _rattle;
         private Vector3 _rattleOffset;
+        private float _width;
+        // Curtain edge when the roll starts: the spill never reaches below it.
+        private float _seamBase;
+        // Where the lock let go; the horizon ring stays there while the padlock drops.
+        private Vector3 _releasedAt;
+        // Ring flattening, like the tube base in perspective.
+        private const float RingAspect = 0.32f;
 
         public bool IsPlaying => _play.isAlive;
 
@@ -74,6 +90,7 @@ namespace Project.Contexts.Game.Items
             transform.localRotation = Quaternion.identity;
             transform.localScale = Vector3.one;
             var width = Mathf.Abs(b.x - a.x) + TubeArt.ArtWidthPx / TubeArt.PixelsPerUnit;
+            _width = width;
             var height = TubeArt.ArtHeightPx / TubeArt.PixelsPerUnit;
             _frame.size = new Vector2(width, _frameSize.y + _rise);
             _frame.transform.localPosition = new Vector3(0f, _rise * 0.5f, 0f);
@@ -108,6 +125,8 @@ namespace Project.Contexts.Game.Items
         {
             Stop();
             Follow();
+            _seamBase = transform.InverseTransformPoint(_curtain.bounds.min).y;
+            _releasedAt = LockCenter();
             var shake = config.ShutterShakeDuration;
             var rollAt = shake + config.ShutterRollDelay;
             var clearAt = config.ShutterClearTime;
@@ -132,6 +151,14 @@ namespace Project.Contexts.Game.Items
                 .Insert(rollAt, PrimeTween.Tween.Custom(this, 0f, config.ShutterRollDistance, config.ShutterRollDuration,
                     (shutter, y) => shutter._curtain.transform.localPosition = new Vector3(0f, curtainY + y, 0f),
                     PrimeTween.Ease.InOutSine))
+                .Insert(0f, PrimeTween.Tween.Custom(this, 0f, 1f, rollAt, (shutter, k) => shutter.Snap(config, k)))
+                .InsertCallback(rollAt, this, shutter => shutter.Release(config))
+                .Insert(rollAt, PrimeTween.Tween.Custom(this, 0f, 1f, Mathf.Max(config.ShutterFxHorizonTime, 0.0001f),
+                    (shutter, k) => shutter.Horizon(config, k)))
+                .Insert(rollAt, PrimeTween.Tween.Custom(this, 0f, 1f, config.ShutterRollDuration,
+                    (shutter, k) => shutter.Seam(config, k)))
+                .Insert(clearAt, PrimeTween.Tween.Custom(this, 0f, 1f, Mathf.Max(config.ShutterFadeDuration, 0.0001f),
+                    (shutter, k) => shutter.RimGlow(config, k)))
                 .InsertCallback(clearAt, () => onClear?.Invoke())
                 .Insert(clearAt, PrimeTween.Tween.Custom(this, 1f, 0f, config.ShutterFadeDuration, (shutter, a) =>
                 {
@@ -141,9 +168,97 @@ namespace Project.Contexts.Game.Items
                 .ChainCallback(() => onDone?.Invoke());
         }
 
+        // Anticipation: a ring snaps in round the padlock and is drawn into it.
+        private void Snap(BallAnimationConfig config, float k)
+        {
+            var lockWidth = _padlockBody.bounds.size.x / Mathf.Max(transform.lossyScale.x, 0.0001f);
+            var size = lockWidth * Mathf.Lerp(config.ShutterFxSnapFrom, config.ShutterFxSnapTo, k * k);
+            var alpha = Mathf.Clamp01(k * 4f) * (1f - k * k * k);
+            Ring(config.Finish.Core, config.Finish.Violet, alpha, size, LockCenter());
+        }
+
+        // The lock lets go: gold sparks fly off on arcs.
+        private void Release(BallAnimationConfig config)
+        {
+            var center = LockCenter();
+            _releasedAt = center;
+            for (var i = 0; i < config.ShutterFxSparks; i++)
+            {
+                var angle = Mathf.Lerp(20f, 160f, (i + UnityEngine.Random.value) / Mathf.Max(config.ShutterFxSparks, 1)) * Mathf.Deg2Rad;
+                var speed = UnityEngine.Random.Range(config.ShutterFxSparkSpeed.x, config.ShutterFxSparkSpeed.y);
+                _sparks.Emit(new ParticleSystem.EmitParams
+                {
+                    position = center,
+                    velocity = new Vector3(Mathf.Cos(angle), Mathf.Sin(angle), 0f) * speed,
+                    startColor = Color.Lerp(config.Finish.Gold, Color.white, UnityEngine.Random.Range(0f, 0.4f)),
+                    startSize = 0.14f,
+                    startLifetime = UnityEngine.Random.Range(0.25f, 0.4f),
+                    applyShapeToPosition = false,
+                }, 1);
+            }
+        }
+
+        // A crisp event-horizon ring widens from the lock and fades.
+        private void Horizon(BallAnimationConfig config, float k)
+        {
+            var lockWidth = _padlockBody.bounds.size.x / Mathf.Max(transform.lossyScale.x, 0.0001f);
+            var grow = PrimeTween.Easing.Evaluate(k, PrimeTween.Ease.OutCubic);
+            var size = lockWidth * Mathf.Lerp(config.ShutterFxSnapTo, config.ShutterFxHorizonTo, grow);
+            Ring(Color.white, config.Finish.Violet, 1f - k * k, size, _releasedAt);
+        }
+
+        // A thin seam rides the curtain's lower edge, the tube glass glowing faint violet under it.
+        private void Seam(BallAnimationConfig config, float k)
+        {
+            var edge = transform.InverseTransformPoint(_curtain.bounds.min).y;
+            var alpha = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(k / 0.2f)) * (1f - Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((k - 0.75f) / 0.25f)));
+            Stretch(_seam, new Vector3(0f, edge, 0f), _width, config.ShutterFxSeamHeight,
+                config.Finish.Core, alpha * config.ShutterFxSeamAlpha);
+            var spill = Mathf.Min(config.ShutterFxSpillHeight, Mathf.Max(edge - _seamBase, 0f));
+            Stretch(_spill, new Vector3(0f, edge - spill * 0.5f, 0f), _width, spill * 2f,
+                config.Finish.Violet, alpha * config.ShutterFxSpillAlpha);
+        }
+
+        // The opened tubes' rims catch a soft white-cyan light as the frame fades.
+        private void RimGlow(BallAnimationConfig config, float k)
+        {
+            var alpha = k < 0.3f ? k / 0.3f : 1f - (k - 0.3f) / 0.7f;
+            Stretch(_rimGlow, new Vector3(0f, _housing.transform.localPosition.y, 0f), _width, config.ShutterFxRimHeight,
+                Color.Lerp(config.Finish.Core, Color.white, 0.3f), alpha * config.ShutterFxRimAlpha);
+            if (k >= 1f) _rimGlow.enabled = false;
+        }
+
+        private Vector3 LockCenter() => transform.InverseTransformPoint(_padlockBody.bounds.center);
+
+        // Kept inside the shutter's own width.
+        private void Ring(Color line, Color glow, float alpha, float width, Vector3 center)
+        {
+            width = Mathf.Min(width, _width * 1.05f);
+            foreach (var (renderer, color, share) in new[] { (_ringNear, line, 1f), (_ringFar, line, 0.7f), (_glowNear, glow, 1f), (_glowFar, glow, 0.7f) })
+                Stretch(renderer, center, width, width * RingAspect, color, alpha * share);
+        }
+
+        private static void Stretch(SpriteRenderer renderer, Vector3 position, float width, float height, Color color, float alpha)
+        {
+            renderer.enabled = alpha > 0.001f && renderer.sprite != null;
+            if (!renderer.enabled) return;
+            var native = renderer.sprite.bounds.size;
+            renderer.transform.localPosition = position;
+            renderer.transform.localScale = new Vector3(width / native.x, height / native.y, 1f);
+            renderer.color = new Color(color.r, color.g, color.b, color.a * alpha);
+        }
+
+        private void HideFx()
+        {
+            _ringNear.enabled = _ringFar.enabled = _glowNear.enabled = _glowFar.enabled = false;
+            _seam.enabled = _spill.enabled = _rimGlow.enabled = false;
+            _sparks.Clear();
+        }
+
         // Back to closed at rest without running callbacks.
         public void Stop()
         {
+            HideFx();
             if (_play.isAlive) _play.Stop();
             if (_rattle.isAlive) _rattle.Stop();
             _rattleOffset = Vector3.zero;

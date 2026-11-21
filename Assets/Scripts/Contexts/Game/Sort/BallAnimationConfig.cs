@@ -301,6 +301,23 @@ namespace Project.Contexts.Game.Sort
         public float ShutterFadeDuration = 0.1f;
         public float ShutterHopDuration = 0.56f;
         public float ShutterHopStagger = 0.24f;
+        [Header("Shutter open FX")]
+        [Tooltip("During the shake an orbit ring snaps in around the padlock, from and to these multiples of its width.")]
+        public float ShutterFxSnapFrom = 1.6f;
+        public float ShutterFxSnapTo = 0.45f;
+        [Tooltip("At the release a crisp ring widens from the lock over this time, to this multiple of its width, with gold sparks on arcs.")]
+        public float ShutterFxHorizonTime = 0.18f;
+        public float ShutterFxHorizonTo = 1.7f;
+        public int ShutterFxSparks = 6;
+        public Vector2 ShutterFxSparkSpeed = new(2.5f, 4f);
+        [Tooltip("A light seam rides the curtain's lower edge as it rolls, with a faint violet spill under it: seam and spill heights and alphas.")]
+        public float ShutterFxSeamHeight = 0.09f;
+        public float ShutterFxSpillHeight = 0.9f;
+        [Range(0f, 1f)] public float ShutterFxSeamAlpha = 0.9f;
+        [Range(0f, 1f)] public float ShutterFxSpillAlpha = 0.35f;
+        [Tooltip("As the tubes clear, a soft white-cyan glow on their rims: height and peak alpha; it lasts the frame fade.")]
+        public float ShutterFxRimHeight = 0.6f;
+        [Range(0f, 1f)] public float ShutterFxRimAlpha = 0.55f;
 
         [Header("Fail")]
         [Tooltip("The fail board stays readable this long after its last meaningful change before the panel opens.")]

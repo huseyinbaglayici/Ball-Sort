@@ -491,6 +491,18 @@ MonoBehaviour:
   ShutterFadeDuration: 0.1
   ShutterHopDuration: 0.56
   ShutterHopStagger: 0.24
+  ShutterFxSnapFrom: 1.6
+  ShutterFxSnapTo: 0.45
+  ShutterFxHorizonTime: 0.18
+  ShutterFxHorizonTo: 1.7
+  ShutterFxSparks: 6
+  ShutterFxSparkSpeed: {x: 2.5, y: 4}
+  ShutterFxSeamHeight: 0.09
+  ShutterFxSpillHeight: 0.9
+  ShutterFxSeamAlpha: 0.9
+  ShutterFxSpillAlpha: 0.35
+  ShutterFxRimHeight: 0.6
+  ShutterFxRimAlpha: 0.55
   FailReadableWindow: 1
   KeyUseScale: 1.25
   KeyUsePop: 0.2

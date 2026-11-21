@@ -511,8 +511,40 @@ namespace Project.Editor
             so.FindProperty("_padlockBase").objectReferenceValue = padlockBase;
             so.FindProperty("_padlockBody").objectReferenceValue = padlockBody;
             so.FindProperty("_mask").objectReferenceValue = mask;
+            ShutterFx(root.transform, so);
             so.ApplyModifiedPropertiesWithoutUndo();
             return root;
+        }
+
+        // The open beat, in the shutter's own sorting group: ring halves round the lock, seam, spill, rim glow and sparks.
+        private static void ShutterFx(Transform root, SerializedObject so)
+        {
+            var lineNear = CompleteFxBuilder.ImportSprite("TouchLineNear", 128f);
+            var lineFar = CompleteFxBuilder.ImportSprite("TouchLineFar", 128f);
+            var glowNear = CompleteFxBuilder.ImportSprite("TouchGlowNear", 128f);
+            var glowFar = CompleteFxBuilder.ImportSprite("TouchGlowFar", 128f);
+            var halo = CompleteFxBuilder.ImportSprite("Halo", 128f);
+            var dot = CompleteFxBuilder.ImportSprite("Dot", 64f);
+            var additive = CompleteFxBuilder.AdditiveMaterial("FxShutterSprite", null);
+            var fx = new GameObject("OpenFx").transform;
+            fx.SetParent(root, false);
+            so.FindProperty("_spill").objectReferenceValue = CompleteFxBuilder.AddSprite(fx, "Spill", halo, 1, additive);
+            so.FindProperty("_seam").objectReferenceValue = CompleteFxBuilder.AddSprite(fx, "Seam", dot, 2, additive);
+            so.FindProperty("_glowFar").objectReferenceValue = CompleteFxBuilder.AddSprite(fx, "GlowFar", glowFar, 2, additive);
+            so.FindProperty("_ringFar").objectReferenceValue = CompleteFxBuilder.AddSprite(fx, "RingFar", lineFar, 2, additive);
+            so.FindProperty("_rimGlow").objectReferenceValue = CompleteFxBuilder.AddSprite(fx, "RimGlow", halo, 3, additive);
+            so.FindProperty("_glowNear").objectReferenceValue = CompleteFxBuilder.AddSprite(fx, "GlowNear", glowNear, 5, additive);
+            so.FindProperty("_ringNear").objectReferenceValue = CompleteFxBuilder.AddSprite(fx, "RingNear", lineNear, 6, additive);
+            var sparks = CompleteFxBuilder.Particles(fx, "Sparks", 16, CompleteFxBuilder.ParticleMaterial("FxShutterSpark", dot.texture), 7);
+            var main = sparks.main;
+            main.gravityModifier = 0.6f;
+            var color = sparks.colorOverLifetime;
+            color.enabled = true;
+            color.color = CompleteFxBuilder.Fade((0f, 1f), (0.6f, 0.8f), (1f, 0f));
+            var size = sparks.sizeOverLifetime;
+            size.enabled = true;
+            size.size = new ParticleSystem.MinMaxCurve(1f, new AnimationCurve(new Keyframe(0f, 1f), new Keyframe(1f, 0.3f)));
+            so.FindProperty("_sparks").objectReferenceValue = sparks;
         }
 
         private static SpriteRenderer AddSliced(Transform parent, string name, Sprite sprite, int order)
