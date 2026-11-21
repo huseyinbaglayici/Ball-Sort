@@ -24,6 +24,9 @@ namespace Project.Contexts.Game.Items
         [SerializeField] private Transform _padlock;
         [SerializeField] private SpriteRenderer _padlockBase;
         [SerializeField] private SpriteRenderer _padlockBody;
+        // A dark plate and a soft gold glow behind the padlock, so it reads against the curtain.
+        [SerializeField] private SpriteRenderer _lockShade;
+        [SerializeField] private SpriteRenderer _lockGlow;
         [SerializeField] private SpriteMask _mask;
         // Open FX: orbit ring halves and glows round the lock, the seam and its spill, the rim glow and the sparks.
         [SerializeField] private SpriteRenderer _ringNear;
@@ -34,6 +37,12 @@ namespace Project.Contexts.Game.Items
         [SerializeField] private SpriteRenderer _spill;
         [SerializeField] private SpriteRenderer _rimGlow;
         [SerializeField] private ParticleSystem _sparks;
+        // Charge and hit at the lock: soft core glow, hot core, photon ring and two orbiting beads; a glow under the seam.
+        [SerializeField] private SpriteRenderer _coreGlow;
+        [SerializeField] private SpriteRenderer _coreHot;
+        [SerializeField] private SpriteRenderer _photon;
+        [SerializeField] private SpriteRenderer[] _beads;
+        [SerializeField] private SpriteRenderer _seamGlow;
 
         private static Sprite _maskSprite;
         private Transform _first;
@@ -52,8 +61,22 @@ namespace Project.Contexts.Game.Items
         private Vector3 _releasedAt;
         // Ring flattening, like the tube base in perspective.
         private const float RingAspect = 0.32f;
+        // The open's rings stay soft so the key's insertion leads.
+        private const float SoftRing = 0.6f;
+        // The padlock is drawn this much larger than its art; its glow breathes over this period.
+        private const float LockScale = 1.15f;
+        private const float GlowPeriod = 2.4f;
+        private static readonly Color ShadeColor = new(0.05f, 0.03f, 0.18f, 0.8f);
+        private static readonly Color GlowColor = new(1f, 0.8f, 0.35f, 0.45f);
+        // Bead orders in the shutter group: in front of the padlock (3, 4) on the near half, behind it on the far half.
+        private const int BeadNearOrder = 7;
+        private const int BeadFarOrder = 2;
 
         public bool IsPlaying => _play.isAlive;
+
+        // The keyhole, where a flying key goes in.
+        public Vector3 LockWorld => _padlockBody.bounds.center;
+        public float LockWorldWidth => _padlockBody.bounds.size.x;
 
         private void Awake()
         {
@@ -77,7 +100,19 @@ namespace Project.Contexts.Game.Items
             Follow();
         }
 
-        private void LateUpdate() => Follow();
+        private void LateUpdate()
+        {
+            Follow();
+            if (!_play.isAlive) LockLight(1f);
+        }
+
+        // Plate and glow at the given strength; the glow shimmers slowly at rest.
+        private void LockLight(float alpha)
+        {
+            _lockShade.color = new Color(ShadeColor.r, ShadeColor.g, ShadeColor.b, ShadeColor.a * alpha);
+            var breath = 0.75f + 0.25f * Mathf.Sin(Time.time * Mathf.PI * 2f / GlowPeriod);
+            _lockGlow.color = new Color(GlowColor.r, GlowColor.g, GlowColor.b, GlowColor.a * alpha * breath);
+        }
 
         // Spans both end tubes with the art's width over each; the housing keeps its height, the rest stretches.
         private void Follow()
@@ -147,86 +182,137 @@ namespace Project.Contexts.Game.Items
                     shutter._padlockBase.color = new Color(1f, 1f, 1f, a);
                     var c = shutter._padlockBody.color;
                     shutter._padlockBody.color = new Color(c.r, c.g, c.b, a);
+                    shutter.LockLight(a);
                 }))
                 .Insert(rollAt, PrimeTween.Tween.Custom(this, 0f, config.ShutterRollDistance, config.ShutterRollDuration,
                     (shutter, y) => shutter._curtain.transform.localPosition = new Vector3(0f, curtainY + y, 0f),
                     PrimeTween.Ease.InOutSine))
-                .Insert(0f, PrimeTween.Tween.Custom(this, 0f, 1f, rollAt, (shutter, k) => shutter.Snap(config, k)))
+                .Insert(0f, PrimeTween.Tween.Custom(this, 0f, 1f, rollAt, (shutter, k) => shutter.Charge(config, k)))
                 .InsertCallback(rollAt, this, shutter => shutter.Release(config))
                 .Insert(rollAt, PrimeTween.Tween.Custom(this, 0f, 1f, Mathf.Max(config.ShutterFxHorizonTime, 0.0001f),
-                    (shutter, k) => shutter.Horizon(config, k)))
+                    (shutter, k) => shutter.Hit(config, k)))
                 .Insert(rollAt, PrimeTween.Tween.Custom(this, 0f, 1f, config.ShutterRollDuration,
                     (shutter, k) => shutter.Seam(config, k)))
-                .Insert(clearAt, PrimeTween.Tween.Custom(this, 0f, 1f, Mathf.Max(config.ShutterFadeDuration, 0.0001f),
-                    (shutter, k) => shutter.RimGlow(config, k)))
                 .InsertCallback(clearAt, () => onClear?.Invoke())
                 .Insert(clearAt, PrimeTween.Tween.Custom(this, 1f, 0f, config.ShutterFadeDuration, (shutter, a) =>
                 {
                     shutter._frame.color = new Color(1f, 1f, 1f, a);
                     shutter._housing.color = new Color(1f, 1f, 1f, a);
                 }))
+                // The tubes are usable at clearAt; only the glow lingers past it.
+                .Insert(clearAt, PrimeTween.Tween.Custom(this, 0f, 1f, Mathf.Max(config.ShutterFxLinger, 0.0001f),
+                    (shutter, k) => shutter.Linger(config, k)))
                 .ChainCallback(() => onDone?.Invoke());
         }
 
-        // Anticipation: a ring snaps in round the padlock and is drawn into it.
-        private void Snap(BallAnimationConfig config, float k)
+        // Charge: an orbit ring spins in round the padlock with two beads, its core brightens and the lock squashes.
+        private void Charge(BallAnimationConfig config, float k)
         {
-            var lockWidth = _padlockBody.bounds.size.x / Mathf.Max(transform.lossyScale.x, 0.0001f);
+            var f = config.Finish;
+            var lockWidth = LockWidth();
+            var center = LockCenter();
             var size = lockWidth * Mathf.Lerp(config.ShutterFxSnapFrom, config.ShutterFxSnapTo, k * k);
-            var alpha = Mathf.Clamp01(k * 4f) * (1f - k * k * k);
-            Ring(config.Finish.Core, config.Finish.Violet, alpha, size, LockCenter());
+            var alpha = Mathf.Clamp01(k * 4f);
+            Ring(f.Core, f.Violet, alpha * SoftRing, size, center);
+            Orbit(f, k, Mathf.Min(size, _width * 1.05f), center, alpha * SoftRing);
+            var heat = k * k;
+            Stretch(_coreGlow, center, lockWidth * Mathf.Lerp(1.6f, 1.1f, heat), lockWidth * Mathf.Lerp(1.6f, 1.1f, heat),
+                Color.Lerp(f.Violet, f.Core, heat), 0.35f * heat);
+            Stretch(_coreHot, center, lockWidth * 0.7f, lockWidth * 0.7f, Color.white, 0.25f * heat);
+            var squash = config.ShutterFxSquash;
+            _padlock.localScale = new Vector3(Mathf.Lerp(1f, squash.x, heat), Mathf.Lerp(1f, squash.y, heat), 1f) * LockScale;
         }
 
-        // The lock lets go: gold sparks fly off on arcs.
+        // The lock lets go: the beads are gone, gold sparks fly off on arcs.
         private void Release(BallAnimationConfig config)
         {
             var center = LockCenter();
             _releasedAt = center;
+            foreach (var bead in _beads) bead.enabled = false;
             for (var i = 0; i < config.ShutterFxSparks; i++)
             {
-                var angle = Mathf.Lerp(20f, 160f, (i + UnityEngine.Random.value) / Mathf.Max(config.ShutterFxSparks, 1)) * Mathf.Deg2Rad;
+                var angle = Mathf.Lerp(-10f, 190f, (i + UnityEngine.Random.value) / Mathf.Max(config.ShutterFxSparks, 1)) * Mathf.Deg2Rad;
                 var speed = UnityEngine.Random.Range(config.ShutterFxSparkSpeed.x, config.ShutterFxSparkSpeed.y);
                 _sparks.Emit(new ParticleSystem.EmitParams
                 {
                     position = center,
                     velocity = new Vector3(Mathf.Cos(angle), Mathf.Sin(angle), 0f) * speed,
-                    startColor = Color.Lerp(config.Finish.Gold, Color.white, UnityEngine.Random.Range(0f, 0.4f)),
-                    startSize = 0.14f,
-                    startLifetime = UnityEngine.Random.Range(0.25f, 0.4f),
+                    startColor = Color.Lerp(config.Finish.Gold, Color.white, UnityEngine.Random.Range(0f, 0.5f)),
+                    startSize = UnityEngine.Random.Range(0.12f, 0.2f),
+                    startLifetime = UnityEngine.Random.Range(0.3f, 0.5f),
                     applyShapeToPosition = false,
                 }, 1);
             }
         }
 
-        // A crisp event-horizon ring widens from the lock and fades.
-        private void Horizon(BallAnimationConfig config, float k)
+        // The hit: a hot core flash, a crisp horizon ring with its photon ring widening, the lock and frame pop back.
+        private void Hit(BallAnimationConfig config, float k)
         {
-            var lockWidth = _padlockBody.bounds.size.x / Mathf.Max(transform.lossyScale.x, 0.0001f);
+            var f = config.Finish;
+            var lockWidth = LockWidth();
             var grow = PrimeTween.Easing.Evaluate(k, PrimeTween.Ease.OutCubic);
             var size = lockWidth * Mathf.Lerp(config.ShutterFxSnapTo, config.ShutterFxHorizonTo, grow);
-            Ring(Color.white, config.Finish.Violet, 1f - k * k, size, _releasedAt);
+            var fade = 1f - k * k;
+            Ring(Color.white, f.Violet, fade * SoftRing, size, _releasedAt);
+            var photon = Mathf.Min(size * 0.85f, _width);
+            Stretch(_photon, _releasedAt, photon, photon * 0.62f, Color.Lerp(f.Core, f.Gold, 0.35f), fade * 0.45f);
+            var flash = lockWidth * config.ShutterFxFlashSize * Mathf.Lerp(0.6f, 1f, grow);
+            Stretch(_coreHot, _releasedAt, flash, flash, Color.white, (1f - grow) * 0.45f);
+            Stretch(_coreGlow, _releasedAt, flash * 1.4f, flash * 1.4f, f.Core, (1f - grow) * 0.3f);
+            var pop = PrimeTween.Easing.Evaluate(k, PrimeTween.Ease.OutBack);
+            var squash = config.ShutterFxSquash;
+            _padlock.localScale = new Vector3(Mathf.LerpUnclamped(squash.x, 1f, pop), Mathf.LerpUnclamped(squash.y, 1f, pop), 1f) * LockScale;
+            var punch = 1f + config.ShutterFxPunch * (1f - grow);
+            _frame.transform.localScale = _housing.transform.localScale = new Vector3(punch, punch, 1f);
+            if (k >= 1f) _coreHot.enabled = _coreGlow.enabled = _photon.enabled = false;
         }
 
-        // A thin seam rides the curtain's lower edge, the tube glass glowing faint violet under it.
+        // A bright seam rides the curtain's lower edge; violet energy fills the opened glass under it.
         private void Seam(BallAnimationConfig config, float k)
         {
+            var f = config.Finish;
             var edge = transform.InverseTransformPoint(_curtain.bounds.min).y;
-            var alpha = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(k / 0.2f)) * (1f - Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((k - 0.75f) / 0.25f)));
-            Stretch(_seam, new Vector3(0f, edge, 0f), _width, config.ShutterFxSeamHeight,
-                config.Finish.Core, alpha * config.ShutterFxSeamAlpha);
-            var spill = Mathf.Min(config.ShutterFxSpillHeight, Mathf.Max(edge - _seamBase, 0f));
-            Stretch(_spill, new Vector3(0f, edge - spill * 0.5f, 0f), _width, spill * 2f,
-                config.Finish.Violet, alpha * config.ShutterFxSpillAlpha);
+            var alpha = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(k / 0.15f)) * (1f - Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((k - 0.8f) / 0.2f)));
+            Stretch(_seam, new Vector3(0f, edge, 0f), _width, config.ShutterFxSeamHeight, f.Core, alpha * config.ShutterFxSeamAlpha);
+            Stretch(_seamGlow, new Vector3(0f, edge, 0f), _width * 1.02f, config.ShutterFxSeamHeight * 5f, f.Core, alpha * 0.45f);
+            Spill(config, edge, Mathf.Min(1f, k / 0.15f) * config.ShutterFxSpillAlpha);
         }
 
-        // The opened tubes' rims catch a soft white-cyan light as the frame fades.
-        private void RimGlow(BallAnimationConfig config, float k)
+        // As the tubes come alive the spill sinks away and their rims flash in the finish's gold.
+        private void Linger(BallAnimationConfig config, float k)
         {
-            var alpha = k < 0.3f ? k / 0.3f : 1f - (k - 0.3f) / 0.7f;
+            var edge = transform.InverseTransformPoint(_curtain.bounds.min).y;
+            Spill(config, edge, (1f - Mathf.SmoothStep(0f, 1f, k)) * config.ShutterFxSpillAlpha);
+            var flash = k < 0.2f ? k / 0.2f : 1f - Mathf.SmoothStep(0f, 1f, (k - 0.2f) / 0.8f);
+            var gold = config.CompleteGlowColor;
             Stretch(_rimGlow, new Vector3(0f, _housing.transform.localPosition.y, 0f), _width, config.ShutterFxRimHeight,
-                Color.Lerp(config.Finish.Core, Color.white, 0.3f), alpha * config.ShutterFxRimAlpha);
-            if (k >= 1f) _rimGlow.enabled = false;
+                Color.Lerp(gold, Color.white, 0.35f), flash * config.ShutterFxRimAlpha);
+            if (k >= 1f) _spill.enabled = _rimGlow.enabled = _seam.enabled = _seamGlow.enabled = false;
         }
+
+        // Fills the opened glass from the shutter's foot up to the edge, never below the tubes.
+        private void Spill(BallAnimationConfig config, float edge, float alpha)
+        {
+            var height = Mathf.Max(edge - _seamBase, 0f);
+            Stretch(_spill, new Vector3(0f, _seamBase + height * 0.5f, 0f), _width, height * 1.1f, config.Finish.Violet, alpha);
+        }
+
+        // Two beads run round the closing ring, behind the lock on the far half.
+        private void Orbit(FinishFxSettings f, float k, float width, Vector3 center, float alpha)
+        {
+            for (var i = 0; i < _beads.Length; i++)
+            {
+                var bead = _beads[i];
+                var angle = -Mathf.PI * 0.5f + Mathf.PI * (2f * k * 1.5f + i);
+                var near = Mathf.Sin(angle) < 0f;
+                var position = center + new Vector3(Mathf.Cos(angle) * width * 0.42f, Mathf.Sin(angle) * width * RingAspect * 0.42f, 0f);
+                var size = LockWidth() * 0.32f;
+                Stretch(bead, position, size, size, Color.Lerp(f.Core, f.Gold, 0.3f), alpha * (near ? 1f : 0.55f));
+                bead.sortingOrder = near ? BeadNearOrder : BeadFarOrder;
+            }
+        }
+
+        private float LockWidth() => _padlockBody.bounds.size.x / Mathf.Max(transform.lossyScale.x, 0.0001f);
 
         private Vector3 LockCenter() => transform.InverseTransformPoint(_padlockBody.bounds.center);
 
@@ -251,8 +337,13 @@ namespace Project.Contexts.Game.Items
         private void HideFx()
         {
             _ringNear.enabled = _ringFar.enabled = _glowNear.enabled = _glowFar.enabled = false;
-            _seam.enabled = _spill.enabled = _rimGlow.enabled = false;
+            _seam.enabled = _seamGlow.enabled = _spill.enabled = _rimGlow.enabled = false;
+            _coreGlow.enabled = _coreHot.enabled = _photon.enabled = false;
+            foreach (var bead in _beads) bead.enabled = false;
             _sparks.Clear();
+            _padlock.localScale = Vector3.one * LockScale;
+            LockLight(1f);
+            _frame.transform.localScale = _housing.transform.localScale = Vector3.one;
         }
 
         // Back to closed at rest without running callbacks.

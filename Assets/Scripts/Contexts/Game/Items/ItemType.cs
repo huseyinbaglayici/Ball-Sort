@@ -11,6 +11,8 @@ namespace Project.Contexts.Game.Items
         Shutter = 6,
         BombBlast = 7,
         CompleteFx = 8,
-        ResultFx = 9
+        ResultFx = 9,
+        KeyFlightFx = 10,
+        WinFx = 11
     }
 }

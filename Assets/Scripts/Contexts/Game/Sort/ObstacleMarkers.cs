@@ -32,6 +32,8 @@ namespace Project.Contexts.Game.Sort
             public bool Playing;
             public bool Cleared;
             public int Running;
+            // The key on its way to the lock; the shutters open when it turns.
+            public KeyFlightFx Flight;
         }
 
         private readonly Dictionary<int, CurtainView> _curtains = new();
@@ -282,6 +284,7 @@ namespace Project.Contexts.Game.Sort
 
         private void Rest(BoxView view)
         {
+            StopFlight(view);
             foreach (var shutter in view.Items) shutter.Stop();
             view.Held = view.Playing = view.Cleared = false;
             view.Running = 0;
@@ -292,10 +295,43 @@ namespace Project.Contexts.Game.Sort
         {
             view.Held = false;
             view.Playing = true;
-            view.Running = view.Items.Count;
+            BallItem carrier = null;
             foreach (var bottle in _bottles)
                 foreach (var ball in bottle.Balls)
-                    if (ball.KeyId == view.Id) ball.PlayKeyUse(_config);
+                    if (ball.KeyId == view.Id)
+                    {
+                        if (carrier == null && ball.KeyMark != null) carrier = ball;
+                        else ball.PlayKeyUse(_config);
+                    }
+            if (carrier == null || view.Items.Count == 0)
+            {
+                OpenShutters(index, view);
+                return;
+            }
+            // The key leaves its ball, shows itself at the screen's centre, then turns in the first padlock.
+            var from = _host.InverseTransformPoint(carrier.KeyMark.position);
+            var size = Mathf.Max(carrier.KeyWorldWidth, 0.1f) / Mathf.Max(_host.lossyScale.x, 0.0001f);
+            var camera = Camera.main;
+            var centre = camera != null ? _host.InverseTransformPoint(camera.transform.position) : Vector3.zero;
+            centre.z = 0f;
+            var lockAt = _host.InverseTransformPoint(view.Items[0].LockWorld);
+            var lockWidth = view.Items[0].LockWorldWidth / Mathf.Max(_host.lossyScale.x, 0.0001f);
+            carrier.ReleaseKey();
+            var flight = _factory.Get<KeyFlightFx>(ItemType.KeyFlightFx, _host);
+            view.Flight = flight;
+            flight.Play(from, centre, lockAt, size, lockWidth, LockColor(view.Id), _config, () =>
+            {
+                if (_boxes.TryGetValue(index, out var current) && current == view) OpenShutters(index, view);
+            }, done =>
+            {
+                if (view.Flight == done) view.Flight = null;
+                _factory.Release(done);
+            });
+        }
+
+        private void OpenShutters(int index, BoxView view)
+        {
+            view.Running = view.Items.Count;
             foreach (var shutter in view.Items)
                 shutter.PlayOpen(_config, () =>
                 {
@@ -311,10 +347,21 @@ namespace Project.Contexts.Game.Sort
                 });
         }
 
+        // An undo or restart mid-flight: the key is gone with no open.
+        private void StopFlight(BoxView view)
+        {
+            if (view.Flight == null) return;
+            var flight = view.Flight;
+            view.Flight = null;
+            flight.Stop();
+            _factory.Release(flight);
+        }
+
         private void ReleaseBox(int index)
         {
             var view = _boxes[index];
             _boxes.Remove(index);
+            StopFlight(view);
             foreach (var shutter in view.Items)
             {
                 shutter.Stop();

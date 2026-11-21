@@ -137,6 +137,34 @@ def slot_outline(size=256):
     return (line + inner) * np.clip((1.0 - r) * 12.0, 0.0, 1.0)
 
 
+# Crisp cartoon click star for the keyhole: four points, dark outline, gold body, white heart (colour baked, not tinted).
+def click_star(size=128):
+    x, y = grid(size)
+    r = np.sqrt(x * x + y * y) + 1e-6
+    a = np.arctan2(y, x)
+    # Star radius by angle: long points on the axes, pinched between them.
+    reach = 0.38 + 0.56 * (1.0 - np.abs(np.sin(2.0 * a))) ** 1.6
+    edge = reach - r
+    aa = 2.0 / size
+    body = np.clip(edge / aa + 0.5, 0.0, 1.0)
+    inner = np.clip((edge - 0.09) / aa + 0.5, 0.0, 1.0)
+    heart = np.clip((0.15 - r) / aa + 0.5, 0.0, 1.0)
+    outline = np.array([0.16, 0.10, 0.36])
+    gold = np.array([1.0, 0.80, 0.22])
+    white = np.array([1.0, 0.98, 0.86])
+    fill = gold[None, None, :] * (1 - heart[..., None]) + white[None, None, :] * heart[..., None]
+    rgb = outline[None, None, :] * (1 - inner[..., None]) + fill * inner[..., None]
+    rgba = np.zeros((size, size, 4))
+    rgba[..., :3] = rgb
+    rgba[..., 3] = body
+    return rgba
+
+
+def save_rgba(rgba, path):
+    out = np.round(np.clip(rgba, 0.0, 1.0) * 255).astype(np.uint8)
+    Image.fromarray(out, "RGBA").save(path, optimize=True)
+
+
 # The singularity's dark core: solid, with a short soft edge.
 def core(size=64):
     x, y = grid(size)
@@ -162,6 +190,7 @@ def main(out):
     save(touch_ring(glow=True, near=True), os.path.join(out, "Fx_TouchGlowNear.png"))
     save(touch_ring(glow=True, near=False), os.path.join(out, "Fx_TouchGlowFar.png"))
     save(slot_outline(), os.path.join(out, "Fx_SlotOutline.png"))
+    save_rgba(click_star(), os.path.join(out, "Fx_ClickStar.png"))
 
 
 if __name__ == "__main__":
