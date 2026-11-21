@@ -37,8 +37,12 @@ namespace Project.Contexts.Game.Sort
             CameraMargin = 12f,
         };
 
-        [SerializeField, Range(0f, 1f)] private float _bandBottom = 0.15f;
-        [SerializeField, Range(0f, 1f)] private float _bandTop = 0.77f;
+        // Free band between the HUD blocks, in screen height (the HUD at 1170x2532); used when the caller passes none.
+        [SerializeField, Range(0f, 1f)] private float _bandBottom = 0.14f;
+        [SerializeField, Range(0f, 1f)] private float _bandTop = 0.79f;
+
+        // Highest drawn point of a tube above its bottom: the completed cap's gem (102 px over the cap's center).
+        private const float ArtTop = TubeArt.ContainerLocalY + TubeArt.CapLocalY + 102f / TubeArt.PixelsPerUnit;
 
         // Levels before this one spread rows of fewer than six bottles over the width of six.
         public const int SpreadBeforeLevel = 15;
@@ -57,46 +61,36 @@ namespace Project.Contexts.Game.Sort
         private const int ThreeRows = 3;
 
         public Vector2[] Place(IReadOnlyList<Vector2> positions, IReadOnlyList<int> capacities, int levelNumber,
-            float aspect, out float[] rises, out float orthoSize) =>
-            Place(positions, capacities, levelNumber < SpreadBeforeLevel, aspect, out rises, out orthoSize);
+            float aspect, out float[] rises, out float orthoSize, Vector2? band = null) =>
+            Place(positions, capacities, levelNumber < SpreadBeforeLevel, aspect, out rises, out orthoSize, band);
 
-        // Centered on the camera; capacities: level bottles then added ones; rises: extra height over the standard art.
+        // Centered on the camera; capacities lists level bottles then added ones; band is the free HUD gap (0-1).
         public Vector2[] Place(IReadOnlyList<Vector2> positions, IReadOnlyList<int> capacities, bool spread,
-            float aspect, out float[] rises, out float orthoSize)
+            float aspect, out float[] rises, out float orthoSize, Vector2? band = null)
         {
             var count = capacities.Count;
+            var levelBottles = positions.Count;
             var rows = BuildRows(positions, capacities);
             var fit = rows.Count == ThreeRows ? _threeRows : _otherRows;
             var hasTall = false;
-            for (var b = 0; b < count; b++) hasTall |= IsTall(capacities[b]);
+            for (var b = 0; b < levelBottles; b++) hasTall |= IsTall(capacities[b]);
 
             var origins = new Vector2[count];
-            for (var r = 0; r < rows.Count; r++)
+            Vector2 size;
+            if (!hasTall)
             {
-                var row = rows[r];
-                var y = r * fit.RowDistance;
-                if (hasTall)
-                {
-                    PlaceOnGrid(rows, r, y, positions, capacities, fit, origins);
-                    continue;
-                }
-
-                RowSpacing(row.Count, fit, spread && !hasTall, out var start, out var step);
-                for (var i = 0; i < row.Count; i++) origins[row[i]] = new Vector2(start + step * i, y);
+                // An added bottle joins a row and the whole board is laid out again.
+                for (var b = levelBottles; b < count; b++) AddToRow(rows, capacities, b);
+                for (var r = 0; r < rows.Count; r++) PackRow(rows[r], r * fit.RowDistance, fit, spread, 0f, origins);
+                size = Center(rows, capacities, fit, origins);
             }
-
-            var min = new Vector2(float.MaxValue, float.MaxValue);
-            var max = new Vector2(float.MinValue, float.MinValue);
-            for (var b = 0; b < count; b++)
+            else
             {
-                BoundsOf(capacities[b], out var below, out var above);
-                min = Vector2.Min(min, new Vector2(origins[b].x - BoundsHalfWidth, origins[b].y + below));
-                max = Vector2.Max(max, new Vector2(origins[b].x + BoundsHalfWidth, origins[b].y + above));
+                for (var r = 0; r < rows.Count; r++) PlaceOnGrid(rows[r], r * fit.RowDistance, positions, fit, origins);
+                size = Center(rows, capacities, fit, origins);
+                // Added bottles go in one at a time around the board as it stands.
+                for (var b = levelBottles; b < count; b++) size = AddBeside(rows, capacities, b, fit, origins);
             }
-
-            var center = (min + max) * 0.5f;
-            var size = max - min;
-            for (var b = 0; b < count; b++) origins[b] += new Vector2(-center.x, fit.CenterOffsetY - center.y);
 
             var portrait = aspect < 1f;
             var width = Mathf.Max((portrait ? fit.CameraPadding : LandscapePadding) + size.x, fit.MinWidth);
@@ -107,7 +101,7 @@ namespace Project.Contexts.Game.Sort
             rises = new float[count];
             for (var b = 0; b < count; b++) rises[b] = TubeArt.Rise(capacities[b]);
 
-            KeepClearOfHud(origins, rises, ref orthoSize);
+            KeepClearOfHud(origins, rises, band ?? new Vector2(_bandBottom, _bandTop), ref orthoSize);
             return origins;
         }
 
@@ -146,39 +140,79 @@ namespace Project.Contexts.Game.Sort
             start = n > 1 ? -(full * 0.5f - missing * 0.5f) : 0f;
         }
 
-        // Level bottles keep their grid column; added ones extend the row past its ends, beside any tall tube reaching it.
-        private static void PlaceOnGrid(List<List<int>> rows, int r, float y, IReadOnlyList<Vector2> positions,
-            IReadOnlyList<int> capacities, Fit fit, Vector2[] origins)
+        // Packed and centered on centerX.
+        private static void PackRow(List<int> row, float y, Fit fit, bool spread, float centerX, Vector2[] origins)
         {
-            var row = rows[r];
+            RowSpacing(row.Count, fit, spread, out var start, out var step);
+            for (var i = 0; i < row.Count; i++) origins[row[i]] = new Vector2(centerX + start + step * i, y);
+        }
+
+        // Level bottles keep their grid column.
+        private static void PlaceOnGrid(List<int> row, float y, IReadOnlyList<Vector2> positions, Fit fit,
+            Vector2[] origins)
+        {
             var scale = fit.Pitch / GridPitch;
-            float left = float.MaxValue, right = float.MinValue;
+            foreach (var b in row) origins[b] = new Vector2(positions[b].x * scale, y);
+        }
+
+        // Moves the board so its bounds center on x 0 and on CenterOffsetY; returns the bounds size.
+        private static Vector2 Center(List<List<int>> rows, IReadOnlyList<int> capacities, Fit fit, Vector2[] origins)
+        {
+            var min = new Vector2(float.MaxValue, float.MaxValue);
+            var max = new Vector2(float.MinValue, float.MinValue);
+            foreach (var row in rows)
             foreach (var b in row)
             {
-                if (b >= positions.Count) continue;
-                origins[b] = new Vector2(positions[b].x * scale, y);
-                left = Mathf.Min(left, origins[b].x);
-                right = Mathf.Max(right, origins[b].x);
-            }
-            foreach (var t in TallReaching(rows, r, capacities))
-            {
-                left = Mathf.Min(left, origins[t].x);
-                right = Mathf.Max(right, origins[t].x);
+                BoundsOf(capacities[b], out var below, out var above);
+                min = Vector2.Min(min, new Vector2(origins[b].x - BoundsHalfWidth, origins[b].y + below));
+                max = Vector2.Max(max, new Vector2(origins[b].x + BoundsHalfWidth, origins[b].y + above));
             }
 
-            for (var i = 0; i < row.Count; i++)
+            var shift = new Vector2(-(min.x + max.x) * 0.5f, fit.CenterOffsetY - (min.y + max.y) * 0.5f);
+            foreach (var row in rows)
+            foreach (var b in row) origins[b] += shift;
+            return max - min;
+        }
+
+        // Added bottle on a tall-tube board: one pitch past its neighbour and any tall tube, rows rebalanced, then recentred.
+        private static Vector2 AddBeside(List<List<int>> rows, IReadOnlyList<int> capacities, int bottle, Fit fit,
+            Vector2[] origins)
+        {
+            var (r, index) = AddToRow(rows, capacities, bottle);
+            var row = rows[r];
+            var y = origins[row[index == 0 ? 1 : 0]].y;
+            var tall = TallReaching(rows, r, capacities);
+            if (tall.Count == 0 && !HasTall(row, capacities))
             {
-                var b = row[i];
-                if (b < positions.Count) continue;
-                if (left > right)
-                {
-                    left = right = 0f;
-                    origins[b] = new Vector2(0f, y);
-                    continue;
-                }
-                var x = i == 0 ? left -= fit.Pitch : right += fit.Pitch;
-                origins[b] = new Vector2(x, y);
+                PackRow(row, y, fit, false, 0f, origins);
+                return Center(rows, capacities, fit, origins);
             }
+
+            var x = index == 0 ? origins[row[1]].x - fit.Pitch : origins[row[index - 1]].x + fit.Pitch;
+            foreach (var t in tall)
+                if (Mathf.Abs(origins[t].x - x) < fit.Pitch) x = origins[t].x + (index == 0 ? -fit.Pitch : fit.Pitch);
+            origins[bottle] = new Vector2(x, y);
+
+            float narrowest = float.MaxValue, widest = float.MinValue;
+            for (var i = 0; i < rows.Count; i++)
+            {
+                var half = (rows[i].Count + TallReaching(rows, i, capacities).Count) * fit.Pitch * 0.5f;
+                narrowest = Mathf.Min(narrowest, half);
+                widest = Mathf.Max(widest, half);
+            }
+            var shift = widest - narrowest;
+            if (shift > 0f)
+                for (var i = 0; i < rows.Count; i++)
+                    if (HasTall(rows[i], capacities) || TallReaching(rows, i, capacities).Count > 0)
+                        foreach (var b in rows[i]) origins[b].x -= shift;
+            return Center(rows, capacities, fit, origins);
+        }
+
+        private static bool HasTall(List<int> row, IReadOnlyList<int> capacities)
+        {
+            foreach (var b in row)
+                if (IsTall(capacities[b])) return true;
+            return false;
         }
 
         // Tall tubes from lower rows reaching row r, nearest row first.
@@ -208,8 +242,6 @@ namespace Project.Contexts.Game.Sort
             for (var b = 0; b < levelBottles; b++) rows[RowOf(rowYs, positions[b].y, capacities[b])].Add(b);
             foreach (var row in rows)
                 row.Sort((a, b) => positions[a].x != positions[b].x ? positions[a].x.CompareTo(positions[b].x) : a.CompareTo(b));
-
-            for (var b = levelBottles; b < capacities.Count; b++) AddToRow(rows, capacities, b);
             return rows;
         }
 
@@ -231,7 +263,7 @@ namespace Project.Contexts.Game.Sort
         }
 
         // Lowest row with fewest places, right end; near tall tubes, left end if rows differ by 2+ and count is even.
-        private static void AddToRow(List<List<int>> rows, IReadOnlyList<int> capacities, int bottle)
+        private static (int Row, int Index) AddToRow(List<List<int>> rows, IReadOnlyList<int> capacities, int bottle)
         {
             int Places(int r) => rows[r].Count + TallReaching(rows, r, capacities).Count;
 
@@ -251,30 +283,27 @@ namespace Project.Contexts.Game.Sort
                 if (most - least >= 2 && index % 2 == 0) index = 0;
             }
             rows[target].Insert(index, bottle);
+            return (target, index);
         }
 
-        // Art outside the band between HUD blocks: zoom out just enough and shift it in the least distance.
-        private void KeepClearOfHud(Vector2[] origins, float[] rises, ref float orthoSize)
+        // Zoom out just enough to fit art (up to a completed cap) inside the HUD band and center it; a fitting board stays.
+        private static void KeepClearOfHud(Vector2[] origins, float[] rises, Vector2 band, ref float orthoSize)
         {
-            if (origins.Length == 0) return;
+            if (origins.Length == 0 || band.y <= band.x) return;
             var low = float.MaxValue;
             var high = float.MinValue;
             for (var b = 0; b < origins.Length; b++)
             {
                 var bottom = origins[b].y + TubeArt.BottomFromOrigin;
                 low = Mathf.Min(low, bottom);
-                high = Mathf.Max(high, bottom + TubeArt.MouthLocalY + rises[b]);
+                high = Mathf.Max(high, bottom + ArtTop + rises[b]);
             }
 
-            var band = _bandTop - _bandBottom;
-            if (band <= 0f) return;
-            orthoSize = Mathf.Max(orthoSize, (high - low) / (2f * band));
-            var bandLow = (_bandBottom - 0.5f) * 2f * orthoSize;
-            var bandHigh = (_bandTop - 0.5f) * 2f * orthoSize;
-            var shift = 0f;
-            if (high > bandHigh) shift = bandHigh - high;
-            if (low + shift < bandLow) shift = bandLow - low;
-            if (shift == 0f) return;
+            var view = 2f * orthoSize;
+            if (0.5f + low / view >= band.x && 0.5f + high / view <= band.y) return;
+            orthoSize = Mathf.Max(orthoSize, (high - low) / (2f * (band.y - band.x)));
+            var middle = ((band.x + band.y) * 0.5f - 0.5f) * 2f * orthoSize;
+            var shift = middle - (low + high) * 0.5f;
             for (var b = 0; b < origins.Length; b++) origins[b].y += shift;
         }
     }

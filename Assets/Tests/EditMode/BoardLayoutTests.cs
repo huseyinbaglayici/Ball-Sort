@@ -150,12 +150,18 @@ namespace Project.Tests
             for (var r = -2; r <= 2; r++)
                 for (var c = 0; c < 6; c++) positions.Add(new Vector2((c - 2.5f) * 2.35f, r * 6.8f));
 
-            var origins = Place(positions.ToArray(), Fours(30), 60, out var rises, out var ortho);
+            // The HUD's free band at 9:16: tray top at 0.15, top block from 0.74.
+            var band = new Vector2(0.15f, 0.74f);
+            var origins = new BoardLayout().Place(positions.ToArray(), Fours(30), 60, 9f / 16f, out _, out var ortho, band);
 
-            var low = origins.Min(o => o.y) + TubeArt.BottomFromOrigin;
-            var high = origins.Max(o => o.y) + TubeArt.BottomFromOrigin + TubeArt.MouthLocalY;
-            Assert.GreaterOrEqual(0.5f + low / (2f * ortho), 0.15f - Tolerance);
-            Assert.LessOrEqual(0.5f + high / (2f * ortho), 0.77f + Tolerance);
+            // Up to the completed cap's gem, which sits above the mouth.
+            const float capTop = TubeArt.ContainerLocalY + TubeArt.CapLocalY + 102f / TubeArt.PixelsPerUnit;
+            var low = 0.5f + (origins.Min(o => o.y) + TubeArt.BottomFromOrigin) / (2f * ortho);
+            var high = 0.5f + (origins.Max(o => o.y) + TubeArt.BottomFromOrigin + capTop) / (2f * ortho);
+            Assert.GreaterOrEqual(low, band.x - Tolerance);
+            Assert.LessOrEqual(high, band.y + Tolerance);
+            // Centered in the band, and rows keep their distance.
+            Assert.AreEqual((band.x + band.y) * 0.5f, (low + high) * 0.5f, Tolerance);
             Assert.AreEqual(7f, origins[6].y - origins[0].y, Tolerance);
         }
 
