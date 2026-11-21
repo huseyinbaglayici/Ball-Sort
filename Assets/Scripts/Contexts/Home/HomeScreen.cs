@@ -26,6 +26,8 @@ namespace Project.Contexts.Home
         [SerializeField] private Button _challengeButton;
         [SerializeField] private Button _rewardedLifeButton;
         [SerializeField] private Button _settingsButton;
+        // Tabs for screens not in the game yet.
+        [SerializeField] private Button[] _comingSoon = System.Array.Empty<Button>();
         [SerializeField] private SettingsPopup _settingsPopup;
         [SerializeField] private MessagePopup _messagePopup;
 
@@ -51,8 +53,9 @@ namespace Project.Contexts.Home
                 _challengeButton.onClick.AddListener(() => ShowMessage("challenge.title", "challenge.soon_body"));
             if (_rewardedLifeButton != null)
                 _rewardedLifeButton.onClick.AddListener(() => _ads.ShowRewardedLife(_ => Refresh()));
-            if (_settingsButton != null)
-                _settingsButton.onClick.AddListener(() => _popups.Show(_settingsPopup, new SettingsArgs(null, null, false)));
+            if (_settingsButton != null) _settingsButton.onClick.AddListener(ShowSettings);
+            foreach (var tab in _comingSoon)
+                if (tab != null) tab.onClick.AddListener(() => ShowMessage("nav.soon_title", "nav.soon_body"));
 
             Refresh();
         }
@@ -95,6 +98,8 @@ namespace Project.Contexts.Home
             _ = Services.Get<MainFlow>().GoToGameAsync();
         }
 
+        private void ShowSettings() => _popups.Show(_settingsPopup, new SettingsArgs(null, null, false));
+
         private void ShowMessage(string titleKey, string bodyKey) =>
             _popups.Show(_messagePopup, new MessageArgs(titleKey, _localization.Get(bodyKey), "common.ok", closable: true));
 
@@ -103,7 +108,7 @@ namespace Project.Contexts.Home
             if (_progress == null) return;
             var finished = _progress.IsCampaignFinished;
             var level = _progress.Level;
-            _levelText.text = finished ? _localization.Get("meta.final_title") : _localization.Format("home.play_level", level);
+            _levelText.text = finished ? _localization.Get("meta.final_title") : _localization.Format("home.level", level);
             _playButton.interactable = !finished;
             if (_difficulty != null)
             {
@@ -116,10 +121,9 @@ namespace Project.Contexts.Home
                 _metaText.text = finished
                     ? _localization.Get("meta.final_title")
                     : _localization.Format("home.period", _progress.MetaPeriod);
-            if (_starterPackButton != null)
-                _starterPackButton.gameObject.SetActive(_progress.IsUnlocked(Feature.StarterPack));
-            if (_challengeButton != null)
-                _challengeButton.gameObject.SetActive(_progress.IsUnlocked(Feature.Challenge));
+            // Tab-bar slots stay in place; locked ones just don't respond.
+            if (_starterPackButton != null) _starterPackButton.interactable = _progress.IsUnlocked(Feature.StarterPack);
+            if (_challengeButton != null) _challengeButton.interactable = _progress.IsUnlocked(Feature.Challenge);
             if (_rewardedLifeButton != null)
                 _rewardedLifeButton.gameObject.SetActive(!finished && _ads.CanOfferRewardedLife);
         }

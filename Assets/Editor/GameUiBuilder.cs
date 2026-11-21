@@ -229,33 +229,48 @@ namespace Project.Editor
             Clear(canvas);
             var (area, topStage, bottomStage) = EdgeStages(canvas);
 
-            // The winding road fills whatever height lies between the period ribbon and Play.
-            var road = Span("Road", area, new Vector2(0.5f, 0f), new Vector2(0.5f, 1f), Vector2.zero, Vector2.zero);
-            road.offsetMin = new Vector2(-Reference.x * 0.5f, RoadBottom);
-            road.offsetMax = new Vector2(Reference.x * 0.5f, -RoadTop);
-            var roadView = BuildRoad(road);
-
-            var bottom = Group("Bottom", bottomStage, new Vector2(0, -420), 0.4f);
-            var play = ButtonRect("PlayButton", bottom, Center, At(585, 2317), new Vector2(750, 150), S("UI_Button_Wide_Go"));
-            var playLabel = Text("Label", play, new Vector2(0, 6), new Vector2(660, 110), "Play · Level 1", 66, White);
-
+            // Top bar: avatar, then coins and lives sharing the rest; settings lives in the tab bar.
             var top = Group("Top", topStage, new Vector2(0, 360), 0.4f);
-            // Lives on the left, coins and settings on the right, the period ribbon centred under them.
-            var livesBar = Pic("LivesBar", top, Center, At(201, 223), new Vector2(240, 96), S("UI_Pill_Well_96"));
-            var livesCount = Text("Count", livesBar, new Vector2(30, 0), new Vector2(150, 80), "5", 56, White);
-            var heart = Pic("Heart", top, Center, At(84, 223), new Vector2(124, 124), S("UI_Icon_Heart"));
-            var livesTimer = Text("Timer", top, At(201, 296), new Vector2(240, 44), "Full", 30, White);
-            var lifeAd = ButtonRect("RewardedLifeButton", top, Center, At(360, 223), new Vector2(80, 80), S("UI_Icon_Ad"));
-            var coinBar = Pic("CoinBar", top, Center, At(785, 229), new Vector2(292, 96), S("UI_Pill_Well_96"));
-            var coins = Text("Amount", coinBar, new Vector2(30, 0), new Vector2(200, 80), "0", 52, White);
-            Pic("Coin", top, Center, At(676, 229), new Vector2(118, 118), S("UI_Icon_Coin"));
-            var gear = IconButton(top, "SettingsButton", At(1048, 228), S("UI_Icon_Settings"), 150f, 100f);
-            var ribbon = Pic("PeriodRibbon", top, Center, At(585, 375), new Vector2(554, 157), S("UI_Popup_Ribbon_Info"));
-            var period = Text("Label", ribbon, new Vector2(0, 14), new Vector2(380, 80), "Period 1", 54, White);
+            Pic("Avatar", top, Center, At(100, 228), new Vector2(150, 150), S("UI_InLevel_IconBase")).raycastTarget = false;
+            Pic("Face", top, Center, At(100, 222), new Vector2(124, 124), S("Luno_512")).raycastTarget = false;
+            var coinBar = Pic("CoinBar", top, Center, At(458, 229), new Vector2(360, 96), S("UI_Pill_Well_96"));
+            var coins = Text("Amount", coinBar, new Vector2(30, 0), new Vector2(240, 80), "0", 52, White);
+            Pic("Coin", top, Center, At(270, 229), new Vector2(116, 116), S("UI_Icon_Coin"));
+            var livesBar = Pic("LivesBar", top, Center, At(935, 229), new Vector2(360, 96), S("UI_Pill_Well_96"));
+            var livesTimer = Text("Timer", livesBar, new Vector2(10, 0), new Vector2(220, 70), "Full", 42, White);
+            var heart = Pic("Heart", top, Center, At(748, 223), new Vector2(128, 128), S("UI_Icon_Heart"));
+            var livesCount = Text("Count", heart, new Vector2(0, 4), new Vector2(100, 80), "5", 54, White);
+            var lifeAd = ButtonRect("RewardedLifeButton", top, Center, At(1110, 229), new Vector2(72, 72), S("UI_Icon_Ad"));
+            var ribbon = Pic("PeriodRibbon", top, Center, At(585, 395), new Vector2(480, 136), S("UI_Popup_Ribbon_Info"));
+            var period = Text("Label", ribbon, new Vector2(0, 12), new Vector2(330, 70), "Period 1", 48, White);
 
-            // Right column: event and shop slots. The left column (daily, puzzle) stays empty: no such features yet.
-            var challenge = SideButton(top, "ChallengeButton", At(1080, 598), S("UI_Icon_Challenge"), "home.challenge");
-            var starter = SideButton(top, "StarterPackButton", At(1080, 821), S("UI_Icon_Shop"), "home.starter_pack");
+            // Centre piece: the current level on a big orb, the mascot beside it; sits mid-screen at every aspect.
+            var centre = Rect("Centre", area, Center, new Vector2(0, 110), new Vector2(Reference.x, 900));
+            Entrance(centre, new Vector2(0, -120), 0.4f, 0.05f, PrimeTween.Ease.OutCubic);
+            var glow = Pic("Glow", centre, Center, Vector2.zero, new Vector2(760, 760), S("UI_Toggle_Knob"));
+            glow.color = new Color(1f, 0.78f, 0.35f, 0.3f);
+            glow.raycastTarget = false;
+            Pic("Orb", centre, Center, Vector2.zero, new Vector2(560, 560), S("UI_Toggle_Knob")).raycastTarget = false;
+            var difficulty = DifficultyBadge(centre, new Vector2(0, 150), new Vector2(300, 66), new Vector2(0, 215));
+            var levelText = Text("Level", centre, new Vector2(0, -10), new Vector2(480, 150), "Level 1", 110, Ink);
+            Pic("Mascot", centre, Center, new Vector2(260, -210), new Vector2(300, 300), S("Luno_512")).raycastTarget = false;
+
+            // Play, with the next road reward chest as its badge.
+            var bottom = Group("Bottom", bottomStage, new Vector2(0, -520), 0.4f);
+            var play = ButtonRect("PlayButton", bottom, Center, At(585, 2045), new Vector2(620, 190), S("UI_Button_Wide_Go"));
+            Text("Label", play, new Vector2(0, 8), new Vector2(520, 130), "Play", 86, White, "home.play");
+            var chest = ButtonRect("RoadChest", bottom, Center, At(860, 1955), new Vector2(130, 130), S("UI_Icon_RewardChest"));
+
+            // Tab bar: shop, events, Home (raised, selected), daily puzzle, settings.
+            Pic("TabBar", bottom, Center, At(585, 2340), new Vector2(1190, 250), S("UI_InLevel_Tray")).raycastTarget = false;
+            var starter = IconButton(bottom, "StarterPackButton", At(117, 2330), S("UI_Icon_Shop"), 170f, 124f);
+            var challenge = IconButton(bottom, "ChallengeButton", At(351, 2330), S("UI_Icon_Challenge"), 170f, 124f);
+            var homeTab = Pic("HomeTab", bottom, Center, At(585, 2290), new Vector2(240, 238), S("UI_InLevel_BoosterBase_Up"));
+            homeTab.raycastTarget = false;
+            Pic("Icon", homeTab, Center, new Vector2(0, 22), new Vector2(140, 140), S("UI_Icon_Daily")).raycastTarget = false;
+            Text("Label", homeTab, new Vector2(0, -78), new Vector2(210, 50), "Home", 38, White, "nav.home");
+            var puzzle = IconButton(bottom, "DailyPuzzleButton", At(819, 2330), S("UI_Icon_DailyPuzzle"), 170f, 124f);
+            var settingsTab = IconButton(bottom, "SettingsTab", At(1053, 2330), S("UI_Icon_Settings"), 170f, 116f);
 
             var hud = area.gameObject.AddComponent<EconomyHud>();
             Set(hud, "_coins", coins);
@@ -267,97 +282,19 @@ namespace Project.Editor
 
             var screen = Root(scene, "HomeScreen").GetComponent<HomeScreen>();
             Set(screen, "_view", canvas.gameObject);
-            Set(screen, "_levelText", playLabel);
-            Set(screen, "_difficulty", null);
+            Set(screen, "_levelText", levelText);
+            Set(screen, "_difficulty", difficulty);
             Set(screen, "_metaText", period);
-            Set(screen, "_road", roadView.Road);
-            Set(screen, "_roadButton", roadView.Chest);
+            Set(screen, "_road", null);
+            Set(screen, "_roadButton", chest.GetComponent<Button>());
             Set(screen, "_playButton", play.GetComponent<Button>());
             Set(screen, "_starterPackButton", starter);
             Set(screen, "_challengeButton", challenge);
             Set(screen, "_rewardedLifeButton", lifeAd.GetComponent<Button>());
-            Set(screen, "_settingsButton", gear);
+            Set(screen, "_settingsButton", settingsTab);
+            SetArray(screen, "_comingSoon", new Object[] { puzzle });
             Set(screen, "_settingsPopup", settingsPopup);
             Set(screen, "_messagePopup", message);
-        }
-
-        // Road edges inside the safe area: under the period ribbon, above the Play button.
-        private const float RoadTop = 454f - DesignTop + 16f;
-        private const float RoadBottom = 2532f - 2242f - DesignBottom + 20f;
-
-        private static (JourneyRoad Road, Button Chest) BuildRoad(RectTransform road)
-        {
-            // Node centres of the journey mock, bottom (won) to top (coming), mapped onto the road's height.
-            Vector2[] mock =
-            {
-                new(584, 2047), new(819, 1871), new(876, 1696), new(713, 1522), new(452, 1347),
-                new(291, 1174), new(353, 1000), new(590, 823), new(823, 648), new(876, 471)
-            };
-            const float first = 471f, last = 2047f, pad = 0.07f;
-            Vector2 AnchorOf(Vector2 p) => new(p.x / Reference.x, pad + (1f - 2f * pad) * (1f - (p.y - first) / (last - first)));
-
-            var glow = Pic("CurrentGlow", road, Center, Vector2.zero, new Vector2(330, 330), S("UI_Toggle_Knob"));
-            glow.color = new Color(1f, 0.78f, 0.35f, 0.35f);
-            glow.raycastTarget = false;
-
-            // Dotted path under the nodes: gold up to the current node, grey after it.
-            var segments = new GameObject[mock.Length - 1];
-            for (var i = 0; i < segments.Length; i++)
-            {
-                var segment = Span("Path" + i, road, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
-                for (var d = 1; d <= 3; d++)
-                {
-                    var anchor = Vector2.Lerp(AnchorOf(mock[i]), AnchorOf(mock[i + 1]), d / 4f);
-                    var dot = Pic("Dot" + d, segment, anchor, Vector2.zero, new Vector2(26, 26), S("UI_Toggle_Knob"));
-                    dot.color = i < 4 ? new Color(1f, 0.70f, 0.15f) : new Color(0.62f, 0.62f, 0.72f, 0.85f);
-                    dot.raycastTarget = false;
-                }
-                segments[i] = segment.gameObject;
-            }
-
-            var view = road.gameObject.AddComponent<JourneyRoad>();
-            var so = new SerializedObject(view);
-            var nodes = so.FindProperty("_nodes");
-            nodes.arraySize = mock.Length;
-            for (var i = 0; i < mock.Length; i++)
-            {
-                var node = Rect("Node" + i, road, AnchorOf(mock[i]), Vector2.zero, new Vector2(150, 150));
-                var body = Pic("Body", node, Center, Vector2.zero, Vector2.zero, S("UI_Toggle_Knob"));
-                Stretch(body.rectTransform);
-                body.raycastTarget = false;
-                var number = Text("Number", node, new Vector2(0, 2), new Vector2(130, 90), "1", 64, Ink);
-                var check = Pic("Check", node, Center, new Vector2(52, -50), new Vector2(66, 66), S("UI_Icon_Check"));
-                // Comets on the top-right of hard (one) and super hard (two) nodes.
-                var marks = Rect("Marks", node, new Vector2(1f, 1f), new Vector2(-30, -6), new Vector2(100, 52));
-                var comets = new GameObject[2];
-                for (var c = 0; c < comets.Length; c++)
-                    comets[c] = Pic("Comet" + c, marks, Center, new Vector2(-24 + c * 44, 0), new Vector2(52, 52), S("UI_Icon_Comet")).gameObject;
-                var tag = marks.gameObject.AddComponent<DifficultyTag>();
-                Set(tag, "_root", marks.gameObject);
-                SetArray(tag, "_marks", comets);
-
-                var element = nodes.GetArrayElementAtIndex(i);
-                element.FindPropertyRelative("Rect").objectReferenceValue = node;
-                element.FindPropertyRelative("Body").objectReferenceValue = body;
-                element.FindPropertyRelative("Number").objectReferenceValue = number;
-                element.FindPropertyRelative("Check").objectReferenceValue = check.gameObject;
-                element.FindPropertyRelative("Tag").objectReferenceValue = tag;
-            }
-            so.FindProperty("_currentIndex").intValue = 4;
-            so.FindProperty("_nodeSize").floatValue = 150f;
-            so.FindProperty("_currentSize").floatValue = 210f;
-            so.FindProperty("_mascotOffset").vector2Value = new Vector2(190f, 0f);
-            so.FindProperty("_chestOffset").vector2Value = new Vector2(-120f, 70f);
-            so.ApplyModifiedPropertiesWithoutUndo();
-
-            var chest = ButtonRect("RoadChest", road, Center, Vector2.zero, new Vector2(126, 126), S("UI_Icon_RewardChest"));
-            var mascot = Pic("Mascot", road, Center, Vector2.zero, new Vector2(250, 250), S("Luno_512"));
-            mascot.raycastTarget = false;
-            Set(view, "_mascot", mascot.rectTransform);
-            Set(view, "_chest", chest);
-            Set(view, "_currentGlow", glow.gameObject);
-            SetArray(view, "_segments", segments);
-            return (view, chest.GetComponent<Button>());
         }
 
         // ---------------------------------------------------------------- Gameplay HUD
@@ -651,6 +588,10 @@ namespace Project.Editor
                 var music = Switch("Music", 894, "UI_Icon_Music", "home.music");
 
                 var popup = root.AddComponent<SettingsPopup>();
+                // A full page: shows at once, no panel motion.
+                var entrance = new SerializedObject(popup);
+                entrance.FindProperty("_entrance").enumValueIndex = (int)PopupEntrance.None;
+                entrance.ApplyModifiedPropertiesWithoutUndo();
                 Set(popup, "_content", content);
                 Set(popup, "_sound", sound);
                 Set(popup, "_music", music);
