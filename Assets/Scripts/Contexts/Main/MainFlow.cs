@@ -21,11 +21,12 @@ namespace Project.Contexts.Main
     // Raised once, when Main has opened its first screen.
     public readonly struct MainReady : IEvent { }
 
-    // Home and Game are states of one scene; a switch covers it with the loading overlay first.
+    // Home and Game are states of one scene; a switch happens under the level-open portal, or the loading overlay without one.
     public sealed class MainFlow : MonoBehaviour
     {
         [SerializeField] private HomeScreen _home;
         [SerializeField] private GameController _game;
+        [SerializeField] private LevelOpenView _levelOpen;
 
         private readonly StateMachine<MainState> _states = new();
         private LoadingOverlay _overlay;
@@ -68,9 +69,19 @@ namespace Project.Contexts.Main
             try
             {
                 _popups.CloseAll();
-                await _overlay.ShowAsync();
-                _states.ChangeState(next);
-                await _overlay.HideAsync();
+                // Without the portal (or an orb to grow from) the overlay still covers the switch.
+                if (_levelOpen == null || _levelOpen.IsRunning || _home.Orb == null)
+                {
+                    await _overlay.ShowAsync();
+                    _states.ChangeState(next);
+                    await _overlay.HideAsync();
+                }
+                else if (next == MainState.Game)
+                {
+                    _home.Leave();
+                    await _levelOpen.OpenAsync(_home.Orb, () => _states.ChangeState(next));
+                }
+                else await _levelOpen.CloseAsync(_home.Orb, () => _states.ChangeState(next));
             }
             finally
             {

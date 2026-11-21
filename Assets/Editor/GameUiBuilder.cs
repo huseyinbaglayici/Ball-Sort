@@ -5,6 +5,7 @@ using Project.Common.Visual;
 using Project.Contexts.Application.Economy;
 using Project.Contexts.Game;
 using Project.Contexts.Home;
+using Project.Contexts.Main;
 using TMPro;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -96,6 +97,7 @@ namespace Project.Editor
                 BuildBackground(scene);
                 BuildHome(scene, message, settings);
                 BuildHud(scene, message, result);
+                BuildLevelOpen(scene);
                 EditorSceneManager.MarkSceneDirty(scene);
                 EditorSceneManager.SaveScene(scene);
             }
@@ -234,31 +236,36 @@ namespace Project.Editor
             Pic("Avatar", top, Center, At(100, 228), new Vector2(150, 150), S("UI_InLevel_IconBase")).raycastTarget = false;
             Pic("Face", top, Center, At(100, 222), new Vector2(124, 124), S("Luno_512")).raycastTarget = false;
             var coinBar = Pic("CoinBar", top, Center, At(458, 229), new Vector2(360, 96), S("UI_Pill_Well_96"));
-            var coins = Text("Amount", coinBar, new Vector2(30, 0), new Vector2(240, 80), "0", 52, White);
+            var coins = Text("Amount", coinBar, new Vector2(30, 2), new Vector2(240, 70), "0", 48, White);
             Pic("Coin", top, Center, At(270, 229), new Vector2(116, 116), S("UI_Icon_Coin"));
             var livesBar = Pic("LivesBar", top, Center, At(935, 229), new Vector2(360, 96), S("UI_Pill_Well_96"));
-            var livesTimer = Text("Timer", livesBar, new Vector2(10, 0), new Vector2(220, 70), "Full", 42, White);
+            var livesTimer = Text("Timer", livesBar, new Vector2(10, 2), new Vector2(220, 64), "Full", 40, White);
             var heart = Pic("Heart", top, Center, At(748, 223), new Vector2(128, 128), S("UI_Icon_Heart"));
-            var livesCount = Text("Count", heart, new Vector2(0, 4), new Vector2(100, 80), "5", 54, White);
+            var livesCount = Text("Count", heart, new Vector2(0, 6), new Vector2(90, 70), "5", 50, White);
             var lifeAd = ButtonRect("RewardedLifeButton", top, Center, At(1110, 229), new Vector2(72, 72), S("UI_Icon_Ad"));
-            var ribbon = Pic("PeriodRibbon", top, Center, At(585, 395), new Vector2(480, 136), S("UI_Popup_Ribbon_Info"));
-            var period = Text("Label", ribbon, new Vector2(0, 12), new Vector2(330, 70), "Period 1", 48, White);
 
             // Centre piece: the current level on a big orb, the mascot beside it; sits mid-screen at every aspect.
             var centre = Rect("Centre", area, Center, new Vector2(0, 110), new Vector2(Reference.x, 900));
             Entrance(centre, new Vector2(0, -120), 0.4f, 0.05f, PrimeTween.Ease.OutCubic);
-            var glow = Pic("Glow", centre, Center, Vector2.zero, new Vector2(760, 760), S("UI_Toggle_Knob"));
+            // The level orb and its labels fade together when a level opens; the mascot stays, holding the zoom's orb.
+            var levelOrb = Rect("LevelOrb", centre, Center, Vector2.zero, new Vector2(Reference.x, 900));
+            levelOrb.gameObject.AddComponent<CanvasGroup>();
+            var glow = Pic("Glow", levelOrb, Center, Vector2.zero, new Vector2(760, 760), S("UI_Toggle_Knob"));
             glow.color = new Color(1f, 0.78f, 0.35f, 0.3f);
             glow.raycastTarget = false;
-            Pic("Orb", centre, Center, Vector2.zero, new Vector2(560, 560), S("UI_Toggle_Knob")).raycastTarget = false;
-            var difficulty = DifficultyBadge(centre, new Vector2(0, 150), new Vector2(300, 66), new Vector2(0, 215));
-            var levelText = Text("Level", centre, new Vector2(0, -10), new Vector2(480, 150), "Level 1", 110, Ink);
-            Pic("Mascot", centre, Center, new Vector2(260, -210), new Vector2(300, 300), S("Luno_512")).raycastTarget = false;
+            Pic("Orb", levelOrb, Center, Vector2.zero, new Vector2(560, 560), S("UI_Toggle_Knob")).raycastTarget = false;
+            var difficulty = DifficultyBadge(levelOrb, new Vector2(0, 150), new Vector2(300, 66), new Vector2(0, 215));
+            var levelText = Text("Level", levelOrb, new Vector2(0, -10), new Vector2(460, 130), "Level 1", 96, Ink);
+            var mascot = Pic("Mascot", centre, Center, new Vector2(260, -210), new Vector2(300, 300), S("Luno_512"));
+            mascot.raycastTarget = false;
+            // The orb in the mascot's hand, measured on the art; the level zooms out of and back into it.
+            var handOrb = Rect("HandOrb", mascot, Center, HandOrbAt * mascot.rectTransform.sizeDelta,
+                Vector2.one * (HandOrbSize * mascot.rectTransform.sizeDelta.x));
 
             // Play, with the next road reward chest as its badge.
             var bottom = Group("Bottom", bottomStage, new Vector2(0, -520), 0.4f);
-            var play = ButtonRect("PlayButton", bottom, Center, At(585, 2045), new Vector2(620, 190), S("UI_Button_Wide_Go"));
-            Text("Label", play, new Vector2(0, 8), new Vector2(520, 130), "Play", 86, White, "home.play");
+            var play = ButtonRect("PlayButton", bottom, Center, At(585, 2045), new Vector2(640, 170), S("UI_Button_Wide_Go"));
+            Text("Label", play, new Vector2(0, 8), new Vector2(500, 100), "Play", 68, White, "home.play");
             var chest = ButtonRect("RoadChest", bottom, Center, At(860, 1955), new Vector2(130, 130), S("UI_Icon_RewardChest"));
 
             // Tab bar: shop, events, Home (raised, selected), daily puzzle, settings.
@@ -268,7 +275,7 @@ namespace Project.Editor
             var homeTab = Pic("HomeTab", bottom, Center, At(585, 2290), new Vector2(240, 238), S("UI_InLevel_BoosterBase_Up"));
             homeTab.raycastTarget = false;
             Pic("Icon", homeTab, Center, new Vector2(0, 22), new Vector2(140, 140), S("UI_Icon_Daily")).raycastTarget = false;
-            Text("Label", homeTab, new Vector2(0, -78), new Vector2(210, 50), "Home", 38, White, "nav.home");
+            Text("Label", homeTab, new Vector2(0, -80), new Vector2(200, 44), "Home", 34, White, "nav.home");
             var puzzle = IconButton(bottom, "DailyPuzzleButton", At(819, 2330), S("UI_Icon_DailyPuzzle"), 170f, 124f);
             var settingsTab = IconButton(bottom, "SettingsTab", At(1053, 2330), S("UI_Icon_Settings"), 170f, 116f);
 
@@ -284,7 +291,7 @@ namespace Project.Editor
             Set(screen, "_view", canvas.gameObject);
             Set(screen, "_levelText", levelText);
             Set(screen, "_difficulty", difficulty);
-            Set(screen, "_metaText", period);
+            Set(screen, "_metaText", null);
             Set(screen, "_road", null);
             Set(screen, "_roadButton", chest.GetComponent<Button>());
             Set(screen, "_playButton", play.GetComponent<Button>());
@@ -295,6 +302,51 @@ namespace Project.Editor
             SetArray(screen, "_comingSoon", new Object[] { puzzle });
             Set(screen, "_settingsPopup", settingsPopup);
             Set(screen, "_messagePopup", message);
+            // The level-open zoom grows out of the orb while bars and mascot fade.
+            Set(screen, "_orb", handOrb);
+            SetArray(screen, "_chrome", new Object[]
+            {
+                top.gameObject.AddComponent<CanvasGroup>(), bottom.gameObject.AddComponent<CanvasGroup>(),
+                levelOrb.GetComponent<CanvasGroup>()
+            });
+        }
+
+        // ---------------------------------------------------------------- Level open
+
+        private const string LevelOpenShaderPath = "Assets/Art/Shaders/LevelOpenMask.shader";
+        private const string LevelOpenSettingsPath = "Assets/Configs/LevelOpenSettings.asset";
+        // Centre and width of the orb in the mascot's hand, as shares of the Luno_512 art from its middle.
+        private static readonly Vector2 HandOrbAt = new(0.371f, 0.133f);
+        private const float HandOrbSize = 0.11f;
+
+        // One full-screen image over every canvas; its material cuts the feathered hole at runtime.
+        private static void BuildLevelOpen(Scene scene)
+        {
+            var canvas = Root(scene, "UI Canvas").transform;
+            var old = canvas.Find("LevelOpen");
+            if (old != null) Object.DestroyImmediate(old.gameObject);
+
+            var root = Span("LevelOpen", canvas, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+            root.SetAsLastSibling();
+            root.gameObject.AddComponent<CanvasGroup>();
+            // Catches every tap while the view runs.
+            root.gameObject.AddComponent<Image>();
+
+            var settings = AssetDatabase.LoadAssetAtPath<LevelOpenSettings>(LevelOpenSettingsPath);
+            if (settings == null)
+            {
+                settings = ScriptableObject.CreateInstance<LevelOpenSettings>();
+                AssetDatabase.CreateAsset(settings, LevelOpenSettingsPath);
+            }
+            var shader = AssetDatabase.LoadAssetAtPath<Shader>(LevelOpenShaderPath);
+            if (shader == null) throw new System.InvalidOperationException($"[GameUI] Shader missing at {LevelOpenShaderPath}.");
+
+            var view = root.gameObject.AddComponent<LevelOpenView>();
+            Set(view, "_settings", settings);
+            Set(view, "_shader", shader);
+            root.gameObject.SetActive(false);
+
+            Set(Root(scene, "MainFlow").GetComponent<MainFlow>(), "_levelOpen", view);
         }
 
         // ---------------------------------------------------------------- Gameplay HUD
@@ -334,17 +386,17 @@ namespace Project.Editor
                 var iconImage = Pic("Icon", button, Center, new Vector2(0, 7), new Vector2(134, 134), S(icon));
                 iconImage.raycastTarget = false;
 
-                var lockText = Text("Lock", button, new Vector2(0, -70), new Vector2(170, 48), "Lv 1", 34, White);
+                var lockText = Text("Lock", button, new Vector2(0, -70), new Vector2(170, 44), "Lv 1", 32, White);
 
                 // Count badge at the bottom-right; the coin price box takes the bottom centre when stock is out.
                 var count = Pic("CountBadge", button, Center, new Vector2(63, -69), new Vector2(86, 89), S("UI_Badge_Count"));
                 count.raycastTarget = false;
-                var countText = Text("Count", count, new Vector2(0, 2), new Vector2(76, 66), "0", 48, White);
+                var countText = Text("Count", count, new Vector2(0, 4), new Vector2(66, 56), "0", 42, White);
 
                 var price = Pic("PricePill", button, Center, new Vector2(13, -79), new Vector2(169, 64), S("UI_Pill_Well_60"));
                 price.raycastTarget = false;
                 Pic("Coin", price, new Vector2(0, 0.5f), new Vector2(18, 0), new Vector2(62, 62), S("UI_Icon_Coin")).raycastTarget = false;
-                var priceText = Text("Amount", price, new Vector2(22, 0), new Vector2(104, 52), "0", 38, White);
+                var priceText = Text("Amount", price, new Vector2(22, 2), new Vector2(100, 48), "0", 34, White);
 
                 var slot = slots.GetArrayElementAtIndex(i);
                 slot.FindPropertyRelative("Type").enumValueIndex = (int)type;
@@ -366,10 +418,10 @@ namespace Project.Editor
             // Top: coins on the left, the level banner in the middle, settings on the right.
             var top = Group("Top", topStage, new Vector2(0, 300), 0.3f);
             var coinBar = Pic("CoinBar", top, Center, At(201, 262), new Vector2(284, 100), S("UI_Pill_Well_96"));
-            var coins = Text("Amount", coinBar, new Vector2(27, -4), new Vector2(162, 76), "0", 52, White);
+            var coins = Text("Amount", coinBar, new Vector2(27, -2), new Vector2(162, 66), "0", 46, White);
             Pic("Coin", top, Center, At(93, 254), new Vector2(93, 93), S("UI_Icon_Coin"));
             var pill = Pic("LevelPill", top, Center, At(585, 446), new Vector2(432, 140), S("UI_InLevel_LevelPill"));
-            var levelText = Text("Level", pill, new Vector2(0, 8), new Vector2(371, 90), "Level 1", 66, White);
+            var levelText = Text("Level", pill, new Vector2(0, 8), new Vector2(360, 80), "Level 1", 56, White);
             var difficulty = DifficultyBadge(top, At(585, 524), new Vector2(300, 66), At(585, 369));
 
             var hud = area.gameObject.AddComponent<EconomyHud>();
@@ -456,23 +508,23 @@ namespace Project.Editor
 
         // ---------------------------------------------------------------- Popups
 
-        // Shared popup frame: panel top 608 on the design screen.
-        private const float FrameTop = 608f;
+        // Shared popup frame of the art mock: 880 wide, panel top 760 on the design screen.
+        private const float FrameTop = 760f;
 
         private static MessagePopup BuildMessagePopup()
         {
             var root = PopupRoot("MessagePopup", new Color(0f, 0f, 0f, 0.894f));
             try
             {
-                var (frame, ribbon, title) = Panel(root, 1331f, "lives.out_title");
+                var (frame, ribbon, title) = Panel(root, 880f, "lives.out_title");
                 var close = CloseButton(frame);
-                var header = DifficultyBadge(frame, F(585, 499), new Vector2(381, 81), F(585, 430));
-                var well = Well(frame, 1163f, new Vector2(866, 655));
-                var heart = Pic("Heart", well, Center, new Vector2(0, 70), new Vector2(300, 300), S("UI_Icon_HeartBroken"));
-                var body = Text("Body", well, Vector2.zero, Vector2.zero, "Body", 52, White);
+                var header = DifficultyBadge(frame, F(585, 650), new Vector2(300, 66), F(585, 590));
+                var well = Well(frame, 1150f, new Vector2(720, 400));
+                var heart = Pic("Heart", well, Center, new Vector2(0, 62), new Vector2(230, 230), S("UI_Icon_HeartBroken"));
+                var body = Text("Body", well, Vector2.zero, Vector2.zero, "Body", 46, White);
                 body.textWrappingMode = TextWrappingModes.Normal;
-                Stretch(body.rectTransform, 50f, 50f);
-                var button = WideButton(frame, "Button", 1669f, S("UI_Button_Wide_Go"), "common.ok");
+                Stretch(body.rectTransform, 40f, 30f);
+                var button = WideButton(frame, "Button", 1500f, S("UI_Button_Wide_Go"), "common.ok");
 
                 var popup = root.AddComponent<MessagePopup>();
                 Set(popup, "_content", (RectTransform)frame.parent);
@@ -500,31 +552,41 @@ namespace Project.Editor
             var root = PopupRoot("ResultPopup", new Color(0f, 0f, 0f, 0.85f));
             try
             {
-                var (frame, ribbon, title) = Panel(root, 1331f, "result.win");
+                var (frame, ribbon, title) = Panel(root, 900f, "result.win");
                 var close = CloseButton(frame);
-                // Content box of the fail and win panels.
-                var well = Well(frame, 1120f, new Vector2(816, 361));
-                var mascot = Pic("WinPicture", well, Center, new Vector2(-190, 10), new Vector2(260, 260), S("Luno_512"));
-                var loss = Pic("LossPicture", well, Center, new Vector2(0, 40), new Vector2(220, 220), S("UI_Icon_HeartBroken"));
-                var rewards = Rect("Rewards", well, Center, new Vector2(130, 10), new Vector2(380, 160));
-                var coinIcon = Pic("CoinIcon", rewards, Center, new Vector2(-90, 0), new Vector2(140, 140), S("UI_Icon_Reward_CoinSack_CC"));
-                var amount = Text("Amount", rewards, new Vector2(100, 0), new Vector2(200, 100), "+20", 72, White);
-                var details = Text("Details", well, Vector2.zero, new Vector2(740, 100), "", 34, White);
+                // Content box: picture on top, the reward or the reason under it.
+                var well = Well(frame, 1170f, new Vector2(720, 440));
+                var mascot = Pic("WinPicture", well, Center, new Vector2(0, 98), new Vector2(190, 190), S("Luno_512"));
+                var loss = Pic("LossPicture", well, Center, new Vector2(0, 56), new Vector2(210, 210), S("UI_Icon_HeartBroken"));
+                var rewards = Rect("Rewards", well, Center, new Vector2(0, -58), new Vector2(380, 120));
+                var coinIcon = Pic("CoinIcon", rewards, Center, new Vector2(-80, 0), new Vector2(116, 116), S("UI_Icon_Reward_CoinSack_CC"));
+                var amount = Text("Amount", rewards, new Vector2(75, 2), new Vector2(200, 90), "+20", 64, White);
+                var details = Text("Details", well, Vector2.zero, new Vector2(660, 130), "", 42, White);
                 details.textWrappingMode = TextWrappingModes.Normal;
+                // Sits on the box's bottom edge so a one-line road reward stays clear of the coin row.
+                details.alignment = TextAlignmentOptions.Bottom;
                 details.rectTransform.pivot = new Vector2(0.5f, 0f);
-                Anchor(details.rectTransform, Bottom, new Vector2(0, 22));
+                Anchor(details.rectTransform, Bottom, new Vector2(0, 24));
 
-                var primary = WideButton(frame, "PrimaryButton", 1669f, S("UI_Button_Wide_Go"), null);
-                // Extra choices are smaller purple buttons stacked under the main one.
-                var option = WideButton(frame, "OptionButton", 1909f, S("UI_Button_Wide_Purple"), null, new Vector2(560, 220));
-                var doubleButton = WideButton(frame, "DoubleButton", 1909f, S("UI_Button_Wide_Purple"), "result.double", new Vector2(560, 220));
-                var adIcon = Pic("Ad", doubleButton.transform, new Vector2(0f, 0.5f), new Vector2(110, 6), new Vector2(84, 84), S("UI_Icon_Ad"));
+                var primary = WideButton(frame, "PrimaryButton", 1510f, S("UI_Button_Wide_Go"), null);
+                // Extra choices are purple buttons stacked under the main one.
+                var option = WideButton(frame, "OptionButton", 1680f, S("UI_Button_Wide_Purple"), null, 50f);
+                var doubleButton = WideButton(frame, "DoubleButton", 1680f, S("UI_Button_Wide_Purple"), "result.double", 50f);
+                var adIcon = Pic("Ad", doubleButton.transform, Center, new Vector2(-170, 8), new Vector2(80, 80), S("UI_Icon_Ad"));
                 adIcon.raycastTarget = false;
-                var doubleLabel = (RectTransform)doubleButton.transform.Find("Label");
-                doubleLabel.anchoredPosition = new Vector2(50, 8);
-                doubleLabel.sizeDelta = new Vector2(360, 100);
+                ((RectTransform)doubleButton.transform.Find("Label")).anchoredPosition = new Vector2(50, 8);
+
+                // Hold-to-peek pill over the tray: fades panel and dim while held, the dim still blocks the board.
+                var panelGroup = frame.parent.gameObject.AddComponent<CanvasGroup>();
+                // Placed under the frame's bottom edge by the popup; stays visible while the panel fades.
+                var peek = Pic("HoldToPeek", root.transform, Center, Vector2.zero, new Vector2(560, 96), S("UI_Pill_Well_96"));
+                Text("Label", peek, new Vector2(0, 2), new Vector2(480, 64), "result.peek", 38, White, "result.peek");
+                var hold = peek.gameObject.AddComponent<HoldToPeek>();
+                Set(hold, "_panel", panelGroup);
+                Set(hold, "_dim", root.GetComponent<Image>());
 
                 var popup = root.AddComponent<ResultPopup>();
+                Set(popup, "_peek", peek.gameObject);
                 Set(popup, "_content", (RectTransform)frame.parent);
                 Set(popup, "_frame", frame);
                 Set(popup, "_ribbon", ribbon);
@@ -559,8 +621,10 @@ namespace Project.Editor
             try
             {
                 var content = Rect("Content", root.transform, Center, Vector2.zero, Reference);
-                Text("Title", content, At(585, 227), new Vector2(600, 110), "settings.title", 80, White, "settings.title");
-                var close = ButtonRect("CloseButton", content, Center, At(1003, 227), new Vector2(150, 155), S("UI_Button_Close"));
+                // Title row hangs from the safe top like the screens' top bars (the root reaches 400 past it).
+                var header = Rect("Header", root.transform, Top, new Vector2(0, DesignTop - 400f), Reference, new Vector2(0.5f, 1f));
+                Text("Title", header, At(585, 228), new Vector2(600, 100), "settings.title", 72, White, "settings.title");
+                var close = ButtonRect("CloseButton", header, Center, At(1048, 228), new Vector2(124, 128), S("UI_Button_Close"));
 
                 ToggleSwitch Switch(string name, float x, string icon, string key)
                 {
@@ -570,7 +634,7 @@ namespace Project.Editor
                     iconImage.raycastTarget = false;
                     var off = Pic("Off", button, Center, new Vector2(0, 6), new Vector2(150, 150), S("UI_Icon_OffSlash"));
                     off.raycastTarget = false;
-                    Text("Label", button, new Vector2(0, -160), new Vector2(260, 60), key, 44, White, key);
+                    Text("Label", button, new Vector2(0, -158), new Vector2(260, 54), key, 40, White, key);
                     var toggle = button.gameObject.AddComponent<ToggleSwitch>();
                     Set(toggle, "_track", button.GetComponent<Image>());
                     Set(toggle, "_trackOn", S("UI_InLevel_IconBase"));
@@ -655,7 +719,7 @@ namespace Project.Editor
             // Coin counter above the dim at the in-level spot, hung from the safe top (the root reaches 400 past it).
             var pill = Rect("Coins", rect, Top, new Vector2(0, DesignTop - 400f), Reference, new Vector2(0.5f, 1f));
             var bar = Pic("CoinBar", pill, Center, At(201, 262), new Vector2(284, 100), S("UI_Pill_Well_96"));
-            var amount = Text("Amount", bar, new Vector2(27, -4), new Vector2(162, 76), "0", 52, White);
+            var amount = Text("Amount", bar, new Vector2(27, -2), new Vector2(162, 66), "0", 46, White);
             Pic("Coin", pill, Center, At(93, 254), new Vector2(93, 93), S("UI_Icon_Coin"));
             var hud = pill.gameObject.AddComponent<EconomyHud>();
             Set(hud, "_coins", amount);
@@ -667,11 +731,11 @@ namespace Project.Editor
         {
             // Centred holder so the open scale grows from the middle of the screen.
             var content = Rect("Content", root.transform, Center, Vector2.zero, Reference);
-            var frame = Rect("Frame", content, Center, new Vector2(0, Reference.y * 0.5f - FrameTop), new Vector2(999, height), new Vector2(0.5f, 1f));
+            var frame = Rect("Frame", content, Center, new Vector2(0, Reference.y * 0.5f - FrameTop), new Vector2(880, height), new Vector2(0.5f, 1f));
             Sliced(frame.gameObject.AddComponent<Image>(), S("UI_Popup_Panel"));
-            var ribbon = Pic("Ribbon", frame, Top, F(585, 689), new Vector2(730, 206), S("UI_Popup_Ribbon_Info"));
+            var ribbon = Pic("Ribbon", frame, Top, F(585, 770), new Vector2(760, 214), S("UI_Popup_Ribbon_Info"));
             ribbon.raycastTarget = false;
-            var title = Text("Title", ribbon, new Vector2(0, 16), new Vector2(560, 120), titleKey, 72, White, titleKey);
+            var title = Text("Title", ribbon, new Vector2(0, 16), new Vector2(540, 100), titleKey, 64, White, titleKey);
             return (frame, ribbon, title);
         }
 
@@ -683,17 +747,28 @@ namespace Project.Editor
         }
 
         private static Button CloseButton(RectTransform frame) =>
-            ButtonRect("CloseButton", frame, Top, F(1041, 703), new Vector2(181, 187), S("UI_Button_Close")).GetComponent<Button>();
+            ButtonRect("CloseButton", frame, Top, F(1004, 786), new Vector2(124, 128), S("UI_Button_Close")).GetComponent<Button>();
 
-        // A wide button at y on the design screen; a null key leaves the label for code.
-        private static Button WideButton(Component parent, string name, float y, Sprite sprite, string key, Vector2? size = null)
+        // A wide button at y on the design screen, at the sprite's 150 height; a null key leaves the label for code.
+        // Hidden extras for code: a coin price chip (left), an owned-count badge (corner), a "-1 life" line (below).
+        private static Button WideButton(Component parent, string name, float y, Sprite sprite, string key, float labelSize = 58f)
         {
-            var box = size ?? new Vector2(707, 278);
+            var box = new Vector2(630, 150);
             var rect = ButtonRect(name, parent, Top, F(585, y), box, sprite);
             var button = rect.GetComponent<Button>();
             button.transition = Selectable.Transition.SpriteSwap;
             button.spriteState = new SpriteState { disabledSprite = S("UI_Button_Wide_Off") };
-            Text("Label", rect, new Vector2(0, 10), box * new Vector2(0.85f, 0.54f), key ?? "Option", box.y * 0.26f, White, key);
+            Text("Label", rect, new Vector2(0, 8), new Vector2(440, 90), key ?? "Option", labelSize, White, key);
+
+            var price = Rect("Price", rect, Center, new Vector2(-190, 8), new Vector2(200, 90));
+            Pic("Coin", price, Center, new Vector2(-50, 0), new Vector2(72, 72), S("UI_Icon_Coin")).raycastTarget = false;
+            Text("Amount", price, new Vector2(38, 0), new Vector2(100, 64), "0", 44, White);
+            price.gameObject.SetActive(false);
+            var badge = Pic("Badge", rect, Center, new Vector2(292, 52), new Vector2(76, 79), S("UI_Badge_Count"));
+            badge.raycastTarget = false;
+            Text("Count", badge, new Vector2(0, 4), new Vector2(60, 52), "0", 40, White);
+            badge.gameObject.SetActive(false);
+            Text("Cost", rect, new Vector2(0, -98), new Vector2(300, 48), "game.life_cost", 38, White, "game.life_cost").gameObject.SetActive(false);
             return button;
         }
 
@@ -813,11 +888,13 @@ namespace Project.Editor
             // The display face is already heavy; faux bold would smear it.
             text.fontStyle = FontStyles.Normal;
             text.color = color;
-            text.alignment = TextAlignmentOptions.Center;
+            // Midline centres on the drawn glyphs, which reads centred in pills and buttons.
+            text.alignment = TextAlignmentOptions.Midline;
             text.textWrappingMode = TextWrappingModes.NoWrap;
             text.overflowMode = TextOverflowModes.Overflow;
             text.enableAutoSizing = true;
-            text.fontSizeMin = Mathf.Min(20f, fontSize);
+            // Auto-size never drops below 70% so a role keeps one look.
+            text.fontSizeMin = Mathf.Round(fontSize * 0.7f);
             text.fontSizeMax = fontSize;
             text.raycastTarget = false;
             if (key != null)

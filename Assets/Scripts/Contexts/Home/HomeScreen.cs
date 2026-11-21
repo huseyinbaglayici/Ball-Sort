@@ -30,6 +30,10 @@ namespace Project.Contexts.Home
         [SerializeField] private Button[] _comingSoon = System.Array.Empty<Button>();
         [SerializeField] private SettingsPopup _settingsPopup;
         [SerializeField] private MessagePopup _messagePopup;
+        // The level orb the level-open zoom grows out of, and what fades away around it.
+        [SerializeField] private RectTransform _orb;
+        [SerializeField] private CanvasGroup[] _chrome = System.Array.Empty<CanvasGroup>();
+        [SerializeField] private float _leaveTime = 0.22f;
 
         private ProgressService _progress;
         private LivesService _lives;
@@ -60,10 +64,25 @@ namespace Project.Contexts.Home
             Refresh();
         }
 
+        public RectTransform Orb => _orb;
+
         public void SetOpen(bool open)
         {
             _view.SetActive(open);
-            if (open) Refresh();
+            if (!open) return;
+            foreach (var group in _chrome)
+            {
+                PrimeTween.Tween.StopAll(group);
+                group.alpha = 1f;
+            }
+            Refresh();
+        }
+
+        // Bars and mascot fade out, leaving the orb alone for the zoom.
+        public void Leave()
+        {
+            foreach (var group in _chrome)
+                PrimeTween.Tween.Alpha(group, 0f, _leaveTime, PrimeTween.Ease.OutQuad, useUnscaledTime: true);
         }
 
         private void OnEnable()

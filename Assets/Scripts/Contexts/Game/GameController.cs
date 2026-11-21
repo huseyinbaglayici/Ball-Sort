@@ -186,6 +186,7 @@ namespace Project.Contexts.Game
             _screen = new Vector2Int(Screen.width, Screen.height);
             _board.ScreenBand = HudBand();
             _board.Build(data, _level, _model, _factory, _palette);
+            _board.PlayEntrance();
             _ads.BeginActivePlay();
             RefreshHud();
         }
@@ -659,35 +660,27 @@ namespace Project.Contexts.Game
                 var lives = _c._lives;
                 var bomb = _c._model.IsFailed;
                 var options = new System.Collections.Generic.List<ResultOption>();
+                // One short reason line; the buttons carry prices and costs.
                 var note = new System.Text.StringBuilder(loc.Get(bomb ? "fail.bomb" : "fail.no_move"));
 
                 if (bomb && _report != null && _report.UndoWins)
                 {
                     var stock = _c._inventory.Stock(BoosterType.Undo);
-                    var label = stock > 0
-                        ? loc.Format("undo.offer_stock", stock)
-                        : loc.Format("undo.offer_coins", BoosterInventory.Price(BoosterType.Undo));
-                    options.Add(new ResultOption(label, UndoLastMove, _c._inventory.CanUse(BoosterType.Undo, _c._level)));
+                    options.Add(new ResultOption(loc.Get("booster.undo"), UndoLastMove, _c._inventory.CanUse(BoosterType.Undo, _c._level),
+                        price: stock > 0 ? 0 : BoosterInventory.Price(BoosterType.Undo), badge: stock));
                 }
 
                 var offer = _report?.Offer;
                 if (offer != null && !_c._model.ContinueUsed && !_c._continue.UsedInTry(_c._progress.TryId))
                 {
-                    options.Add(new ResultOption(ContinueService.Describe(offer, _c._model, loc), () => BuyContinue(offer),
-                        _c._continue.CanAfford));
-                    if (!_c._continue.CanAfford) note.Append('\n').Append(loc.Format("continue.not_enough", ContinueService.Price));
-                }
-                else
-                {
-                    note.Append('\n').Append(loc.Get("fail.no_offer"));
+                    options.Add(new ResultOption(loc.Get("common.continue"), () => BuyContinue(offer), _c._continue.CanAfford,
+                        price: ContinueService.Price));
+                    note.Append('\n').Append(loc.Format("continue.gives", ContinueService.Bombs(offer, _c._model, loc)));
                 }
 
                 if (lives.CanPlay)
-                {
-                    var restart = lives.IsUnlimited ? loc.Get("common.retry") : loc.Get("game.restart_life");
-                    options.Add(new ResultOption(restart, Retry));
-                    note.Append('\n').Append(EconomyText.Lives(lives, loc));
-                }
+                    options.Add(new ResultOption(loc.Get(lives.IsUnlimited ? "common.retry" : "game.restart"), Retry,
+                        lifeCost: !lives.IsUnlimited));
                 else
                 {
                     note.Append('\n').Append(loc.Format("lives.out_body", EconomyText.Timer(lives.NextLifeIn)));
