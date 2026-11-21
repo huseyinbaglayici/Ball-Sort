@@ -103,14 +103,14 @@ namespace Project.Contexts.Game.Items
                 .OnComplete(this, shutter => shutter._rattleOffset = Vector3.zero);
         }
 
-        // Padlock drops, curtain rolls up, housing and frame fade; onClear when the curtain is up, onDone when all is.
+        // Shake, pause, then padlock drop and roll together; onClear when the curtain is up, onDone after the fade.
         public void PlayOpen(BallAnimationConfig config, Action onClear, Action onDone)
         {
             Stop();
             Follow();
             var shake = config.ShutterShakeDuration;
             var rollAt = shake + config.ShutterRollDelay;
-            var clearAt = rollAt + config.ShutterRollDuration;
+            var clearAt = config.ShutterClearTime;
             var curtainY = _rise * 0.5f;
             _play = PrimeTween.Sequence.Create()
                 .Chain(PrimeTween.Tween.Custom(this, 0f, 1f, shake, (shutter, k) =>
@@ -121,7 +121,7 @@ namespace Project.Contexts.Game.Items
                         Mathf.Sin(k * config.ShutterShakeCycles * Mathf.PI * 4f));
                 }))
                 .ChainCallback(this, shutter => shutter._rattleOffset = Vector3.zero)
-                .Chain(PrimeTween.Tween.Custom(this, 0f, 1f, config.LockDropDuration, (shutter, k) =>
+                .Insert(rollAt, PrimeTween.Tween.Custom(this, 0f, 1f, config.LockDropDuration, (shutter, k) =>
                 {
                     shutter.PlacePadlock(Vector3.down * (config.LockDropDistance * k * k), config.LockDropDegrees * k);
                     var a = 1f - k;
