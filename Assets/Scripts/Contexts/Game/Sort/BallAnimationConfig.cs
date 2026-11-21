@@ -233,8 +233,8 @@ namespace Project.Contexts.Game.Sort
         public float BallWaveDuration = 0.16f;
         public float BallWaveStagger = 0.04f;
         [Range(0f, 1f)] public float BallWaveLand = 0.5f;
-        [Tooltip("When the last tube completes, the win popup waits this long so the completion plays out.")]
-        public float WinPopupDelay = 1.1f;
+        [Tooltip("When the last tube completes, the win popup waits this long so the win beat over the board plays out (see WinFx.PanelAt).")]
+        public float WinPopupDelay = 2.75f;
         [Tooltip("As the cap lands, an additive glow around the tube flashes up in this color and fades out.")]
         public Color CompleteGlowColor = new(1f, 0.858f, 0.179f, 0.85f);
         public float CompleteGlowIn = 0.12f;
@@ -242,7 +242,9 @@ namespace Project.Contexts.Game.Sort
         public float CompleteGlowOut = 0.6f;
 
         [Header("Result")]
-        [Tooltip("The orbital burst before the win panel and the small contraction when the fail panel opens.")]
+        [Tooltip("The level-won beat over the board: caps, orbit sweep, burst, mascot and ribbon before the win panel.")]
+        public WinFxSettings Win = new();
+        [Tooltip("The small contraction when the fail panel opens.")]
         public ResultFxSettings Result = new();
 
         [Header("Boosters")]
@@ -302,22 +304,25 @@ namespace Project.Contexts.Game.Sort
         public float ShutterHopDuration = 0.56f;
         public float ShutterHopStagger = 0.24f;
         [Header("Shutter open FX")]
-        [Tooltip("During the shake an orbit ring snaps in around the padlock, from and to these multiples of its width.")]
-        public float ShutterFxSnapFrom = 1.6f;
-        public float ShutterFxSnapTo = 0.45f;
-        [Tooltip("At the release a crisp ring widens from the lock over this time, to this multiple of its width, with gold sparks on arcs.")]
-        public float ShutterFxHorizonTime = 0.18f;
-        public float ShutterFxHorizonTo = 1.7f;
-        public int ShutterFxSparks = 6;
-        public Vector2 ShutterFxSparkSpeed = new(2.5f, 4f);
-        [Tooltip("A light seam rides the curtain's lower edge as it rolls, with a faint violet spill under it: seam and spill heights and alphas.")]
-        public float ShutterFxSeamHeight = 0.09f;
-        public float ShutterFxSpillHeight = 0.9f;
-        [Range(0f, 1f)] public float ShutterFxSeamAlpha = 0.9f;
-        [Range(0f, 1f)] public float ShutterFxSpillAlpha = 0.35f;
-        [Tooltip("As the tubes clear, a soft white-cyan glow on their rims: height and peak alpha; it lasts the frame fade.")]
-        public float ShutterFxRimHeight = 0.6f;
-        [Range(0f, 1f)] public float ShutterFxRimAlpha = 0.55f;
+        [Tooltip("Charge during the shake: an orbit ring spins in round the padlock from and to these multiples of its width while the lock squashes to this scale.")]
+        public float ShutterFxSnapFrom = 1.4f;
+        public float ShutterFxSnapTo = 0.55f;
+        public Vector2 ShutterFxSquash = new(1.12f, 0.88f);
+        [Tooltip("The hit at the release: horizon ring time and reach (lock widths), hot flash size, gold sparks, and the frame's scale punch.")]
+        public float ShutterFxHorizonTime = 0.22f;
+        public float ShutterFxHorizonTo = 1.6f;
+        public float ShutterFxFlashSize = 1f;
+        public int ShutterFxSparks = 5;
+        public Vector2 ShutterFxSparkSpeed = new(3f, 5.5f);
+        [Range(0f, 0.1f)] public float ShutterFxPunch = 0.035f;
+        [Tooltip("The light seam on the curtain's lower edge and the violet energy filling the opened glass: seam height and alpha, spill alpha.")]
+        public float ShutterFxSeamHeight = 0.12f;
+        [Range(0f, 1f)] public float ShutterFxSeamAlpha = 0.7f;
+        [Range(0f, 1f)] public float ShutterFxSpillAlpha = 0.3f;
+        [Tooltip("After the tubes are usable the spill sinks away and the rims flash in the completion gold over this time: rim height and peak alpha.")]
+        public float ShutterFxLinger = 0.25f;
+        public float ShutterFxRimHeight = 0.8f;
+        [Range(0f, 1f)] public float ShutterFxRimAlpha = 0.45f;
 
         [Header("Fail")]
         [Tooltip("The fail board stays readable this long after its last meaningful change before the panel opens.")]
@@ -335,6 +340,16 @@ namespace Project.Contexts.Game.Sort
         public float KeyUseScale = 1.25f;
         public float KeyUsePop = 0.2f;
         public float KeyUseFade = 0.4f;
+        [Tooltip("A freed key glides on one curve through the screen's centre into the padlock: the spans share one eased speed profile; centre size is a multiple of its mark in the ball, lock size of the padlock's width.")]
+        public float KeyFlyToCentre = 0.26f;
+        public float KeyFlyToLock = 0.24f;
+        public float KeyFlyCentreScale = 2.3f;
+        public float KeyFlyLockScale = 1f;
+        [Tooltip("Height of the curve's bends above the key's start and above the keyhole.")]
+        public float KeyFlyArc = 2f;
+        [Tooltip("The push into the keyhole and the quarter turn that opens the lock.")]
+        public float KeyFlyInsertTime = 0.08f;
+        public float KeyFlyTurn = 0.1f;
 
         [Header("Bomb")]
         [Tooltip("A lit bomb's red light fades in, then pulses between BombPulseMin and full; faster on the last BombFastFuse moves.")]

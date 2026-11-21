@@ -16,6 +16,7 @@ namespace Project.Contexts.Game.Items
         private const int ReceivingGroupOrder = 11;
         // The last ball in the selection wave still gets at least this share of the lift time.
         private const float MinWaveShare = 0.55f;
+        private static readonly int UvRectId = Shader.PropertyToID("_UvRect");
 
         [SerializeField] private SpriteRenderer _back;
         [SerializeField] private SpriteRenderer _front;
@@ -78,6 +79,24 @@ namespace Project.Contexts.Game.Items
             foreach (var part in new[] { _back, _front, _frontBehind, _glow, _glowFlash })
                 _body.Add((part, part.sprite.bounds.size, part.transform.localPosition));
             _emptyCapPosition = _emptyCap.transform.localPosition;
+            SetUvRect(_front);
+            SetUvRect(_frontBehind);
+        }
+
+        // The glass shader needs the sprite's own uv rect to find its place across the width, whatever the atlas.
+        private static void SetUvRect(SpriteRenderer glass)
+        {
+            var uv = glass.sprite.uv;
+            Vector2 min = uv[0], max = uv[0];
+            foreach (var p in uv)
+            {
+                min = Vector2.Min(min, p);
+                max = Vector2.Max(max, p);
+            }
+            var block = new MaterialPropertyBlock();
+            glass.GetPropertyBlock(block);
+            block.SetVector(UvRectId, new Vector4(min.x, min.y, 1f / (max.x - min.x), 1f / (max.y - min.y)));
+            glass.SetPropertyBlock(block);
         }
 
         private void LateUpdate() => Reactions.Tick();
@@ -358,6 +377,20 @@ namespace Project.Contexts.Game.Items
 
         private static Vector3 Scale(Vector2 xy) => new(xy.x, xy.y, 1f);
 
+        // Level won: the gem punches up and settles while the cap's glow flashes again.
+        public void PulseCap(float delay, float scale, float time)
+        {
+            if (!_completed) return;
+            var gem = _gem.transform;
+            PrimeTween.Tween.StopAll(gem);
+            gem.localScale = Vector3.one;
+            PrimeTween.Tween.Scale(gem, Vector3.one, Vector3.one * scale, Mathf.Max(time * 0.35f, 0.0001f),
+                    PrimeTween.Ease.OutQuad, startDelay: delay)
+                .Chain(PrimeTween.Tween.Scale(gem, Vector3.one * scale, Vector3.one, Mathf.Max(time * 0.65f, 0.0001f),
+                    PrimeTween.Ease.OutBack));
+            Flash(_glowFlash, _config.CompleteGlowColor, _config, delay);
+        }
+
         private static void Flash(SpriteRenderer glow, Color color, BallAnimationConfig config, float delay)
         {
             glow.enabled = true;
@@ -396,6 +429,8 @@ namespace Project.Contexts.Game.Items
             PrimeTween.Tween.StopAll(_completedCap.transform);
             PrimeTween.Tween.StopAll(_completedCap);
             PrimeTween.Tween.StopAll(_gem);
+            PrimeTween.Tween.StopAll(_gem.transform);
+            _gem.transform.localScale = Vector3.one;
             PrimeTween.Tween.StopAll(_emptyCap);
             PrimeTween.Tween.StopAll(_rimFront);
             PrimeTween.Tween.StopAll(_glowFlash);

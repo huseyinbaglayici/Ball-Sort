@@ -19,16 +19,29 @@ namespace Project.Editor
         private const string OrbFolder = "Assets/Art/Sprites/Orb";
         private const string OrbGeneratedFolder = OrbFolder + "/Generated";
         private const string OrbShaderName = "Project/Orb Layer";
+        private const string OrbCoreShaderName = "Project/Orb Core";
+        private const string OrbRingShaderName = "Project/Orb Ring";
         private const string OrbLayerPath = "Assets/Art/Materials/OrbLayer.mat";
         private const string OrbAdditivePath = "Assets/Art/Materials/OrbLayerAdditive.mat";
+        private const string OrbCorePath = "Assets/Art/Materials/OrbCore.mat";
+        private const string OrbRingPath = "Assets/Art/Materials/OrbRing.mat";
+        // The glass highlight over the shaded core is drawn at this share.
+        private const float OrbGlassAlpha = 0.55f;
         private const string TubeFolder = "Assets/Art/Sprites/Tube";
         private const string AdditivePath = "Assets/Art/Materials/SpriteAdditive.mat";
+        private const string TubeGlassShaderName = "Project/Tube Glass";
+        private const string TubeGlassPath = "Assets/Art/Materials/TubeGlass.mat";
+        // The soft outline outside the glass stays faint; the glass shader draws the crisp edge line.
+        private const float TubeGlowAlpha = 0.22f;
         private const string AtlasPath = "Assets/Art/Atlases/GameplayAtlas.spriteatlasv2";
         private const string ObstacleFolder = "Assets/Art/Sprites/Obstacles";
         private const string CountMaterialPath = "Assets/Art/Materials/BombCount.mat";
         // 9-slice borders of the shutter art (left, bottom, right, top).
         private static readonly Vector4 ShutterBorder = new(62f, 0f, 62f, 0f);
         private static readonly Vector4 HousingBorder = new(40f, 0f, 40f, 0f);
+        private const float KeyMarkScale = 1.35f;
+        // Width of the plate behind the padlock, in board units.
+        private const float LockPlateSize = 1.5f;
         // The padlock's swing pivot, the top of its shackle, above its center.
         private const float ShacklePx = 114f;
         // Bomb counter: white with a dark navy outline, about 70% of the bomb screen's height.
@@ -55,6 +68,10 @@ namespace Project.Editor
             if (completeFx == null) return;
             var resultFx = ResultFxBuilder.Build();
             if (resultFx == null) return;
+            var winFx = WinFxBuilder.Build();
+            if (winFx == null) return;
+            var keyFlight = KeyFlightFxBuilder.Build(art.Key);
+            if (keyFlight == null) return;
             var frozen = SavePrefab(CreateFrozenTube(art, back, front, skins[0]), "FrozenTube");
             var shutter = SavePrefab(CreateShutter(art), "Shutter");
             var blast = SavePrefab(CreateBombBlast(art), "BombBlast");
@@ -66,12 +83,14 @@ namespace Project.Editor
                 (ItemType.QuestionMark, question.GetComponent<Item>(), 24, 64),
                 (ItemType.CompleteFx, completeFx, 2, 6),
                 (ItemType.ResultFx, resultFx, 0, 2),
+                (ItemType.WinFx, winFx, 0, 2),
+                (ItemType.KeyFlightFx, keyFlight, 0, 2),
                 (ItemType.FrozenTube, frozen.GetComponent<Item>(), 0, 8),
                 (ItemType.Shutter, shutter.GetComponent<Item>(), 0, 8),
                 (ItemType.BombBlast, blast.GetComponent<Item>(), 0, 4)
             });
             AssetDatabase.SaveAssets();
-            Debug.Log("[BoardPrefabBuilder] Bottle, Ball, BallQuestionMark, CompleteFx, ResultFx, FrozenTube, Shutter, BombBlast prefabs, LevelPalette and ItemRegistry are ready.");
+            Debug.Log("[BoardPrefabBuilder] Bottle, Ball, BallQuestionMark, CompleteFx, ResultFx, WinFx, KeyFlightFx, FrozenTube, Shutter, BombBlast prefabs, LevelPalette and ItemRegistry are ready.");
         }
 
         // Indexed by the color index levels store, so the order must not change.
@@ -159,9 +178,9 @@ namespace Project.Editor
         }
 
         // Premultiplied blending, or additive for the glass.
-        private static Material EnsureOrbMaterial(string path, BlendMode destination)
+        private static Material EnsureOrbMaterial(string path, BlendMode destination, string shaderName = OrbShaderName)
         {
-            var shader = Shader.Find(OrbShaderName);
+            var shader = Shader.Find(shaderName);
             var material = AssetDatabase.LoadAssetAtPath<Material>(path);
             if (material == null)
             {
@@ -169,7 +188,7 @@ namespace Project.Editor
                 AssetDatabase.CreateAsset(material, path);
             }
             material.shader = shader;
-            material.SetFloat("_DstBlend", (float)destination);
+            if (material.HasFloat("_DstBlend")) material.SetFloat("_DstBlend", (float)destination);
             EditorUtility.SetDirty(material);
             return material;
         }
@@ -229,11 +248,13 @@ namespace Project.Editor
             container.localPosition = new Vector3(0f, TubeArt.ContainerLocalY, 0f);
 
             var additive = EnsureAdditiveMaterial();
+            var glass = EnsureOrbMaterial(TubeGlassPath, BlendMode.OneMinusSrcAlpha, TubeGlassShaderName);
             var backRenderer = AddSprite(container, "BackGlass", back, TubeArt.BackOrder, null);
             AddSprite(container, "EndPiece", endPiece, TubeArt.EndPieceOrder, null);
-            var frontBehind = AddSprite(container, "FrontGlassBehind", front, TubeArt.GlassBehindOrder, additive);
-            var frontRenderer = AddSprite(container, "FrontGlass", front, TubeArt.FrontOrder, additive);
+            var frontBehind = AddSprite(container, "FrontGlassBehind", front, TubeArt.GlassBehindOrder, glass);
+            var frontRenderer = AddSprite(container, "FrontGlass", front, TubeArt.FrontOrder, glass);
             var glowRenderer = AddSprite(container, "Glow", glow, TubeArt.GlowOrder, null);
+            glowRenderer.color = new Color(1f, 1f, 1f, TubeGlowAlpha);
             var glowFlash = AddSprite(container, "GlowFlash", glow, TubeArt.GlowFlashOrder, additive);
             glowFlash.enabled = false;
             var emptyCapRenderer = AddSprite(container, "EmptyCap", emptyCap, TubeArt.EmptyCapOrder, null);
@@ -358,10 +379,13 @@ namespace Project.Editor
             visual.SetParent(root.transform, false);
             var normal = EnsureOrbMaterial(OrbLayerPath, BlendMode.OneMinusSrcAlpha);
             var additive = EnsureOrbMaterial(OrbAdditivePath, BlendMode.One);
+            var coreMaterial = EnsureOrbMaterial(OrbCorePath, BlendMode.OneMinusSrcAlpha, OrbCoreShaderName);
+            var ringMaterial = EnsureOrbMaterial(OrbRingPath, BlendMode.OneMinusSrcAlpha, OrbRingShaderName);
             var outerGlow = AddSprite(visual, "OuterGlow", sample.OuterGlow, 1, normal);
-            var backRenderer = AddSprite(visual, "Back", back, 2, normal);
-            var core = AddSprite(visual, "Core", sample.Core, 3, normal);
+            var backRenderer = AddSprite(visual, "Back", back, 2, ringMaterial);
+            var core = AddSprite(visual, "Core", sample.Core, 3, coreMaterial);
             var frontRenderer = AddSprite(visual, "Front", front, 4, additive);
+            frontRenderer.color = new Color(1f, 1f, 1f, OrbGlassAlpha);
             var innerGlow = AddSprite(visual, "InnerGlow", sample.InnerGlow, 5, normal);
             var layers = new List<SpriteRenderer> { outerGlow, backRenderer, core, frontRenderer, innerGlow };
 
@@ -375,6 +399,10 @@ namespace Project.Editor
             keyRoot.SetParent(visual, false);
             var keyGlow = AddOverlay(keyRoot, "KeyGlow", art.KeyGlow, 2, normal);
             var key = AddOverlay(keyRoot, "KeyMark", art.Key, 3, normal);
+            // Larger than the art, over its own soft shadow, so it reads on every orb color.
+            key.transform.localScale = Vector3.one * KeyMarkScale;
+            keyGlow.transform.localScale = Vector3.one * KeyMarkScale * 1.12f;
+            keyGlow.transform.localPosition += new Vector3(0f, -0.02f, 0f);
             var bombBase = AddOverlay(visual, "BombBase", art.BombBase, 4, normal);
             var bombRing = AddOverlay(visual, "BombRing", art.BombRing, 5, normal);
             var bombFx = AddOverlay(visual, "BombFx", art.BombFx, 6, normal);
@@ -385,6 +413,7 @@ namespace Project.Editor
             so.FindProperty("_visual").objectReferenceValue = visual;
             SetArray(so.FindProperty("_layers"), layers);
             so.FindProperty("_outerGlow").objectReferenceValue = outerGlow;
+            so.FindProperty("_ring").objectReferenceValue = backRenderer;
             so.FindProperty("_core").objectReferenceValue = core;
             so.FindProperty("_innerGlow").objectReferenceValue = innerGlow;
             so.FindProperty("_shell").objectReferenceValue = shell;
@@ -457,11 +486,14 @@ namespace Project.Editor
             badge.SetParent(root.transform, false);
             var normal = EnsureOrbMaterial(OrbLayerPath, BlendMode.OneMinusSrcAlpha);
             var additive = EnsureOrbMaterial(OrbAdditivePath, BlendMode.One);
+            var coreMaterial = EnsureOrbMaterial(OrbCorePath, BlendMode.OneMinusSrcAlpha, OrbCoreShaderName);
+            var ringMaterial = EnsureOrbMaterial(OrbRingPath, BlendMode.OneMinusSrcAlpha, OrbRingShaderName);
             var order = TubeArt.FrozenBadgeOrder;
             var outerGlow = AddSprite(badge, "OuterGlow", sample.OuterGlow, order, normal);
-            var backRenderer = AddSprite(badge, "Back", back, order + 1, normal);
-            var core = AddSprite(badge, "Core", sample.Core, order + 2, normal);
+            var backRenderer = AddSprite(badge, "Back", back, order + 1, ringMaterial);
+            var core = AddSprite(badge, "Core", sample.Core, order + 2, coreMaterial);
             var frontRenderer = AddSprite(badge, "Front", front, order + 3, additive);
+            frontRenderer.color = new Color(1f, 1f, 1f, OrbGlassAlpha);
             var innerGlow = AddSprite(badge, "InnerGlow", sample.InnerGlow, order + 4, normal);
             var melt = AddSprite(root.transform, "Melt", art.Melt, TubeArt.MeltOrder, null);
             melt.enabled = false;
@@ -492,9 +524,18 @@ namespace Project.Editor
             var padlock = new GameObject("Padlock").transform;
             padlock.SetParent(root.transform, false);
             var lockOffset = new Vector3(0f, -ShacklePx / TubeArt.PixelsPerUnit, 0f);
-            var padlockBase = AddSprite(padlock, "Base", art.PadlockBase, 3, null);
+            // Dark plate, gold glow, then the padlock: it must read against the curtain on every board.
+            var halo = CompleteFxBuilder.ImportSprite("Halo", 128f);
+            var lockShade = AddSprite(padlock, "LockShade", halo, 2, null);
+            lockShade.transform.localPosition = lockOffset;
+            lockShade.transform.localScale = Vector3.one * (LockPlateSize / halo.bounds.size.x);
+            var lockGlow = CompleteFxBuilder.AddSprite(padlock, "LockGlow", halo, 3, CompleteFxBuilder.AdditiveMaterial("FxFinishSprite", null));
+            lockGlow.enabled = true;
+            lockGlow.transform.localPosition = lockOffset;
+            lockGlow.transform.localScale = Vector3.one * (LockPlateSize * 1.3f / halo.bounds.size.x);
+            var padlockBase = AddSprite(padlock, "Base", art.PadlockBase, 4, null);
             padlockBase.transform.localPosition = lockOffset;
-            var padlockBody = AddSprite(padlock, "Body", art.PadlockBody, 4, null);
+            var padlockBody = AddSprite(padlock, "Body", art.PadlockBody, 5, null);
             padlockBody.transform.localPosition = lockOffset;
 
             var mask = new GameObject("Mask").AddComponent<SpriteMask>();
@@ -510,6 +551,8 @@ namespace Project.Editor
             so.FindProperty("_padlock").objectReferenceValue = padlock;
             so.FindProperty("_padlockBase").objectReferenceValue = padlockBase;
             so.FindProperty("_padlockBody").objectReferenceValue = padlockBody;
+            so.FindProperty("_lockShade").objectReferenceValue = lockShade;
+            so.FindProperty("_lockGlow").objectReferenceValue = lockGlow;
             so.FindProperty("_mask").objectReferenceValue = mask;
             ShutterFx(root.transform, so);
             so.ApplyModifiedPropertiesWithoutUndo();
@@ -525,11 +568,22 @@ namespace Project.Editor
             var glowFar = CompleteFxBuilder.ImportSprite("TouchGlowFar", 128f);
             var halo = CompleteFxBuilder.ImportSprite("Halo", 128f);
             var dot = CompleteFxBuilder.ImportSprite("Dot", 64f);
-            var additive = CompleteFxBuilder.AdditiveMaterial("FxShutterSprite", null);
+            var bead = CompleteFxBuilder.ImportSprite("Bead", 64f);
+            var photon = CompleteFxBuilder.ImportSprite("PhotonRing", 128f);
+            // The completion finish's own material, so the two read as one kind of light.
+            var additive = CompleteFxBuilder.AdditiveMaterial("FxFinishSprite", null);
             var fx = new GameObject("OpenFx").transform;
             fx.SetParent(root, false);
             so.FindProperty("_spill").objectReferenceValue = CompleteFxBuilder.AddSprite(fx, "Spill", halo, 1, additive);
+            so.FindProperty("_seamGlow").objectReferenceValue = CompleteFxBuilder.AddSprite(fx, "SeamGlow", halo, 2, additive);
             so.FindProperty("_seam").objectReferenceValue = CompleteFxBuilder.AddSprite(fx, "Seam", dot, 2, additive);
+            so.FindProperty("_coreGlow").objectReferenceValue = CompleteFxBuilder.AddSprite(fx, "CoreGlow", halo, 5, additive);
+            so.FindProperty("_coreHot").objectReferenceValue = CompleteFxBuilder.AddSprite(fx, "CoreHot", bead, 6, additive);
+            so.FindProperty("_photon").objectReferenceValue = CompleteFxBuilder.AddSprite(fx, "PhotonRing", photon, 6, additive);
+            var beads = so.FindProperty("_beads");
+            beads.arraySize = 2;
+            for (var i = 0; i < 2; i++)
+                beads.GetArrayElementAtIndex(i).objectReferenceValue = CompleteFxBuilder.AddSprite(fx, $"Bead{i}", bead, 7, additive);
             so.FindProperty("_glowFar").objectReferenceValue = CompleteFxBuilder.AddSprite(fx, "GlowFar", glowFar, 2, additive);
             so.FindProperty("_ringFar").objectReferenceValue = CompleteFxBuilder.AddSprite(fx, "RingFar", lineFar, 2, additive);
             so.FindProperty("_rimGlow").objectReferenceValue = CompleteFxBuilder.AddSprite(fx, "RimGlow", halo, 3, additive);

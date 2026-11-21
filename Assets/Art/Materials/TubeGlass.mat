@@ -1,0 +1,54 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: TubeGlass
+  m_Shader: {fileID: 4800000, guid: 7c2f1a4e9b3d4e6f8a1b2c3d4e5f6a7b, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _MainTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _ArtGain: 0.5
+    - _EdgeGain: 1.7
+    - _EdgeWidth: 0.035
+    - _EndFade: 0.14
+    - _FresnelDark: 0.55
+    - _FresnelPower: 2.5
+    - _GlowFalloff: 10
+    - _GlowGain: 0.5
+    - _HalfWidth: 0.427
+    - _InteriorDark: 0.3
+    - _RimGain: 0.3
+    - _StreakDrift: 0
+    - _StreakGain: 0.3
+    - _StreakPos: -0.55
+    - _StreakWidth: 0.08
+    m_Colors:
+    - _EdgeColor: {r: 0.62, g: 0.95, b: 1, a: 1}
+    - _GlowColor: {r: 0.55, g: 0.5, b: 1, a: 1}
+    - _RimColor: {r: 0.6, g: 0.8, b: 1, a: 1}
+    - _StreakColor: {r: 0.8, g: 0.9, b: 1, a: 1}
+    - _UvRect: {r: 0, g: 0, b: 1, a: 1}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1

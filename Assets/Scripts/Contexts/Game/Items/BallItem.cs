@@ -26,6 +26,8 @@ namespace Project.Contexts.Game.Items
         // All orb layers, bottom to top.
         [SerializeField] private SpriteRenderer[] _layers;
         [SerializeField] private SpriteRenderer _outerGlow;
+        // Its color is the orb's palette color; the ring shader darkens it.
+        [SerializeField] private SpriteRenderer _ring;
         [SerializeField] private SpriteRenderer _core;
         [SerializeField] private SpriteRenderer _innerGlow;
         // Hidden balls only: the shell drawn instead of the orb, and its break art.
@@ -35,6 +37,9 @@ namespace Project.Contexts.Game.Items
         [SerializeField] private Transform _keyRoot;
         [SerializeField] private SpriteRenderer _keyGlow;
         [SerializeField] private SpriteRenderer _key;
+        // The key reads on any orb: lightened toward white over a dark soft shadow.
+        private const float KeyLighten = 0.45f;
+        private static readonly Color KeyShade = new(0.04f, 0.02f, 0.16f, 0.85f);
         [SerializeField] private SpriteRenderer _bombBase;
         [SerializeField] private SpriteRenderer _bombRing;
         [SerializeField] private SpriteRenderer _bombFx;
@@ -146,6 +151,7 @@ namespace Project.Contexts.Game.Items
             Bomb = BombLook.None;
             _shellShown = IsHidden;
             SetOrb(orb);
+            _ring.color = color;
             _haloAlpha = config.OrbHaloAlpha;
             SetGlow(1f);
             _highlight.SetTint(IsHidden ? Color.white : color);
@@ -249,7 +255,22 @@ namespace Project.Contexts.Game.Items
             if (id == KeyId && !_keyUse.isAlive && (id == null || _key.color == tint)) return;
             StopKeyUse();
             KeyId = id;
-            if (id != null) _key.color = tint;
+            if (id != null) _key.color = Color.Lerp(tint, Color.white, KeyLighten);
+            ApplyLook();
+        }
+
+        // Where the key sits in the ball, for the flight that carries it to its lock.
+        public Transform KeyMark => _key != null ? _key.transform : null;
+
+        // Drawn width of the key mark, so the flight starts at the same size.
+        public float KeyWorldWidth => _key != null && _key.sprite != null ? _key.sprite.bounds.size.x * _key.transform.lossyScale.x : 0f;
+
+        // The key leaves the ball for its flight: gone from the orb at once.
+        public void ReleaseKey()
+        {
+            if (KeyId == null) return;
+            StopKeyUse();
+            KeyId = null;
             ApplyLook();
         }
 
@@ -284,7 +305,7 @@ namespace Project.Contexts.Game.Items
 
         private void SetKeyAlpha(float alpha)
         {
-            _keyGlow.color = new Color(1f, 1f, 1f, alpha);
+            _keyGlow.color = new Color(KeyShade.r, KeyShade.g, KeyShade.b, KeyShade.a * alpha);
             var c = _key.color;
             _key.color = new Color(c.r, c.g, c.b, alpha);
         }

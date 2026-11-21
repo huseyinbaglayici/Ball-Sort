@@ -387,26 +387,52 @@ MonoBehaviour:
   BallWaveDuration: 0.16
   BallWaveStagger: 0.04
   BallWaveLand: 0.5
-  WinPopupDelay: 1.1
+  WinPopupDelay: 2.75
   CompleteGlowColor: {r: 1, g: 0.858, b: 0.179, a: 0.85}
   CompleteGlowIn: 0.12
   CompleteGlowHold: 0.1
   CompleteGlowOut: 0.6
-  Result:
-    WinDelay: 0.6
-    FlashSize: 1.1
+  Win:
+    CapStagger: 0.05
+    CapPulseScale: 1.35
+    CapPulseTime: 0.22
+    RingDelay: 0.05
+    RingFrom: 1.1
+    RingTo: 0.04
+    RingTime: 0.45
+    RingAspect: 0.3
+    RingTurn: 40
+    FlashSize: 0.9
     FlashAlpha: 0.8
     FlashTime: 0.35
-    RingFrom: 0.2
-    RingTo: 1.15
-    RingTime: 0.5
-    RingStagger: 0.08
-    RingAspect: 0.3
     DustCount: 60
     DustSpeed: {x: 3, y: 8}
     SparkCount: 24
     SparkSpeed: {x: 10, y: 16}
+    DimAlpha: 0.45
+    DimTime: 0.25
+    MascotDelay: 0.05
+    MascotTime: 0.55
+    MascotSize: 0.5
+    MascotRest: {x: 0, y: -0.02}
+    MascotFrom: {x: 0.75, y: -0.6}
+    MascotLean: 18
+    MascotSquash: {x: 1.12, y: 0.88}
+    MascotSquashTime: 0.09
+    MascotRecover: 0.22
+    MascotBob: 0.03
+    MascotBobPeriod: 1.4
+    TrailAlpha: 0.35
+    RibbonDelay: 0.1
+    RibbonTime: 0.32
+    RibbonWidth: 0.85
+    RibbonGap: 0.02
+    RibbonDrop: 0.1
+    RibbonFontSize: 18
+    AfterPanel: 0.5
+  Result:
     LoseDelay: 0.1
+    RingAspect: 0.3
     LoseRingFrom: 1.1
     LoseRingTo: 0.35
     LoseRingTime: 0.4
@@ -491,22 +517,32 @@ MonoBehaviour:
   ShutterFadeDuration: 0.1
   ShutterHopDuration: 0.56
   ShutterHopStagger: 0.24
-  ShutterFxSnapFrom: 1.6
-  ShutterFxSnapTo: 0.45
-  ShutterFxHorizonTime: 0.18
-  ShutterFxHorizonTo: 1.7
-  ShutterFxSparks: 6
-  ShutterFxSparkSpeed: {x: 2.5, y: 4}
-  ShutterFxSeamHeight: 0.09
-  ShutterFxSpillHeight: 0.9
-  ShutterFxSeamAlpha: 0.9
-  ShutterFxSpillAlpha: 0.35
-  ShutterFxRimHeight: 0.6
-  ShutterFxRimAlpha: 0.55
+  ShutterFxSnapFrom: 1.4
+  ShutterFxSnapTo: 0.55
+  ShutterFxSquash: {x: 1.12, y: 0.88}
+  ShutterFxHorizonTime: 0.22
+  ShutterFxHorizonTo: 1.6
+  ShutterFxFlashSize: 1
+  ShutterFxSparks: 5
+  ShutterFxSparkSpeed: {x: 3, y: 5.5}
+  ShutterFxPunch: 0.035
+  ShutterFxSeamHeight: 0.12
+  ShutterFxSeamAlpha: 0.7
+  ShutterFxSpillAlpha: 0.3
+  ShutterFxLinger: 0.25
+  ShutterFxRimHeight: 0.8
+  ShutterFxRimAlpha: 0.45
   FailReadableWindow: 1
   KeyUseScale: 1.25
   KeyUsePop: 0.2
   KeyUseFade: 0.4
+  KeyFlyToCentre: 0.26
+  KeyFlyToLock: 0.24
+  KeyFlyCentreScale: 2.3
+  KeyFlyLockScale: 1
+  KeyFlyArc: 2
+  KeyFlyInsertTime: 0.08
+  KeyFlyTurn: 0.1
   BombLitFadeIn: 0.24
   BombPulsePeriod: 0.48
   BombPulseFastPeriod: 0.22
