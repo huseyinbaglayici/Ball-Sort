@@ -4,11 +4,27 @@ using UnityEngine;
 
 namespace Project.Common.UI.PopUps
 {
-    // The prefab root needs a CanvasGroup and a "content" child that scales in.
+    public enum PopupEntrance
+    {
+        // Appears as is.
+        None,
+        // Panel settles from slightly large.
+        Settle,
+        // Panel bursts in from small, for wins.
+        Burst
+    }
+
+    // The prefab root needs a CanvasGroup and a "content" child that animates in.
+    // Dim and panel appear at once and close at once; only the panel scale moves.
     [RequireComponent(typeof(CanvasGroup))]
     public abstract class Popup : MonoBehaviour
     {
         [SerializeField] private RectTransform _content;
+        [SerializeField] private PopupEntrance _entrance = PopupEntrance.Settle;
+
+        // Subclasses may pick per show, inside OnShow.
+        protected PopupEntrance Entrance { get; set; }
+        protected float EntranceDelay { get; set; }
 
         private CanvasGroup _group;
 
@@ -21,33 +37,28 @@ namespace Project.Common.UI.PopUps
             if (_content == null) _content = (RectTransform)transform;
         }
 
-        internal async Awaitable ShowAsync(object args)
+        internal void Show(object args)
         {
             gameObject.SetActive(true);
             transform.SetAsLastSibling();
             IsOpen = true;
-            _group.interactable = false;
-            PrimeTween.Tween.StopAll(_group);
+            Entrance = _entrance;
+            EntranceDelay = 0f;
             OnShow(args);
-            _ = TweenPresets.PopupScaleIn(_content);
-            await TweenPresets.PopupDimIn(_group);
-            if (!IsOpen) return;
+            PrimeTween.Tween.StopAll(_content);
+            _content.localScale = Vector3.one;
+            if (Entrance == PopupEntrance.Settle) TweenPresets.PopupSettle(_content, EntranceDelay);
+            else if (Entrance == PopupEntrance.Burst) TweenPresets.PopupBurst(_content);
+            _group.alpha = 1f;
             _group.interactable = true;
             _group.blocksRaycasts = true;
         }
 
         // Safe to call twice.
-        public async void Close()
+        public void Close()
         {
             if (!IsOpen) return;
-            IsOpen = false;
-            _group.interactable = false;
-            PrimeTween.Tween.StopAll(_content);
-            PrimeTween.Tween.StopAll(_group);
-            await TweenPresets.PopupDimOut(_group);
-            gameObject.SetActive(false);
-            OnHidden();
-            Closed?.Invoke(this);
+            CloseImmediately();
         }
 
         internal void CloseImmediately()
@@ -55,7 +66,7 @@ namespace Project.Common.UI.PopUps
             if (!IsOpen) return;
             IsOpen = false;
             PrimeTween.Tween.StopAll(_content);
-            PrimeTween.Tween.StopAll(_group);
+            _content.localScale = Vector3.one;
             gameObject.SetActive(false);
             OnHidden();
             Closed?.Invoke(this);

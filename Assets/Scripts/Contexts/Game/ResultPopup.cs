@@ -111,6 +111,9 @@ namespace Project.Contexts.Game
             _result = args is ResultArgs r ? r : default;
             var loc = Services.Get<LocalizationService>();
             var won = _result.Won;
+            // Wins burst in; a fail panel settles in after a short beat.
+            Entrance = won ? PopupEntrance.Burst : PopupEntrance.Settle;
+            EntranceDelay = won ? 0f : 0.05f;
             var layout = won ? _winLayout : _lossLayout;
             _frameHeight = layout.x;
             ((RectTransform)_primary.transform).anchoredPosition = new Vector2(0f, layout.y);

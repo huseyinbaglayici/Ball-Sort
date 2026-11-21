@@ -36,7 +36,7 @@ namespace Project.Common.UI.PopUps
             if (_current != null) _current.CloseImmediately();
         }
 
-        private async void Open(Popup prefab, object args)
+        private void Open(Popup prefab, object args)
         {
             if (!_instances.TryGetValue(prefab, out var popup) || popup == null)
             {
@@ -48,7 +48,7 @@ namespace Project.Common.UI.PopUps
 
             _current = popup;
             _audio.PlayOneShotSound("open");
-            await popup.ShowAsync(args);
+            popup.Show(args);
         }
 
         private void OnClosed(Popup popup)
