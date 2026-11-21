@@ -35,6 +35,15 @@ namespace Project.Contexts.Game.Preview
         private float _replayedAt = -1f;
         private GUIStyle _button, _label;
         private bool _boosters;
+        // Shutter section: locked tubes in the open sample (1, 4, or a tall 8), 0 when off.
+        private int _shutterTubes;
+        private bool _loop;
+        private float _openedAt = -1f;
+        // Win section: a solved board whose last tube completes as the level-won beat plays.
+        private bool _win;
+        private float _wonAt = -1f;
+        // Loop restarts after the open has played out and rested a moment.
+        private const float LoopRest = 1.6f;
         private SortBoard _model;
         private LevelData _level;
         private int _selected = -1;
@@ -69,7 +78,7 @@ namespace Project.Contexts.Game.Preview
                 _factory.Release(tube);
             }
             _tubes.Clear();
-            if (_boosters) return;
+            if (_boosters || _shutterTubes > 0 || _win) return;
 
             AddTube(-1, 4, new[] { 1, 2, 1 });
             var full = new int[_size];
@@ -125,6 +134,7 @@ namespace Project.Contexts.Game.Preview
             _selected = -1;
             if (_level == null) _level = ScriptableObject.CreateInstance<LevelData>();
             _level.Bottles.Clear();
+            _level.Lockboxes.Clear();
             int[][] stacks = { new[] { 1, 1, 1 }, new[] { 2, 2, 1 }, new[] { 2, 2 }, new int[0] };
             for (var b = 0; b < stacks.Length; b++)
             {
@@ -136,8 +146,112 @@ namespace Project.Contexts.Game.Preview
             _boardView.Build(_level, 1, _model, _factory, _palette);
         }
 
+        // A key ball in the first tube; the next tubes sit under one shutter.
+        private void BuildShutterBoard()
+        {
+            _selected = -1;
+            _openedAt = -1f;
+            if (_level == null) _level = ScriptableObject.CreateInstance<LevelData>();
+            _level.Bottles.Clear();
+            _level.Lockboxes.Clear();
+            var tall = _shutterTubes > 4;
+            var locked = tall ? 1 : _shutterTubes;
+            var keyTube = BottleData.CreateEmpty(4, new Vector2(0f, 0f));
+            // Under a ball, or the box opens as soon as the board is built.
+            keyTube.Slots[0] = new SlotData { Color = 1 };
+            keyTube.Slots[1] = new SlotData { Color = 1, Key = "k" };
+            keyTube.Slots[2] = new SlotData { Color = 2 };
+            _level.Bottles.Add(keyTube);
+            var box = new LockboxData { Id = "k" };
+            for (var t = 0; t < locked; t++)
+            {
+                var capacity = tall ? 8 : 4;
+                var bottle = BottleData.CreateEmpty(capacity, new Vector2(t + 1, 0f));
+                var fill = tall ? 5 : 2 + t % 2;
+                for (var i = 0; i < fill; i++) bottle.Slots[i] = new SlotData { Color = (i + t) % 2 + 1 };
+                box.Bottles.Add(_level.Bottles.Count);
+                _level.Bottles.Add(bottle);
+            }
+            _level.Lockboxes.Add(box);
+            var spare = BottleData.CreateEmpty(4, new Vector2(locked + 1, 0f));
+            spare.Slots[0] = new SlotData { Color = 2 };
+            _level.Bottles.Add(spare);
+            _model = new SortBoard(_level);
+            _boardView.Build(_level, 20, _model, _factory, _palette);
+        }
+
+        // The game's own open: the ball over the key moves to the spare tube, the key reaches the mouth and opens the box.
+        private void OpenShutters()
+        {
+            if (_model == null || _boardView.IsAnimating) return;
+            Move(0, _model.BottleCount - 1);
+            _openedAt = Time.time;
+        }
+
+        private void Update()
+        {
+            if (!_loop) return;
+            if (_win)
+            {
+                var winCycle = WinFx.PanelAt(_config, 4) + _config.Win.AfterPanel + LoopRest;
+                if (_wonAt >= 0f && Time.time - _wonAt < winCycle) return;
+                PlayWin();
+                return;
+            }
+            if (_shutterTubes == 0) return;
+            var cycle = KeyFlightFx.Duration(_config) + _config.ShutterClearTime + _config.ShutterFadeDuration + LoopRest;
+            if (_openedAt >= 0f && Time.time - _openedAt < cycle) return;
+            BuildShutterBoard();
+            OpenShutters();
+        }
+
+        // Four full tubes; three are already capped, the fourth completes now and the win beat follows as in the game.
+        private void PlayWin()
+        {
+            _selected = -1;
+            if (_level == null) _level = ScriptableObject.CreateInstance<LevelData>();
+            _level.Bottles.Clear();
+            _level.Lockboxes.Clear();
+            for (var b = 0; b < 4; b++)
+            {
+                var bottle = BottleData.CreateEmpty(4, new Vector2(b, 0f));
+                for (var i = 0; i < 4; i++) bottle.Slots[i] = new SlotData { Color = b + 1 };
+                _level.Bottles.Add(bottle);
+            }
+            _model = new SortBoard(_level);
+            _boardView.Build(_level, 1, _model, _factory, _palette);
+            for (var b = 0; b < 3; b++) _boardView.SetCompleted(b, true, celebrate: false);
+            _boardView.SetCompleted(3, true);
+            _boardView.PlayResult(true);
+            _wonAt = Time.time;
+        }
+
+        private void ShowWin()
+        {
+            _boosters = false;
+            _shutterTubes = 0;
+            _loop = false;
+            _win = true;
+            _camera.orthographicSize = MinOrthoSize;
+            Build();
+            PlayWin();
+        }
+
+        private void ShowShutters(int tubes)
+        {
+            _boosters = false;
+            _win = false;
+            _shutterTubes = tubes;
+            _camera.orthographicSize = MinOrthoSize;
+            Build();
+            BuildShutterBoard();
+        }
+
         private void ShowSection(bool boosters)
         {
+            _shutterTubes = 0;
+            _loop = false;
+            _win = false;
             _boosters = boosters;
             if (!boosters) _boardView.Clear();
             _camera.orthographicSize = MinOrthoSize;
@@ -211,9 +325,22 @@ namespace Project.Contexts.Game.Preview
             _button ??= new GUIStyle(GUI.skin.button) { fontSize = 22 };
             _label ??= new GUIStyle(GUI.skin.label) { fontSize = 22, normal = { textColor = Color.white } };
 
-            var top = (width - 40f) / 2f;
-            if (GUI.Button(new Rect(20f, 20f, top - 8f, 56f), _boosters ? "Finish" : "[Finish]", _button)) ShowSection(false);
+            var top = (width - 40f) / 4f;
+            var finish = !_boosters && _shutterTubes == 0 && !_win;
+            if (GUI.Button(new Rect(20f, 20f, top - 8f, 56f), finish ? "[Finish]" : "Finish", _button)) ShowSection(false);
             if (GUI.Button(new Rect(20f + top, 20f, top - 8f, 56f), _boosters ? "[Boosters]" : "Boosters", _button)) ShowSection(true);
+            if (GUI.Button(new Rect(20f + top * 2f, 20f, top - 8f, 56f), _shutterTubes > 0 ? "[Shutter]" : "Shutter", _button)) ShowShutters(1);
+            if (GUI.Button(new Rect(20f + top * 3f, 20f, top - 8f, 56f), _win ? "[Win]" : "Win", _button)) ShowWin();
+            if (_win)
+            {
+                WinGui(width);
+                return;
+            }
+            if (_shutterTubes > 0)
+            {
+                ShutterGui(width);
+                return;
+            }
             if (_boosters)
             {
                 BoosterGui(width);
@@ -240,6 +367,55 @@ namespace Project.Contexts.Game.Preview
             }
             y += 64f;
             if (GUI.Button(new Rect(20f, y, width - 40f, 64f), "Replay", _button)) Replay();
+        }
+
+        private void WinGui(float width)
+        {
+            var y = GuiHeight - 200f;
+            var third = (width - 40f) / 3f;
+            var since = _wonAt < 0f ? "-" : $"{Time.time - _wonAt:0.00}s";
+            GUI.Label(new Rect(20f, y - 76f, width - 40f, 36f), "Win: caps ripple, orbit sweep, burst, mascot, ribbon; the panel would open at the marked time", _label);
+            GUI.Label(new Rect(20f, y - 40f, width - 40f, 36f), $"speed {Time.timeScale:0.##}x   t {since}   panel at {WinFx.PanelAt(_config, 4):0.00}s", _label);
+            if (GUI.Button(new Rect(20f, y, third - 8f, 56f), "Replay", _button)) PlayWin();
+            if (GUI.Button(new Rect(20f + third, y, third - 8f, 56f), _loop ? "[Loop]" : "Loop", _button)) _loop = !_loop;
+            if (GUI.Button(new Rect(20f + third * 2f, y, third - 8f, 56f), _slow ? "[0.25x]" : "0.25x", _button))
+            {
+                _slow = !_slow;
+                Time.timeScale = _slow ? SlowMotion : 1f;
+            }
+        }
+
+        private void ShutterGui(float width)
+        {
+            var y = GuiHeight - 270f;
+            var third = (width - 40f) / 3f;
+            var since = _openedAt < 0f ? "-" : $"{Time.time - _openedAt:0.00}s";
+            GUI.Label(new Rect(20f, y - 76f, width - 40f, 36f), "Open: the key leaves its ball, holds at the centre, turns in the lock", _label);
+            GUI.Label(new Rect(20f, y - 40f, width - 40f, 36f), $"speed {Time.timeScale:0.##}x   t {since}", _label);
+            if (GUI.Button(new Rect(20f, y, third - 8f, 56f), _shutterTubes == 1 ? "[1 tube]" : "1 tube", _button)) ShowShutters(1);
+            if (GUI.Button(new Rect(20f + third, y, third - 8f, 56f), _shutterTubes == 4 ? "[4 tubes]" : "4 tubes", _button)) ShowShutters(4);
+            if (GUI.Button(new Rect(20f + third * 2f, y, third - 8f, 56f), _shutterTubes == 8 ? "[Tall]" : "Tall", _button)) ShowShutters(8);
+            y += 64f;
+            if (GUI.Button(new Rect(20f, y, third - 8f, 56f), "Open", _button)) OpenShutters();
+            if (GUI.Button(new Rect(20f + third, y, third - 8f, 56f), "Reset", _button))
+            {
+                _loop = false;
+                BuildShutterBoard();
+            }
+            if (GUI.Button(new Rect(20f + third * 2f, y, third - 8f, 56f), _loop ? "[Loop]" : "Loop", _button)) _loop = !_loop;
+            y += 64f;
+            // Key: closes the shutter again and replays the whole key flight at once.
+            var half = (width - 40f) / 2f;
+            if (GUI.Button(new Rect(20f, y, half - 8f, 56f), "Key", _button))
+            {
+                BuildShutterBoard();
+                OpenShutters();
+            }
+            if (GUI.Button(new Rect(20f + half, y, half - 8f, 56f), _slow ? "[0.25x]" : "0.25x", _button))
+            {
+                _slow = !_slow;
+                Time.timeScale = _slow ? SlowMotion : 1f;
+            }
         }
 
         private void BoosterGui(float width)

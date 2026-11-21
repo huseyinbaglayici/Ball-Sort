@@ -64,7 +64,9 @@ namespace Project.Contexts.Game.Sort
         private bool[] _capped = Array.Empty<bool>();
         // Completion effect still playing beside each bottle.
         private CompleteFx[] _fx = Array.Empty<CompleteFx>();
-        private ResultFx _result;
+        // The win or fail beat still playing over the board, and the tube that completed last.
+        private Item _result;
+        private int _lastCompleted = -1;
         // Level grid positions, then capacities of every bottle (level ones first, added ones after).
         private readonly List<Vector2> _positions = new();
         private readonly List<int> _capacities = new();
@@ -105,6 +107,7 @@ namespace Project.Contexts.Game.Sort
                 _capacities.Add(board.Capacity(b));
             }
             _levelNumber = levelNumber;
+            _lastCompleted = -1;
 
             var camera = Camera.main;
             var origins = Place(out var rises, out var scale);
@@ -135,6 +138,31 @@ namespace Project.Contexts.Game.Sort
             for (var b = 0; b < _bottles.Count; b++)
                 if (board.IsCompleted(b)) SetCompleted(b, true, celebrate: false);
             Sync(board);
+        }
+
+        // Level start and restart: tubes settle into their seats with a small rise and swell, left to right; barely seen.
+        private const float EntranceRise = 0.08f;
+        private const float EntranceScale = 0.96f;
+        private const float EntranceTime = 0.2f;
+        private const float EntranceStagger = 0.02f;
+
+        // Taps wait for the last tube to settle.
+        public void PlayEntrance()
+        {
+            if (_bottles.Count == 0) return;
+            var order = new List<BottleItem>(_bottles);
+            order.Sort((p, q) => p.transform.localPosition.x.CompareTo(q.transform.localPosition.x));
+            for (var i = 0; i < order.Count; i++)
+            {
+                var root = order[i].transform;
+                var seat = root.localPosition;
+                var delay = i * EntranceStagger;
+                root.localPosition = seat - Vector3.up * EntranceRise;
+                root.localScale = Vector3.one * EntranceScale;
+                PrimeTween.Tween.LocalPositionY(root, seat.y - EntranceRise, seat.y, EntranceTime, PrimeTween.Ease.OutCubic, startDelay: delay);
+                PrimeTween.Tween.Scale(root, EntranceScale, 1f, EntranceTime, PrimeTween.Ease.OutCubic, startDelay: delay);
+            }
+            _settledAt = Time.time + (order.Count - 1) * EntranceStagger + EntranceTime;
         }
 
         // Call only while no ball is flying.
@@ -529,6 +557,7 @@ namespace Project.Contexts.Game.Sort
         {
             if (_capped[bottle] == completed) return;
             _capped[bottle] = completed;
+            if (completed) _lastCompleted = bottle;
             _bottles[bottle].SetCompleted(completed, celebrate);
             StopFx(bottle);
             if (completed && celebrate) PlayFx(bottle);
@@ -559,16 +588,33 @@ namespace Project.Contexts.Game.Sort
                 low = Mathf.Min(low, p.y);
                 high = Mathf.Max(high, p.y + bottle.MouthLocalY);
             }
-            var fx = _factory.Get<ResultFx>(ItemType.ResultFx, transform);
-            fx.transform.localPosition = new Vector3((left + right) * 0.5f, (low + high) * 0.5f, 0f);
+            var centre = new Vector3((left + right) * 0.5f, (low + high) * 0.5f, 0f);
+            var width = right - left + TubeArt.Size.x;
+            if (won)
+            {
+                var fx = Seat(_factory.Get<WinFx>(ItemType.WinFx, transform), centre);
+                fx.Play(_bottles, _lastCompleted, width, WinPopupDelay, _animation, done => Released(done));
+            }
+            else
+            {
+                var fx = Seat(_factory.Get<ResultFx>(ItemType.ResultFx, transform), centre);
+                fx.Play(width, _animation, done => Released(done));
+            }
+        }
+
+        private T Seat<T>(T fx, Vector3 centre) where T : Item
+        {
+            fx.transform.localPosition = centre;
             fx.transform.localRotation = Quaternion.identity;
             fx.transform.localScale = Vector3.one;
             _result = fx;
-            fx.Play(won, right - left + TubeArt.Size.x, _animation, done =>
-            {
-                if (_result == done) _result = null;
-                _factory.Release(done);
-            });
+            return fx;
+        }
+
+        private void Released(Item done)
+        {
+            if (_result == done) _result = null;
+            _factory.Release(done);
         }
 
         private void StopResult()
