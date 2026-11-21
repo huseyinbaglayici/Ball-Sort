@@ -115,6 +115,9 @@ namespace Project.Contexts.Game.Items
             {
                 var path = PathUnder(_visual, _layers[i].transform);
                 _exitLayers[i] = (path.Length == 0 ? _exitVisual : _exitVisual.Find(path)).GetComponent<SpriteRenderer>();
+                // The copy keeps the layer's block values, such as the core's tone.
+                _layers[i].GetPropertyBlock(_block ??= new MaterialPropertyBlock());
+                _exitLayers[i].SetPropertyBlock(_block);
             }
         }
 

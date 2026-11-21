@@ -10,8 +10,11 @@ Shader "Project/Orb Core"
         _ShadeFloor ("Shade floor", Range(0, 1)) = 0.9
         _ShadeGain ("Shade gain", Range(0, 1)) = 0.12
         _LightDir ("Light direction", Vector) = (-0.55, 0.65, 0.52, 0)
-        _RimLight ("Rim light", Range(0, 1)) = 0.18
+        _RimLight ("Rim light", Range(0, 1)) = 0.3
+        _EdgeGlow ("Edge glow", Range(0, 1)) = 0.25
         _BottomShade ("Bottom shade", Range(0, 1)) = 0.22
+        [PerRendererData] _Shade ("Brightness scale", Float) = 1
+        [PerRendererData] _Sat ("Saturation scale", Float) = 1
         _Specular ("Highlight", Range(0, 1)) = 0.22
         _SpecularPos ("Highlight position", Vector) = (-0.38, 0.42, 0.045, 0)
         _OutlineStart ("Edge line start", Range(0.5, 1)) = 0.9
@@ -41,8 +44,8 @@ Shader "Project/Orb Core"
             #pragma fragment frag
             #include "OrbCommon.cginc"
 
-            float _Radius, _Saturation, _Contrast, _ShadeFloor, _ShadeGain, _RimLight, _BottomShade, _Specular;
-            float _OutlineStart, _OutlineWidth, _OutlineTone;
+            float _Radius, _Saturation, _Contrast, _ShadeFloor, _ShadeGain, _RimLight, _EdgeGlow, _BottomShade, _Specular;
+            float _OutlineStart, _OutlineWidth, _OutlineTone, _Shade, _Sat;
             float4 _LightDir, _SpecularPos;
 
             fixed4 frag(OrbV2f i) : SV_Target
@@ -55,8 +58,8 @@ Shader "Project/Orb Core"
                 float nz = sqrt(saturate(1 - saturate(r) * saturate(r)));
 
                 fixed lum = dot(tex.rgb, fixed3(0.299, 0.587, 0.114));
-                fixed3 rgb = saturate(lum + (tex.rgb - lum) * _Saturation);
-                rgb = saturate((rgb - 0.5) * _Contrast + 0.5);
+                fixed3 rgb = saturate(lum + (tex.rgb - lum) * _Saturation * _Sat);
+                rgb = saturate((rgb - 0.5) * _Contrast + 0.5) * _Shade;
                 fixed3 vivid = rgb;
 
                 float3 light = normalize(_LightDir.xyz);
@@ -67,6 +70,10 @@ Shader "Project/Orb Core"
                 rgb = saturate(rgb + rim * fixed3(0.9, 0.95, 1.0) * _RimLight);
                 float bottom = pow(saturate((r - 0.55) / 0.45), 1.5) * saturate(-n.y);
                 rgb *= 1 - _BottomShade * bottom;
+
+                // A soft lit band just inside the edge line, in the color's own lighter tone.
+                float band = smoothstep(0.62, 0.84, r) * (1 - smoothstep(0.86, 0.92, r));
+                rgb = saturate(rgb + band * _EdgeGlow * (vivid * 0.6 + 0.4));
 
                 float2 d = n - _SpecularPos.xy;
                 float spec = exp(-dot(d, d) / _SpecularPos.z);

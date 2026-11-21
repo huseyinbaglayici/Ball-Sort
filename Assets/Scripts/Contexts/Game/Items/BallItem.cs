@@ -780,6 +780,7 @@ namespace Project.Contexts.Game.Items
             _outerGlow.sprite = orb.OuterGlow;
             _core.sprite = orb.Core;
             _innerGlow.sprite = orb.InnerGlow;
+            OrbTone.Apply(_core, orb);
         }
     }
 }

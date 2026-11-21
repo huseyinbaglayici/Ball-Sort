@@ -123,7 +123,10 @@ namespace Project.Editor
                 }
                 sprites[i] = ImportOrbSprite(path);
             }
-            return new OrbSkin { OuterGlow = sprites[0], Core = sprites[1], InnerGlow = sprites[2] };
+            var table = OrbColorTable.IndexOf(name);
+            var shade = table >= 0 ? OrbColorTable.Entries[table].Shade : 1f;
+            var saturation = table >= 0 ? OrbColorTable.Entries[table].Saturation : 1f;
+            return new OrbSkin { OuterGlow = sprites[0], Core = sprites[1], InnerGlow = sprites[2], Shade = shade, Saturation = saturation };
         }
 
         // Hue from the color; saturation and value scaled by the color's.
@@ -223,6 +226,8 @@ namespace Project.Editor
             property.FindPropertyRelative(nameof(OrbSkin.OuterGlow)).objectReferenceValue = skin.OuterGlow;
             property.FindPropertyRelative(nameof(OrbSkin.Core)).objectReferenceValue = skin.Core;
             property.FindPropertyRelative(nameof(OrbSkin.InnerGlow)).objectReferenceValue = skin.InnerGlow;
+            property.FindPropertyRelative(nameof(OrbSkin.Shade)).floatValue = skin.Shade;
+            property.FindPropertyRelative(nameof(OrbSkin.Saturation)).floatValue = skin.Saturation;
         }
 
         private static GameObject CreateBottle()

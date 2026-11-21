@@ -39,6 +39,7 @@ namespace Project.Contexts.Game.Items
             _badgeOuterGlow.sprite = orb.OuterGlow;
             _badgeCore.sprite = orb.Core;
             _badgeInnerGlow.sprite = orb.InnerGlow;
+            OrbTone.Apply(_badgeCore, orb);
             _haloAlpha = config.OrbHaloAlpha;
             SetIceAlpha(1f);
             _melt.enabled = false;

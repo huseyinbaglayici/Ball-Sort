@@ -31,13 +31,16 @@ Material:
     m_Floats:
     - _BottomShade: 0.22
     - _Contrast: 1.08
+    - _EdgeGlow: 0.25
     - _OutlineStart: 0.9
     - _OutlineTone: 0.42
     - _OutlineWidth: 0.08
     - _PortalHeat: 0
     - _Radius: 0.293
-    - _RimLight: 0.18
+    - _RimLight: 0.3
+    - _Sat: 1
     - _Saturation: 1.45
+    - _Shade: 1
     - _ShadeFloor: 0.9
     - _ShadeGain: 0.12
     - _Specular: 0.22

@@ -10,5 +10,8 @@ namespace Project.Contexts.Game.Items
         public Sprite OuterGlow;
         public Sprite Core;
         public Sprite InnerGlow;
+        // Core shader brightness and saturation scales for this color.
+        public float Shade;
+        public float Saturation;
     }
 }
