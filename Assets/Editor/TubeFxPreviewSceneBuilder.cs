@@ -43,12 +43,19 @@ namespace Project.Editor
             camera.backgroundColor = Background;
             camera.transform.position = new Vector3(0f, 0f, -10f);
 
+            // The booster section drives a real board.
+            var boardView = new GameObject("BoosterBoard").AddComponent<BoardView>();
+            var boardSo = new SerializedObject(boardView);
+            boardSo.FindProperty("_animation").objectReferenceValue = config;
+            boardSo.ApplyModifiedPropertiesWithoutUndo();
+
             var preview = new GameObject("TubeFxPreview").AddComponent<TubeFxPreview>();
             var so = new SerializedObject(preview);
             so.FindProperty("_registry").objectReferenceValue = registry;
             so.FindProperty("_palette").objectReferenceValue = palette;
             so.FindProperty("_config").objectReferenceValue = config;
             so.FindProperty("_camera").objectReferenceValue = camera;
+            so.FindProperty("_boardView").objectReferenceValue = boardView;
             so.ApplyModifiedPropertiesWithoutUndo();
 
             EditorSceneManager.SaveScene(scene, ScenePath);

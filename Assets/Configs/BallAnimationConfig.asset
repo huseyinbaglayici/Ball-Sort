@@ -392,6 +392,71 @@ MonoBehaviour:
   CompleteGlowIn: 0.12
   CompleteGlowHold: 0.1
   CompleteGlowOut: 0.6
+  Result:
+    WinDelay: 0.6
+    FlashSize: 1.1
+    FlashAlpha: 0.8
+    FlashTime: 0.35
+    RingFrom: 0.2
+    RingTo: 1.15
+    RingTime: 0.5
+    RingStagger: 0.08
+    RingAspect: 0.3
+    DustCount: 60
+    DustSpeed: {x: 3, y: 8}
+    SparkCount: 24
+    SparkSpeed: {x: 10, y: 16}
+    LoseDelay: 0.1
+    LoseRingFrom: 1.1
+    LoseRingTo: 0.35
+    LoseRingTime: 0.4
+    LoseRingAlpha: 0.9
+    LoseColor: {r: 0.55, g: 0.5, b: 0.95, a: 1}
+    MoteCount: 18
+  Boosters:
+    UncapTime: 0.16
+    UncapLift: 0.5
+    AppearTime: 1.6
+    DescentHeight: 3.2
+    DescentSide: 0.5
+    DescentScaleFrom: 0.82
+    DescentFadeShare: 0.45
+    LandSquash: {x: 1.05, y: 0.95}
+    LandSquashTime: 0.06
+    LandSettleTime: 0.12
+    RelayoutTime: 0.34
+    TouchRingWidth: 2.7
+    TouchRingAspect: 0.28
+    TouchRingY: 0.12
+    TouchRingOpen: 0.08
+    TouchRingTighten: 0.86
+    TouchRingTime: 0.6
+    TouchLineNear: {fileID: 21300000, guid: 14cce17ac7adb5a48b9a1aab65c00913, type: 3}
+    TouchLineFar: {fileID: 21300000, guid: dd57d46adbf109f4e89776de9cdedf97, type: 3}
+    TouchGlowNear: {fileID: 21300000, guid: abe2f264e84969d42a5299a05079b9c8, type: 3}
+    TouchGlowFar: {fileID: 21300000, guid: 3d8e88c094753b6498ee0706802cc968, type: 3}
+    Glint: {fileID: 21300000, guid: c97f3e10e9456f74589ba4ed0b9a93d6, type: 3}
+    GlintSize: 0.36
+    TouchLineColor: {r: 0.86, g: 0.96, b: 1, a: 1}
+    TouchGlowColor: {r: 0.55, g: 0.35, b: 1, a: 1}
+    GlintColor: {r: 1, g: 0.84, b: 0.4, a: 1}
+    Hint: 0
+    IdleTubeBreath: 0.012
+    IdleBallBreath: 0.025
+    IdlePeriod: 1.2
+    IdleBallPhase: 0.08
+    FocusTargetTint: {r: 1, g: 1, b: 1, a: 1}
+    FocusDimTint: {r: 0.35, g: 0.35, b: 0.35, a: 1}
+    FocusTime: 0.2
+    SlotRim: {fileID: 21300000, guid: da89b28c977d9834794c72b8b2200fb6, type: 3}
+    SlotInner: {fileID: 21300000, guid: 85ab5708378b78d419e484c147904da9, type: 3}
+    SlotGloss: {fileID: 21300000, guid: a523c56e44ae2674aa018a3cc3faef4b, type: 3}
+    SlotRimColor: {r: 0.8, g: 0.95, b: 1, a: 1}
+    SlotInnerColor: {r: 0.55, g: 0.35, b: 1, a: 0.55}
+    SlotGlossColor: {r: 1, g: 1, b: 1, a: 0.35}
+    SlotBreathAlpha: 0.25
+    SlotBreathScale: 0.02
+    HintFadeTime: 0.12
   HiddenShakeDuration: 0.56
   HiddenShakeScale: 1.06
   HiddenShakeDegrees: 6
@@ -413,19 +478,20 @@ MonoBehaviour:
   MeltHopDuration: 0.64
   MeltHopStagger: 0.36
   ObstacleHopHeight: 0.11578947
-  ShutterShakeDuration: 1.4
+  ShutterShakeDuration: 0.08
   ShutterShakeDegrees: 12
-  ShutterShakeCycles: 5
+  ShutterShakeCycles: 2
   ShutterRattle: 0.007894737
-  LockDropDuration: 0.88
+  LockDropDuration: 0.2
   LockDropDistance: 0.47368422
   LockDropDegrees: -20
-  ShutterRollDelay: 0.44
-  ShutterRollDuration: 1.44
+  ShutterRollDelay: 0.02
+  ShutterRollDuration: 0.25
   ShutterRollDistance: 4.4736843
-  ShutterFadeDuration: 0.48
+  ShutterFadeDuration: 0.1
   ShutterHopDuration: 0.56
   ShutterHopStagger: 0.24
+  FailReadableWindow: 1
   KeyUseScale: 1.25
   KeyUsePop: 0.2
   KeyUseFade: 0.4

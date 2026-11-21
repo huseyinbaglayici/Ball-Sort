@@ -29,6 +29,10 @@ MonoBehaviour:
     Prefab: {fileID: 6521750241373970873, guid: 55fb940da1325bc4095d2c3cdeb2dd70, type: 3}
     WarmCount: 2
     MaxCount: 6
+  - Type: 9
+    Prefab: {fileID: 192401748083582821, guid: eeb9cb6ce07a63b4cb8c424beaaf05ef, type: 3}
+    WarmCount: 0
+    MaxCount: 2
   - Type: 5
     Prefab: {fileID: 6969854683883615792, guid: cf9f1c8383cd2d84ab05e2ec6bc83725, type: 3}
     WarmCount: 0

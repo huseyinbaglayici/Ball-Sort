@@ -187,7 +187,7 @@ namespace Project.Contexts.Game.Sort
 
         [Header("Completed bottle")]
         [Tooltip("Front glass color while the tube is not completed; it is additive, so grey dims it. Completion brings it back to white.")]
-        public Color GlassRestTint = new(0.8f, 0.8f, 0.8f, 1f);
+        public Color GlassRestTint = new(0.5f, 0.5f, 0.5f, 1f);
         [Tooltip("Time for the front glass to brighten to white when the tube is completed, from the last landing.")]
         public float GlassCompleteBrighten = 0.25f;
         [Tooltip("Charge before the victory hop: the tube twitches and slowly rises for this long after the last landing.")]
@@ -236,10 +236,18 @@ namespace Project.Contexts.Game.Sort
         [Tooltip("When the last tube completes, the win popup waits this long so the completion plays out.")]
         public float WinPopupDelay = 1.1f;
         [Tooltip("As the cap lands, an additive glow around the tube flashes up in this color and fades out.")]
-        public Color CompleteGlowColor = new(1f, 0.858f, 0.179f, 1f);
+        public Color CompleteGlowColor = new(1f, 0.858f, 0.179f, 0.85f);
         public float CompleteGlowIn = 0.12f;
         public float CompleteGlowHold = 0.1f;
         public float CompleteGlowOut = 0.6f;
+
+        [Header("Result")]
+        [Tooltip("The orbital burst before the win panel and the small contraction when the fail panel opens.")]
+        public ResultFxSettings Result = new();
+
+        [Header("Boosters")]
+        [Tooltip("Undo's cap-off, the extra tube's descent and the Free Move target hints.")]
+        public BoosterFxSettings Boosters = new();
 
         [Header("Hidden ball")]
         [Tooltip("Before it breaks the shell trembles, harder toward the end: time, peak scale, peak tilt in degrees and peak side shift in board units.")]
@@ -277,22 +285,35 @@ namespace Project.Contexts.Game.Sort
 
         [Header("Shutter")]
         [Tooltip("The padlock swings from its shackle, growing to this angle, while the shutter ticks sideways by ShutterRattle.")]
-        public float ShutterShakeDuration = 1.4f;
+        public float ShutterShakeDuration = 0.08f;
         public float ShutterShakeDegrees = 12f;
-        public float ShutterShakeCycles = 5f;
+        public float ShutterShakeCycles = 2f;
         public float ShutterRattle = 1.5f / 190f;
-        [Tooltip("The opened padlock drops this far, turns and fades.")]
-        public float LockDropDuration = 0.88f;
+        [Tooltip("The opened padlock drops this far, turns and fades, alongside the roll.")]
+        public float LockDropDuration = 0.2f;
         public float LockDropDistance = 90f / 190f;
         public float LockDropDegrees = -20f;
-        [Tooltip("The curtain starts rolling up this long into the drop and slides up ShutterRollDistance behind the housing.")]
-        public float ShutterRollDelay = 0.44f;
-        public float ShutterRollDuration = 1.44f;
+        [Tooltip("Pause after the shake, then the curtain rolls up ShutterRollDistance; the tubes are usable when it is up.")]
+        public float ShutterRollDelay = 0.02f;
+        public float ShutterRollDuration = 0.25f;
         public float ShutterRollDistance = 850f / 190f;
         [Tooltip("Then housing and frame fade out.")]
-        public float ShutterFadeDuration = 0.48f;
+        public float ShutterFadeDuration = 0.1f;
         public float ShutterHopDuration = 0.56f;
         public float ShutterHopStagger = 0.24f;
+
+        [Header("Fail")]
+        [Tooltip("The fail board stays readable this long after its last meaningful change before the panel opens.")]
+        public float FailReadableWindow = 1f;
+
+        // From the key to the tubes being usable (curtain up).
+        public float ShutterClearTime => ShutterShakeDuration + ShutterRollDelay + ShutterRollDuration;
+
+        // From a reveal's start to its color fully shown.
+        public float HiddenReadableTime => HiddenShakeDuration + HiddenOrbDelay + HiddenOrbDuration;
+
+        // From the explosion's start to the blast fully in.
+        public float ExplodeReadableTime => ExplodeShake + ExplodeIn;
         [Tooltip("The used key grows to this scale with a small overshoot, then fades.")]
         public float KeyUseScale = 1.25f;
         public float KeyUsePop = 0.2f;

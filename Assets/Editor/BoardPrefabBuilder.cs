@@ -53,6 +53,8 @@ namespace Project.Editor
             var question = SavePrefab(CreateBall(ItemType.QuestionMark, back, front, skins[0], art), "BallQuestionMark");
             var completeFx = CompleteFxBuilder.Build();
             if (completeFx == null) return;
+            var resultFx = ResultFxBuilder.Build();
+            if (resultFx == null) return;
             var frozen = SavePrefab(CreateFrozenTube(art, back, front, skins[0]), "FrozenTube");
             var shutter = SavePrefab(CreateShutter(art), "Shutter");
             var blast = SavePrefab(CreateBombBlast(art), "BombBlast");
@@ -63,12 +65,13 @@ namespace Project.Editor
                 (ItemType.Ball, ball.GetComponent<Item>(), 40, 64),
                 (ItemType.QuestionMark, question.GetComponent<Item>(), 24, 64),
                 (ItemType.CompleteFx, completeFx, 2, 6),
+                (ItemType.ResultFx, resultFx, 0, 2),
                 (ItemType.FrozenTube, frozen.GetComponent<Item>(), 0, 8),
                 (ItemType.Shutter, shutter.GetComponent<Item>(), 0, 8),
                 (ItemType.BombBlast, blast.GetComponent<Item>(), 0, 4)
             });
             AssetDatabase.SaveAssets();
-            Debug.Log("[BoardPrefabBuilder] Bottle, Ball, BallQuestionMark, CompleteFx, FrozenTube, Shutter, BombBlast prefabs, LevelPalette and ItemRegistry are ready.");
+            Debug.Log("[BoardPrefabBuilder] Bottle, Ball, BallQuestionMark, CompleteFx, ResultFx, FrozenTube, Shutter, BombBlast prefabs, LevelPalette and ItemRegistry are ready.");
         }
 
         // Indexed by the color index levels store, so the order must not change.

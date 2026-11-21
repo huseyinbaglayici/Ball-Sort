@@ -15,6 +15,16 @@ namespace Project.Contexts.Game.Sort
         // Tubes: idle 0, raised 10, receiving 11. Target portal is above all; source portal above idle, below raised.
         private const int TargetPortalOrder = 20;
         private const int SourcePortalOrder = 5;
+        // The touchdown ring's far half draws under idle tubes, its near half over them and under raised ones.
+        private const int TouchFarOrder = -1;
+        private const int TouchNearOrder = 1;
+        // Slot rims draw inside the tube's group like an orb would, under the front glass.
+        private const int SlotInnerOrder = TubeArt.FrontOrder - 3;
+        private const int SlotRimOrder = TubeArt.FrontOrder - 2;
+        private const int SlotGlossOrder = TubeArt.FrontOrder - 1;
+        // Edge of each slot sprite's art as a share of its half width, so all three match the orb's size.
+        private const float SlotRimEdge = 0.94f;
+        private const float SlotInnerEdge = 0.97f;
         private const float MouthSmear = 0.35f;
         [SerializeField] private BallAnimationConfig _animation;
         // The camera is fixed; the board scales to fit.
@@ -39,30 +49,46 @@ namespace Project.Contexts.Game.Sort
         private AudioManager _audio;
         private HapticModule _haptics;
         private readonly List<PortalView> _portals = new();
+        // Free Move hints over the tubes that can take the lifted balls.
+        private readonly Dictionary<int, PortalView> _hintPortals = new();
+        private readonly List<GameObject> _slotOutlines = new();
+        // Slot of each rim, so it breathes with the ball that would sit there.
+        private readonly List<int> _slotOf = new();
+        // Glass focus is on while Free Move targets are shown.
+        private bool _focused;
+        private readonly List<BottleItem> _idleTubes = new();
+        // Tween target of the tap-me idle, so it stops on its own.
+        private readonly object _idleClock = new();
+        private readonly List<TouchRingView> _rings = new();
         private readonly ObstacleMarkers _markers = new();
         private bool[] _capped = Array.Empty<bool>();
         // Completion effect still playing beside each bottle.
         private CompleteFx[] _fx = Array.Empty<CompleteFx>();
+        private ResultFx _result;
         // Level grid positions, then capacities of every bottle (level ones first, added ones after).
         private readonly List<Vector2> _positions = new();
         private readonly List<int> _capacities = new();
         private int _levelNumber;
-        // Relayout time after a bottle is added during play.
-        private const float AddDuration = 0.3f;
         private float _settledAt;
+        private Action _restoreDescent;
 
         private void Awake()
         {
-            _audio = Services.Get<AudioManager>();
-            _haptics = Services.Get<HapticModule>();
+            // Optional so the debug preview can drive a board without the Boot services.
+            Services.TryGet(out _audio);
+            Services.TryGet(out _haptics);
         }
 
         // An obstacle still showing over a tube that the model already opened locks it too.
         public bool IsLocked(int bottle) => _locks[bottle] > 0 || Time.time < _settledAt || _markers.IsCovered(bottle);
 
         public float WinPopupDelay => _animation.WinPopupDelay;
+        public BallAnimationConfig Animation => _animation;
 
-        public bool IsAnimating => _flights.Count > 0 || Time.time < _settledAt;
+        // Free HUD band (0-1 of screen height) set before Build; null keeps the layout's fallback.
+        public Vector2? ScreenBand { get; set; }
+
+        public bool IsAnimating => _flights.Count > 0 || Time.time < _settledAt || _restoreDescent != null;
 
         public void Build(LevelData level, int levelNumber, SortBoard board, ItemFactory factory, LevelPalette palette)
         {
@@ -117,14 +143,22 @@ namespace Project.Contexts.Game.Sort
             Debug.Assert(index == _bottles.Count, "[BoardView] Bottles are added at the end.");
             _capacities.Add(board.Capacity(index));
             var origins = Place(out var rises, out var scale);
+            var relayout = Mathf.Max(_animation.Boosters.RelayoutTime, 0.0001f);
 
-            if (transform.localScale != Vector3.one * scale)
-                PrimeTween.Tween.Scale(transform, Vector3.one * scale, AddDuration, PrimeTween.Ease.OutCubic);
+            // Every tube slides at once, linearly; the view widens as a linear zoom, so the scale follows 1 / ortho.
+            var camera = Camera.main;
+            if (camera != null && !Mathf.Approximately(transform.localScale.x, scale))
+            {
+                var fromOrtho = camera.orthographicSize / transform.localScale.x;
+                var toOrtho = camera.orthographicSize / scale;
+                PrimeTween.Tween.Custom(transform, fromOrtho, toOrtho, relayout,
+                    (board, ortho) => board.localScale = Vector3.one * (camera.orthographicSize / ortho), PrimeTween.Ease.Linear);
+            }
             for (var b = 0; b < _bottles.Count; b++)
             {
                 var target = BottleLocal(origins[b]);
                 if (_bottles[b].transform.localPosition != target)
-                    PrimeTween.Tween.LocalPosition(_bottles[b].transform, target, AddDuration, PrimeTween.Ease.OutCubic);
+                    PrimeTween.Tween.LocalPosition(_bottles[b].transform, target, relayout, PrimeTween.Ease.Linear);
             }
 
             Array.Resize(ref _locks, index + 1);
@@ -134,17 +168,78 @@ namespace Project.Contexts.Game.Sort
             var bottle = _factory.Get<BottleItem>(ItemType.Bottle, transform);
             bottle.Setup(index, board.Capacity(index), BottleLocal(origins[index]), rises[index], _animation);
             _bottles.Add(bottle);
-            _settledAt = Time.time + AddDuration;
-            PrimeTween.Tween.Scale(bottle.transform, 0f, 1f, AddDuration, PrimeTween.Ease.OutBack)
-                .OnComplete(() => onPlaced?.Invoke());
+            Descend(bottle, onPlaced);
             Sync(board);
+        }
+
+        // The new tube glides down from orbit on a soft arc, fading and growing in, then touches down on a thin ring.
+        private void Descend(BottleItem bottle, Action onPlaced)
+        {
+            var b = _animation.Boosters;
+            var root = bottle.transform;
+            var seat = root.localPosition;
+            // Comes in from the side away from the board's middle.
+            var side = seat.x >= 0f ? b.DescentSide : -b.DescentSide;
+            var from = seat + new Vector3(side, b.DescentHeight, 0f);
+            // The settle closes AppearTime; the glide takes the rest.
+            var time = Mathf.Max(b.AppearTime - b.LandSquashTime - b.LandSettleTime, 0.0001f);
+            var renderers = root.GetComponentsInChildren<SpriteRenderer>(false);
+            var colors = new Color[renderers.Length];
+            for (var i = 0; i < renderers.Length; i++) colors[i] = renderers[i].color;
+            var fadeShare = Mathf.Max(b.DescentFadeShare, 0.0001f);
+            // A pooled tube must not keep a faded colour if the board is cleared mid-descent.
+            _restoreDescent = () =>
+            {
+                for (var i = 0; i < renderers.Length; i++)
+                    if (renderers[i] != null) renderers[i].color = colors[i];
+            };
+            // Only the new tube waits for its landing; the rest are playable once the board has slid.
+            _settledAt = Time.time + b.RelayoutTime;
+            var index = bottle.Index;
+            _locks[index]++;
+
+            PrimeTween.Tween.Custom(root, 0f, 1f, time, (t, k) =>
+                {
+                    var x = PrimeTween.Easing.Evaluate(k, PrimeTween.Ease.OutCubic);
+                    var y = PrimeTween.Easing.Evaluate(k, PrimeTween.Ease.OutSine);
+                    t.localPosition = new Vector3(Mathf.LerpUnclamped(from.x, seat.x, x), Mathf.LerpUnclamped(from.y, seat.y, y), seat.z);
+                    t.localScale = Vector3.one * Mathf.Lerp(b.DescentScaleFrom, 1f, x);
+                    var fade = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(k / fadeShare));
+                    for (var i = 0; i < renderers.Length; i++)
+                        if (renderers[i] != null) renderers[i].color = new Color(colors[i].r, colors[i].g, colors[i].b, colors[i].a * fade);
+                }, PrimeTween.Ease.Linear)
+                .OnComplete(() =>
+                {
+                    root.localPosition = seat;
+                    _restoreDescent?.Invoke();
+                    _restoreDescent = null;
+                    var squash = new Vector3(b.LandSquash.x, b.LandSquash.y, 1f);
+                    PrimeTween.Sequence.Create()
+                        .Chain(PrimeTween.Tween.Scale(root, Vector3.one, squash, b.LandSquashTime, PrimeTween.Ease.OutQuad))
+                        .Chain(PrimeTween.Tween.Scale(root, squash, Vector3.one, b.LandSettleTime, PrimeTween.Ease.OutBack));
+                    _locks[index]--;
+                    _rings.RemoveAll(ring => ring.IsGone);
+                    var touch = new TouchRingView(transform, seat + Vector3.up * b.TouchRingY, b, TouchNearOrder, TouchFarOrder);
+                    _rings.Add(touch);
+                    touch.Play();
+                    onPlaced?.Invoke();
+                });
+        }
+
+        // Lays the board out again in place, for a new screen size or HUD band. Call only while nothing animates.
+        public void Relayout()
+        {
+            if (_bottles.Count == 0) return;
+            var origins = Place(out _, out var scale);
+            transform.localScale = Vector3.one * scale;
+            for (var b = 0; b < _bottles.Count; b++) _bottles[b].transform.localPosition = BottleLocal(origins[b]);
         }
 
         private Vector2[] Place(out float[] rises, out float scale)
         {
             var camera = Camera.main;
             var origins = _layout.Place(_positions, _capacities, _levelNumber, camera != null ? camera.aspect : 9f / 16f,
-                out rises, out var orthoSize);
+                out rises, out var orthoSize, ScreenBand);
             scale = camera != null ? camera.orthographicSize / orthoSize : 1f;
             return origins;
         }
@@ -157,14 +252,23 @@ namespace Project.Contexts.Game.Sort
             _landings.Clear();
             PrimeTween.Tween.StopAll(transform);
             foreach (var bottle in _bottles) PrimeTween.Tween.StopAll(bottle.transform);
+            _restoreDescent?.Invoke();
+            _restoreDescent = null;
             _settledAt = 0f;
             _markers.Clear();
             _model = null;
             Array.Clear(_capped, 0, _capped.Length);
             for (var b = 0; b < _fx.Length; b++) StopFx(b);
+            StopResult();
             _flights.Clear();
+            _hintPortals.Clear();
+            StopIdle();
+            ClearOutlines();
+            _focused = false;
             foreach (var portal in _portals) portal.Destroy();
             _portals.Clear();
+            foreach (var ring in _rings) ring.Destroy();
+            _rings.Clear();
             Array.Clear(_locks, 0, _locks.Length);
             Array.Clear(_incoming, 0, _incoming.Length);
             foreach (var bottle in _bottles)
@@ -247,7 +351,11 @@ namespace Project.Contexts.Game.Sort
             var targetPortal = PortalOver(target, facesDown: false);
             var allThrough = lastStart + _animation.WarpCross;
             var sourceView = NewPortal(sourcePortal, SourcePortalOrder, facesDown: true);
-            var targetView = NewPortal(targetPortal, TargetPortalOrder, facesDown: false);
+            // A Free Move hint portal already open over the target becomes the move's own.
+            var targetView = _hintPortals.Remove(to, out var held) && !held.IsGone
+                ? held
+                : NewPortal(targetPortal, TargetPortalOrder, facesDown: false);
+            HideTargets();
             sourceView.Close(allThrough);
             targetView.Close(allThrough + Mathf.Max(_animation.PortalCloseLag, 0f));
             for (var i = 0; i < count; i++)
@@ -262,6 +370,159 @@ namespace Project.Contexts.Game.Sort
             }
             source.ReturnLifted(_animation);
         }
+
+        // Free Move armed and balls lifted from: target tubes breathe in a tap-me idle with either portals or landing-slot rims.
+        public void ShowTargets(int from, IReadOnlyList<int> targets)
+        {
+            HideTargets();
+            var b = _animation.Boosters;
+            foreach (var t in targets)
+            {
+                if (t < 0 || t >= _bottles.Count) continue;
+                _idleTubes.Add(_bottles[t]);
+                if (b.Hint == FreeMoveHint.Portals)
+                {
+                    _hintPortals[t] = NewPortal(PortalOver(_bottles[t], facesDown: false), TargetPortalOrder, facesDown: false);
+                    continue;
+                }
+                var landing = _model != null ? _model.MoveAmount(from, t) : 0;
+                var first = _bottles[t].BallCount;
+                for (var slot = first; slot < first + landing && slot < _bottles[t].Capacity; slot++) Outline(_bottles[t], slot);
+            }
+            if (_idleTubes.Count > 0) StartIdle();
+            Focus(from, targets);
+        }
+
+        // Targets' glass eases bright, the rest but the source eases dim, so the eye goes to where the balls can go.
+        private void Focus(int from, IReadOnlyList<int> targets)
+        {
+            var b = _animation.Boosters;
+            _focused = true;
+            for (var t = 0; t < _bottles.Count; t++)
+            {
+                if (t == from) continue;
+                var target = false;
+                foreach (var candidate in targets) target |= candidate == t;
+                _bottles[t].SetTint(target ? b.FocusTargetTint : b.FocusDimTint, b.FocusTime);
+            }
+        }
+
+        public void HideTargets()
+        {
+            foreach (var portal in _hintPortals.Values) portal.Close();
+            _hintPortals.Clear();
+            StopIdle();
+            FadeOutlines();
+            if (!_focused) return;
+            _focused = false;
+            foreach (var bottle in _bottles) bottle.ResetTint(_animation.Boosters.FocusTime);
+        }
+
+        // Tap me: each target tube breathes very slightly; its balls a little more, bottom first, and the rims fade in and breathe on with them.
+        private void StartIdle()
+        {
+            var b = _animation.Boosters;
+            var outlines = _slotOutlines.ToArray();
+            var slots = _slotOf.ToArray();
+            var shown = 0f;
+            PrimeTween.Tween.Custom(_idleClock, 0f, 1f, Mathf.Max(b.IdlePeriod, 0.05f), (_, k) =>
+            {
+                shown = Mathf.Min(1f, shown + Time.deltaTime / Mathf.Max(b.HintFadeTime, 0.0001f));
+                var eased = Mathf.SmoothStep(0f, 1f, shown);
+                for (var i = 0; i < outlines.Length; i++)
+                {
+                    if (outlines[i] == null) continue;
+                    var breath = Breath(k - b.IdleBallPhase * slots[i]);
+                    ApplyOutline(outlines[i], eased * (1f - b.SlotBreathAlpha * (1f - breath)), 1f + b.SlotBreathScale * breath);
+                }
+                foreach (var tube in _idleTubes)
+                {
+                    tube.transform.localScale = Vector3.one * (1f + b.IdleTubeBreath * Breath(k));
+                    var balls = tube.Balls;
+                    for (var i = 0; i < balls.Count; i++)
+                        if (!_flights.ContainsKey(balls[i]))
+                            balls[i].transform.localScale = Vector3.one * (1f + b.IdleBallBreath * Breath(k - b.IdleBallPhase * i));
+                }
+            }, PrimeTween.Ease.Linear, cycles: -1);
+        }
+
+        // 0 to 1 and back, eased at both ends.
+        private static float Breath(float k) => 0.5f - 0.5f * Mathf.Cos(Mathf.PI * 2f * k);
+
+        private void StopIdle()
+        {
+            PrimeTween.Tween.StopAll(_idleClock);
+            foreach (var tube in _idleTubes)
+            {
+                if (tube == null) continue;
+                tube.transform.localScale = Vector3.one;
+                foreach (var ball in tube.Balls)
+                    if (!_flights.ContainsKey(ball)) ball.transform.localScale = Vector3.one;
+            }
+            _idleTubes.Clear();
+        }
+
+        // An empty slot drawn like an orb waiting to land: violet inner glow lit from the lower right, crisp rim, gloss upper left.
+        private void Outline(BottleItem tube, int slot)
+        {
+            var b = _animation.Boosters;
+            var root = new GameObject("SlotRim");
+            root.transform.SetParent(tube.transform, false);
+            root.transform.localPosition = TubeArt.SlotLocalPosition(slot);
+            OutlineLayer(root.transform, b.SlotInner, SlotInnerOrder, TubeArt.BallDiameter / SlotInnerEdge);
+            OutlineLayer(root.transform, b.SlotRim, SlotRimOrder, TubeArt.BallDiameter / SlotRimEdge);
+            OutlineLayer(root.transform, b.SlotGloss, SlotGlossOrder, TubeArt.BallDiameter / SlotInnerEdge);
+            _slotOutlines.Add(root);
+            _slotOf.Add(slot);
+        }
+
+        private static void OutlineLayer(Transform parent, Sprite sprite, int order, float size)
+        {
+            var go = new GameObject(sprite != null ? sprite.name : "SlotRimLayer");
+            go.transform.SetParent(parent, false);
+            var layer = go.AddComponent<SpriteRenderer>();
+            layer.sprite = sprite;
+            layer.sortingOrder = order;
+            layer.color = Color.clear;
+            if (sprite != null) go.transform.localScale = Vector3.one * (size / sprite.bounds.size.x);
+        }
+
+        private void FadeOutlines()
+        {
+            if (_slotOutlines.Count == 0) return;
+            var outlines = _slotOutlines.ToArray();
+            _slotOutlines.Clear();
+            _slotOf.Clear();
+            foreach (var outline in outlines)
+            {
+                if (outline == null) continue;
+                var from = outline.transform.localScale.x;
+                PrimeTween.Tween.Custom(outline.transform, 1f, 0f, Mathf.Max(_animation.Boosters.HintFadeTime, 0.0001f),
+                        (t, a) => ApplyOutline(t.gameObject, a, from), PrimeTween.Ease.InQuad)
+                    .OnComplete(outline, gone => Destroy(gone));
+            }
+        }
+
+        private void ClearOutlines()
+        {
+            foreach (var outline in _slotOutlines)
+                if (outline != null) Destroy(outline);
+            _slotOutlines.Clear();
+            _slotOf.Clear();
+        }
+
+        private void ApplyOutline(GameObject outline, float alpha, float scale)
+        {
+            var b = _animation.Boosters;
+            outline.transform.localScale = Vector3.one * scale;
+            var layers = outline.GetComponentsInChildren<SpriteRenderer>();
+            if (layers.Length < 3) return;
+            layers[0].color = Fade(b.SlotInnerColor, alpha);
+            layers[1].color = Fade(b.SlotRimColor, alpha);
+            layers[2].color = Fade(b.SlotGlossColor, alpha);
+        }
+
+        private static Color Fade(Color color, float alpha) => new(color.r, color.g, color.b, color.a * alpha);
 
         // celebrate: a move just completed it, so the charge, cap pop and side effect play.
         public void SetCompleted(int bottle, bool completed, bool celebrate = true)
@@ -282,6 +543,40 @@ namespace Project.Contexts.Game.Sort
                 if (_fx[bottle] == done) _fx[bottle] = null;
                 _factory.Release(done);
             });
+        }
+
+        // The beat before the result panel, centred on the tubes and sized to their spread.
+        public void PlayResult(bool won)
+        {
+            StopResult();
+            if (_bottles.Count == 0) return;
+            float left = float.MaxValue, right = float.MinValue, low = float.MaxValue, high = float.MinValue;
+            foreach (var bottle in _bottles)
+            {
+                var p = bottle.transform.localPosition;
+                left = Mathf.Min(left, p.x);
+                right = Mathf.Max(right, p.x);
+                low = Mathf.Min(low, p.y);
+                high = Mathf.Max(high, p.y + bottle.MouthLocalY);
+            }
+            var fx = _factory.Get<ResultFx>(ItemType.ResultFx, transform);
+            fx.transform.localPosition = new Vector3((left + right) * 0.5f, (low + high) * 0.5f, 0f);
+            fx.transform.localRotation = Quaternion.identity;
+            fx.transform.localScale = Vector3.one;
+            _result = fx;
+            fx.Play(won, right - left + TubeArt.Size.x, _animation, done =>
+            {
+                if (_result == done) _result = null;
+                _factory.Release(done);
+            });
+        }
+
+        private void StopResult()
+        {
+            if (_result == null) return;
+            var fx = _result;
+            _result = null;
+            _factory.Release(fx);
         }
 
         private void StopFx(int bottle)
@@ -505,8 +800,8 @@ namespace Project.Contexts.Game.Sort
 
         private void PlayContact(OrbContact contact, bool last)
         {
-            _audio.PlayOneShotSound(contact.Sound, AudioManager.DecibelsToVolume(contact.GainDb));
-            if (contact.Haptic) _haptics.Haptic(last ? HapticModule.HapticType.Medium : HapticModule.HapticType.Light);
+            _audio?.PlayOneShotSound(contact.Sound, AudioManager.DecibelsToVolume(contact.GainDb));
+            if (contact.Haptic) _haptics?.Haptic(last ? HapticModule.HapticType.Medium : HapticModule.HapticType.Light);
         }
 
         private void StopContacts() => PrimeTween.Tween.StopAll(_contactClock);

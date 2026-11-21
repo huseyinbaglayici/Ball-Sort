@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Project.Contexts.Application;
 using Project.Contexts.Application.Economy;
 using Project.Contexts.Game.Items;
@@ -73,6 +74,7 @@ namespace Project.Contexts.Game
         private int _extraTubes;
         // Armed Free Move: the next transfer onto a different open color uses it and pays only then.
         private bool _freeArmed;
+        private readonly List<int> _freeTargets = new();
         private ContinueService _continue;
         private PopupService _popups;
         // The last transfer made, so a Continue that rewinds an explosion can fly its balls back.
@@ -80,6 +82,10 @@ namespace Project.Contexts.Game
         // The next PlayingState.Enter resumes this try (after a fail-screen Undo or Continue) instead of a new one.
         private bool _resumeTry;
         private System.Threading.CancellationTokenSource _rescueSearch;
+        // Fail timing: when the last move started, when its last meaningful change shows, and a resume frame to skip.
+        private float _movedAt;
+        private float _readableAt;
+        private bool _resumed;
 
         private void Awake()
         {
@@ -142,6 +148,22 @@ namespace Project.Contexts.Game
 
         private void Update() => _states.Tick(Time.deltaTime);
 
+        // A new screen size moves the HUD: re-measure the band after the safe area applies and relayout once still.
+        private void LateUpdate()
+        {
+            var screen = new Vector2Int(Screen.width, Screen.height);
+            if (screen == _screen || _model == null || _board.IsAnimating) return;
+            _screen = screen;
+            _board.ScreenBand = HudBand();
+            _board.Relayout();
+        }
+
+        // Background time never counts toward the fail panel wait.
+        private void OnApplicationPause(bool paused)
+        {
+            if (!paused) _resumed = true;
+        }
+
         private void BeginLevel()
         {
             _level = _progress.Level;
@@ -161,9 +183,40 @@ namespace Project.Contexts.Game
             _extraTubes = 0;
             _freeArmed = false;
             _lastMove = null;
+            _screen = new Vector2Int(Screen.width, Screen.height);
+            _board.ScreenBand = HudBand();
             _board.Build(data, _level, _model, _factory, _palette);
             _ads.BeginActivePlay();
             RefreshHud();
+        }
+
+        // Gap kept between the board's art and each HUD block, as a share of the screen height.
+        private const float HudGap = 0.006f;
+        // Screen size the board was last laid out for.
+        private Vector2Int _screen;
+
+        // Free band (0-1 of screen height) from the tray top to the badge bottom, minus any entrance slide still running.
+        private Vector2? HudBand()
+        {
+            var badge = _difficulty != null ? _difficulty.transform.Find("Badge") as RectTransform : null;
+            var tray = _boosters != null ? _boosters.transform as RectTransform : null;
+            if (badge == null || tray == null || Screen.height <= 0) return null;
+
+            Canvas.ForceUpdateCanvases();
+            var top = RestCorner(badge, 0).y / Screen.height - HudGap;
+            var bottom = RestCorner(tray, 1).y / Screen.height + HudGap;
+            return top > bottom ? new Vector2(bottom, top) : null;
+        }
+
+        // A corner (GetWorldCorners order) in screen pixels with every entrance above it at rest.
+        private static Vector3 RestCorner(RectTransform rect, int corner)
+        {
+            var corners = new Vector3[4];
+            rect.GetWorldCorners(corners);
+            var point = corners[corner];
+            foreach (var entrance in rect.GetComponentsInParent<UiEntrance>(true))
+                point -= entrance.transform.parent.TransformVector(entrance.Displacement);
+            return point;
         }
 
         private void OnBottleTapped(BottleTapped evt)
@@ -214,6 +267,7 @@ namespace Project.Contexts.Game
             if (free) _freeArmed = false;
             _tryHasMoves = true;
             _lastMove = move;
+            _movedAt = Time.time;
             _board.Sync(_model, move);
             var reveal = MechanicSounds.OnMove(move);
             if (reveal != null) _audio.PlayOneShotSound(reveal);
@@ -231,6 +285,7 @@ namespace Project.Contexts.Game
         // Never runs for a move whose flight was cancelled.
         private void OnMoveLanded(MoveResult move)
         {
+            _readableAt = FailWindow.ReadableAt(Time.time, _movedAt, move, _board.Animation);
             foreach (var bottle in move.Completed)
                 if (_model.IsCompleted(bottle)) _board.SetCompleted(bottle, true);
             _board.PlayObstacles(move);
@@ -253,6 +308,23 @@ namespace Project.Contexts.Game
             _selected = bottle;
             // The board plays the lift sounds and the one selection haptic.
             _board.Select(bottle.Index, _model.TopRun(bottle.Index));
+            ShowFreeTargets();
+        }
+
+        // With Free Move armed and balls lifted, every tube that can take them is marked; cleared otherwise.
+        private void ShowFreeTargets()
+        {
+            if (!_freeArmed || _selected == null)
+            {
+                _board.HideTargets();
+                return;
+            }
+            _freeTargets.Clear();
+            var from = _selected.Index;
+            for (var to = 0; to < _model.BottleCount; to++)
+                if (to != from && !_board.IsLocked(to) && (_model.CanMove(from, to) || _model.CanFreeMove(from, to)))
+                    _freeTargets.Add(to);
+            _board.ShowTargets(from, _freeTargets);
         }
 
         private void Deselect()
@@ -260,6 +332,7 @@ namespace Project.Contexts.Game
             if (_selected == null) return;
             _board.Deselect(_selected.Index);
             _selected = null;
+            _board.HideTargets();
         }
 
         // The debug panel's free Undo.
@@ -350,6 +423,7 @@ namespace Project.Contexts.Game
             if (_freeArmed)
             {
                 _freeArmed = false;
+                _board.HideTargets();
                 _audio.PlayOneShotSound("free_cancel");
                 return;
             }
@@ -359,6 +433,7 @@ namespace Project.Contexts.Game
                 return;
             }
             _freeArmed = true;
+            ShowFreeTargets();
             _audio.PlayOneShotSound("free_move");
             _haptics.Haptic(HapticModule.HapticType.Light);
         }
@@ -505,20 +580,54 @@ namespace Project.Contexts.Game
         {
             private readonly GameController _c;
             private RescueReport _report;
+            private FailWindow _window;
+            private float _enteredAt;
+            private float _searchMs;
             public LostState(GameController controller) => _c = controller;
 
+            // Input and the play clock stop here; the panel waits for the readable window and the search, in parallel.
             public override void Enter()
             {
                 _c.Deselect();
                 _c._ads.EndActivePlay();
-                // A bomb already sounded its explosion; only a stuck board gets the fail sting.
-                if (!_c._model.IsFailed) _c._audio.PlayOneShotSound("fail");
-                _c._haptics.Haptic(HapticModule.HapticType.Heavy);
+                // The explosion's own frame gets the one strong pulse; a stuck board's comes with the panel.
+                if (_c._model.IsFailed) _c._haptics.Haptic(HapticModule.HapticType.Heavy);
                 _report = null;
+                _enteredAt = Time.time;
+                _c._resumed = false;
+                var left = _c._readableAt + _c._board.Animation.FailReadableWindow - Time.time;
+                _window = new FailWindow(_c._progress.TryId, _c._model.Version, left);
                 Analyze();
             }
 
-            public override void Exit() => _c.CancelRescueSearch();
+            public override void Tick(float deltaTime)
+            {
+                if (_window == null) return;
+                _window.Tick(_c._resumed ? 0f : deltaTime);
+                _c._resumed = false;
+                if (!_window.TryOpen(_c._progress.TryId, _c._model.Version)) return;
+                var bomb = _c._model.IsFailed;
+                if (!bomb)
+                {
+                    _c._audio.PlayOneShotSound("fail");
+                    _c._haptics.Haptic(HapticModule.HapticType.Heavy);
+                    _c._board.PlayResult(false);
+                }
+                if (Debug.isDebugBuild)
+                    Debug.Log($"[Fail] cause={(bomb ? "bomb" : "no_move")} last={LastMechanic(_c._lastMove)} " +
+                              $"wait={(Time.time - _enteredAt) * 1000f:0}ms search={_searchMs:0}ms frame={Time.frameCount}");
+                Show();
+            }
+
+            public override void Exit()
+            {
+                _window = null;
+                _c.CancelRescueSearch();
+            }
+
+            private static string LastMechanic(MoveResult move) =>
+                move == null ? "none" : move.Exploded ? "blast" : move.LockboxesOpened.Count > 0 ? "box"
+                : move.CurtainsLifted.Count > 0 ? "curtain" : move.Revealed.Count > 0 ? "hidden" : "landing";
 
             private async void Analyze()
             {
@@ -526,6 +635,8 @@ namespace Project.Contexts.Game
                 var search = new System.Threading.CancellationTokenSource();
                 _c._rescueSearch = search;
                 RescueReport report;
+                var started = Time.realtimeSinceStartup;
+                var window = _window;
                 try
                 {
                     report = await RescueAdvisor.AnalyzeAsync(_c._model, RescueAdvisor.DefaultTimeoutMs, search.Token);
@@ -534,9 +645,10 @@ namespace Project.Contexts.Game
                 {
                     return;
                 }
-                if (search.IsCancellationRequested || _c._states.CurrentKey != GameState.Lost) return;
+                if (search.IsCancellationRequested || _c._states.CurrentKey != GameState.Lost || window != _window) return;
+                _searchMs = (Time.realtimeSinceStartup - started) * 1000f;
                 _report = report;
-                Show();
+                window.SearchDone();
             }
 
             // Also shown again after a refused payment.
@@ -583,7 +695,7 @@ namespace Project.Contexts.Game
                         options.Add(new ResultOption(loc.Get("lives.ad"), () => _c._ads.ShowRewardedLife(_ => Show())));
                 }
 
-                // Home is the popup's X; the last option (restart, or the rewarded life) is the main button.
+                // Home is the popup's X; the first option is the main button.
                 _c._popups.Show(_c._resultPopup, ResultArgs.Loss(_c._level, options, note.ToString(), Leave));
             }
 
@@ -658,6 +770,7 @@ namespace Project.Contexts.Game
                 _c.Deselect();
                 _c._ads.EndActivePlay();
                 _c._rewardedWatched = false;
+                _c._board.PlayResult(true);
                 var result = _c._progress.CompleteLevel();
                 // Popup, win cue and delivery sound wait for the last tube's completion to play out.
                 PrimeTween.Tween.Delay(this, _c._board.WinPopupDelay, state => state.ShowResult(result));

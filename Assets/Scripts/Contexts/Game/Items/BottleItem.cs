@@ -35,6 +35,7 @@ namespace Project.Contexts.Game.Items
         private readonly List<BallItem> _lifted = new();
         private bool _inMotion;
         private bool _receiving;
+        private bool _completed;
         private Transform _content;
         // Body sprites with their art size and position, for stretching to other capacities.
         private readonly List<(SpriteRenderer Renderer, Vector2 Size, Vector3 Position)> _body = new();
@@ -90,6 +91,7 @@ namespace Project.Contexts.Game.Items
             Rise = rise;
             _inMotion = false;
             _receiving = false;
+            _completed = false;
             Reactions.Clear();
             transform.localPosition = localPosition;
             transform.localScale = Vector3.one;
@@ -176,6 +178,7 @@ namespace Project.Contexts.Game.Items
         public void SetCompleted(bool completed, bool celebrate)
         {
             StopMoment();
+            _completed = completed;
             ShowCap(completed, celebrate);
             if (!completed) Reactions.Clear();
             else if (celebrate)
@@ -290,6 +293,7 @@ namespace Project.Contexts.Game.Items
         private void ShowCap(bool show, bool celebrate)
         {
             var cap = _completedCap.transform;
+            var wasShown = _completedCap.enabled;
             StopCapTweens();
             var capY = TubeArt.CapLocalY + Rise;
             cap.localPosition = new Vector3(0f, capY, 0f);
@@ -298,15 +302,13 @@ namespace Project.Contexts.Game.Items
             _completedCap.enabled = _gem.enabled = show;
             _emptyCap.enabled = _rimFront.enabled = !show || celebrate;
             _glowFlash.enabled = false;
-            TintGlass(show ? Color.white : _config.GlassRestTint);
+            SetTint(show ? Color.white : _config.GlassRestTint);
+            if (!show && celebrate && wasShown) Uncap(capY);
             if (!show || !celebrate) return;
 
             var c = _config;
-            TintGlass(c.GlassRestTint);
-            PrimeTween.Tween.Color(_front, Glass(Color.white, TubeArt.GlassOverBalls), c.GlassCompleteBrighten,
-                PrimeTween.Ease.OutQuad);
-            PrimeTween.Tween.Color(_frontBehind, Glass(Color.white, 1f - TubeArt.GlassOverBalls), c.GlassCompleteBrighten,
-                PrimeTween.Ease.OutQuad);
+            SetTint(c.GlassRestTint);
+            SetTint(Color.white, c.GlassCompleteBrighten);
 
             var delay = c.CompleteChargeDuration;
             var landed = delay + c.CapPopDuration + c.CapSlamDuration;
@@ -335,6 +337,25 @@ namespace Project.Contexts.Game.Items
             Flash(_glowFlash, c.CompleteGlowColor, c, landed);
         }
 
+        // Undo of a completing move: the cap lifts off and fades as the open rim and the resting glass come back.
+        private void Uncap(float capY)
+        {
+            var c = _config;
+            var time = Mathf.Max(c.Boosters.UncapTime, 0.0001f);
+            var cap = _completedCap.transform;
+            _completedCap.enabled = _gem.enabled = true;
+            PrimeTween.Tween.LocalPositionY(cap, capY, capY + c.Boosters.UncapLift, time, PrimeTween.Ease.OutQuad);
+            PrimeTween.Tween.Scale(cap, Vector3.one, Scale(c.CapPopScale), time, PrimeTween.Ease.InQuad);
+            PrimeTween.Tween.Alpha(_completedCap, 1f, 0f, time, PrimeTween.Ease.InQuad)
+                .OnComplete(_completedCap, done => done.enabled = false);
+            PrimeTween.Tween.Alpha(_gem, 1f, 0f, time, PrimeTween.Ease.InQuad)
+                .OnComplete(_gem, done => done.enabled = false);
+            PrimeTween.Tween.Alpha(_emptyCap, 0f, 1f, time, PrimeTween.Ease.OutQuad);
+            PrimeTween.Tween.Alpha(_rimFront, 0f, 1f, time, PrimeTween.Ease.OutQuad);
+            SetTint(Color.white);
+            SetTint(c.GlassRestTint, time);
+        }
+
         private static Vector3 Scale(Vector2 xy) => new(xy.x, xy.y, 1f);
 
         private static void Flash(SpriteRenderer glow, Color color, BallAnimationConfig config, float delay)
@@ -347,11 +368,26 @@ namespace Project.Contexts.Game.Items
                 startDelay: delay + config.CompleteGlowIn + config.CompleteGlowHold);
         }
 
-        private void TintGlass(Color tint)
+        // The only writer of the front glass tint: at once, or eased from where it is (rest, completion, undo, Free Move focus).
+        public void SetTint(Color tint, float duration = 0f)
         {
-            _front.color = Glass(tint, TubeArt.GlassOverBalls);
-            _frontBehind.color = Glass(tint, 1f - TubeArt.GlassOverBalls);
+            PrimeTween.Tween.StopAll(_front);
+            PrimeTween.Tween.StopAll(_frontBehind);
+            var front = Glass(tint, TubeArt.GlassOverBalls);
+            var behind = Glass(tint, 1f - TubeArt.GlassOverBalls);
+            if (duration <= 0f)
+            {
+                _front.color = front;
+                _frontBehind.color = behind;
+                return;
+            }
+            if (_front.color == front) return;
+            PrimeTween.Tween.Color(_front, front, duration, PrimeTween.Ease.OutQuad);
+            PrimeTween.Tween.Color(_frontBehind, behind, duration, PrimeTween.Ease.OutQuad);
         }
+
+        // Back to its own tint: white once completed, the rest tint otherwise.
+        public void ResetTint(float duration) => SetTint(_completed ? Color.white : _config.GlassRestTint, duration);
 
         private static Color Glass(Color tint, float share) => new(tint.r, tint.g, tint.b, share);
 

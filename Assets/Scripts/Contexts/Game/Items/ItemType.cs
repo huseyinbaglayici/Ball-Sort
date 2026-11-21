@@ -10,6 +10,7 @@ namespace Project.Contexts.Game.Items
         FrozenTube = 5,
         Shutter = 6,
         BombBlast = 7,
-        CompleteFx = 8
+        CompleteFx = 8,
+        ResultFx = 9
     }
 }

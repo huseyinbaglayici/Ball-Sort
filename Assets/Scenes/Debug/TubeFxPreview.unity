@@ -119,7 +119,7 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
---- !u!1 &420060185
+--- !u!1 &1452572320
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -127,8 +127,124 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 420060187}
-  - component: {fileID: 420060186}
+  - component: {fileID: 1452572322}
+  - component: {fileID: 1452572321}
+  m_Layer: 0
+  m_Name: BoosterBoard
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1452572321
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1452572320}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c3d8242d9aa6cc246997242116bb1ec3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Project.Contexts::Project.Contexts.Game.Sort.BoardView
+  _animation: {fileID: 11400000, guid: 0aae03f676d7e844eaea03588121405c, type: 2}
+  _layout:
+    _threeRows:
+      CenterOffsetY: -1.7
+      RowDistance: 6.3
+      BottleWidth: 1.8
+      BottleGap: 0.3
+      SixBottlePitch: 2.1
+      CameraPadding: 0.7
+      MinWidth: 13.2
+      CameraMargin: 12
+    _otherRows:
+      CenterOffsetY: -0.7
+      RowDistance: 7
+      BottleWidth: 1.8
+      BottleGap: 0.3
+      SixBottlePitch: 2.05
+      CameraPadding: 0
+      MinWidth: 12.7
+      CameraMargin: 12
+    _bandBottom: 0.15
+    _bandTop: 0.77
+--- !u!4 &1452572322
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1452572320}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1548668159
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1548668161}
+  - component: {fileID: 1548668160}
+  m_Layer: 0
+  m_Name: TubeFxPreview
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1548668160
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1548668159}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c875376662f831418918059cc778516, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Project.Contexts::Project.Contexts.Game.Preview.TubeFxPreview
+  _registry: {fileID: 11400000, guid: 0624ee3b5e411aa43838efc589b56f77, type: 2}
+  _palette: {fileID: 11400000, guid: 40bad824ce468114d8e9a945ca77acc0, type: 2}
+  _config: {fileID: 11400000, guid: 0aae03f676d7e844eaea03588121405c, type: 2}
+  _camera: {fileID: 2052144208}
+  _colorIndex: 0
+  _boardView: {fileID: 1452572321}
+--- !u!4 &1548668161
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1548668159}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &2052144207
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2052144209}
+  - component: {fileID: 2052144208}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -136,13 +252,13 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!20 &420060186
+--- !u!20 &2052144208
 Camera:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 420060185}
+  m_GameObject: {fileID: 2052144207}
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 2
@@ -187,65 +303,16 @@ Camera:
   m_OcclusionCulling: 1
   m_StereoConvergence: 10
   m_StereoSeparation: 0.022
---- !u!4 &420060187
+--- !u!4 &2052144209
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 420060185}
+  m_GameObject: {fileID: 2052144207}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: -10}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1305529952
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1305529954}
-  - component: {fileID: 1305529953}
-  m_Layer: 0
-  m_Name: TubeFxPreview
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1305529953
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1305529952}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7c875376662f831418918059cc778516, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Project.Contexts::Project.Contexts.Game.Preview.TubeFxPreview
-  _registry: {fileID: 11400000, guid: 0624ee3b5e411aa43838efc589b56f77, type: 2}
-  _palette: {fileID: 11400000, guid: 40bad824ce468114d8e9a945ca77acc0, type: 2}
-  _config: {fileID: 11400000, guid: 0aae03f676d7e844eaea03588121405c, type: 2}
-  _camera: {fileID: 420060186}
-  _colorIndex: 0
---- !u!4 &1305529954
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1305529952}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -255,5 +322,6 @@ Transform:
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
-  - {fileID: 420060187}
-  - {fileID: 1305529954}
+  - {fileID: 2052144209}
+  - {fileID: 1452572322}
+  - {fileID: 1548668161}

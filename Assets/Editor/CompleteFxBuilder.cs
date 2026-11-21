@@ -178,7 +178,7 @@ namespace Project.Editor
             return system;
         }
 
-        private static ParticleSystem Particles(Transform parent, string name, int max, Material material, int order)
+        internal static ParticleSystem Particles(Transform parent, string name, int max, Material material, int order)
         {
             var go = new GameObject(name);
             go.transform.SetParent(parent, false);
@@ -203,7 +203,7 @@ namespace Project.Editor
             return system;
         }
 
-        private static ParticleSystem.MinMaxGradient Fade(params (float time, float alpha)[] keys)
+        internal static ParticleSystem.MinMaxGradient Fade(params (float time, float alpha)[] keys)
         {
             var gradient = new Gradient();
             gradient.SetKeys(new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(Color.white, 1f) },
@@ -212,7 +212,7 @@ namespace Project.Editor
         }
 
         // White textures with the shape in alpha, imported as centred sprites.
-        private static Sprite ImportSprite(string name, float pixelsPerUnit)
+        internal static Sprite ImportSprite(string name, float pixelsPerUnit)
         {
             var path = $"{FxFolder}/Fx_{name}.png";
             var importer = (TextureImporter)AssetImporter.GetAtPath(path);
@@ -242,7 +242,7 @@ namespace Project.Editor
             return go.transform;
         }
 
-        private static SpriteRenderer AddSprite(Transform parent, string name, Sprite sprite, int order, Material material)
+        internal static SpriteRenderer AddSprite(Transform parent, string name, Sprite sprite, int order, Material material)
         {
             var renderer = new GameObject(name).AddComponent<SpriteRenderer>();
             renderer.transform.SetParent(parent, false);
@@ -271,18 +271,18 @@ namespace Project.Editor
             return line;
         }
 
-        private static void SetArray(SerializedProperty property, List<Object> values)
+        internal static void SetArray(SerializedProperty property, List<Object> values)
         {
             property.arraySize = values.Count;
             for (var i = 0; i < values.Count; i++) property.GetArrayElementAtIndex(i).objectReferenceValue = values[i];
         }
 
         // Additive; sprites bring their own texture, lines use the given one.
-        private static Material AdditiveMaterial(string name, Texture texture) =>
+        internal static Material AdditiveMaterial(string name, Texture texture) =>
             SaveMaterial(name, "Mobile/Particles/Additive", texture, false);
 
         // Doubles brightness through its tint, so the dust and glow read on the dark sky.
-        private static Material ParticleMaterial(string name, Texture texture) =>
+        internal static Material ParticleMaterial(string name, Texture texture) =>
             SaveMaterial(name, "Legacy Shaders/Particles/Additive", texture, true);
 
         private static Material SaveMaterial(string name, string shaderName, Texture texture, bool tinted)

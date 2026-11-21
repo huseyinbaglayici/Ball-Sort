@@ -113,6 +113,30 @@ def lens(size=128):
     return np.exp(-((r - 0.55) / 0.2) ** 2) * np.clip((1.0 - r) * 4.0, 0.0, 1.0)
 
 
+# Touchdown ring halves: the near (lower) half is thicker and brighter than the far half; the halves add up to one ring.
+def touch_ring(size=256, radius=0.84, width=0.028, glow=False, near=True):
+    x, y = grid(size)
+    r = np.sqrt(x * x + y * y) + 1e-6
+    toward = np.clip(y / r, -1.0, 1.0) * 0.5 + 0.5
+    falloff = 0.55 + 0.45 * toward
+    if glow:
+        shape = np.exp(-((r - radius + 0.02) / (0.13 * falloff)) ** 2)
+    else:
+        shape = np.exp(-((r - radius) / (width * falloff)) ** 2)
+    shape = shape * (0.7 + 0.3 * toward) * np.clip((1.0 - r) * 8.0, 0.0, 1.0)
+    half = (y >= 0.0) if near else (y < 0.0)
+    return shape * half
+
+
+# Empty-slot rim for landing hints: a crisp thin rim at the orb's edge over a soft falloff into the middle.
+def slot_outline(size=256):
+    x, y = grid(size)
+    r = np.sqrt(x * x + y * y)
+    line = np.exp(-((r - 0.94) / 0.018) ** 2)
+    inner = 0.22 * np.clip(r / 0.94, 0.0, 1.0) ** 4 * (r < 0.94)
+    return (line + inner) * np.clip((1.0 - r) * 12.0, 0.0, 1.0)
+
+
 # The singularity's dark core: solid, with a short soft edge.
 def core(size=64):
     x, y = grid(size)
@@ -133,6 +157,11 @@ def main(out):
     save(photon_ring(), os.path.join(out, "Fx_PhotonRing.png"))
     save(lens(), os.path.join(out, "Fx_Lens.png"))
     save(core(), os.path.join(out, "Fx_Core.png"))
+    save(touch_ring(near=True), os.path.join(out, "Fx_TouchLineNear.png"))
+    save(touch_ring(near=False), os.path.join(out, "Fx_TouchLineFar.png"))
+    save(touch_ring(glow=True, near=True), os.path.join(out, "Fx_TouchGlowNear.png"))
+    save(touch_ring(glow=True, near=False), os.path.join(out, "Fx_TouchGlowFar.png"))
+    save(slot_outline(), os.path.join(out, "Fx_SlotOutline.png"))
 
 
 if __name__ == "__main__":
