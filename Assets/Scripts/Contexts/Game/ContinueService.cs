@@ -37,8 +37,8 @@ namespace Project.Contexts.Game
         // Survives an app restart.
         public bool UsedInTry(int tryId) => _data.Model.LastContinue.TryId == tryId && _data.Model.LastContinue.Coins > 0;
 
-        // The exact result shown before paying, e.g. "900 gold · 4-slot tube + red bomb +3".
-        public static string Describe(ContinueOffer offer, SortBoard board, LocalizationService loc)
+        // The bomb part of an offer, e.g. " + red bomb +3"; empty when no fuse is extended.
+        public static string Bombs(ContinueOffer offer, SortBoard board, LocalizationService loc)
         {
             var bombs = new StringBuilder();
             if (offer.FuseBonus != null)
@@ -49,7 +49,7 @@ namespace Project.Contexts.Game
                     var name = color >= 0 ? loc.Get($"color.{color}") : string.Empty;
                     bombs.Append(loc.Format("continue.bomb", name, offer.FuseBonus[bomb]));
                 }
-            return loc.Format("continue.offer", Price, bombs);
+            return bombs.ToString();
         }
 
         private static int BombColor(SortBoard board, int bomb)

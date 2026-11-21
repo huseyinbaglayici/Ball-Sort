@@ -41,7 +41,7 @@ MonoBehaviour:
   - Key: common.ok
     Value: 'Tamam'
   - Key: game.restart
-    Value: 'Yeniden'
+    Value: 'Yeniden Başla'
   - Key: lives.full
     Value: 'Can {0}/{1}'
   - Key: lives.refill
@@ -174,3 +174,9 @@ MonoBehaviour:
     Value: 'Dönem {0}'
   - Key: settings.title
     Value: 'Ayarlar'
+  - Key: game.life_cost
+    Value: '-1 can'
+  - Key: result.peek
+    Value: 'Tahtayı görmek için basılı tut'
+  - Key: continue.gives
+    Value: 'Devam: 4''lü tüp eklenir{0}'

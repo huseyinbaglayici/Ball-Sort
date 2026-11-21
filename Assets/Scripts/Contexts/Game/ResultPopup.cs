@@ -18,12 +18,21 @@ namespace Project.Contexts.Game
         public readonly string Label;
         public readonly Action Run;
         public readonly bool Enabled;
+        // Coins it costs (shown with a coin on the button); 0 hides it.
+        public readonly int Price;
+        // Owned count in the corner badge; 0 hides it.
+        public readonly int Badge;
+        // Spends a life: a "-1 life" line under the button.
+        public readonly bool LifeCost;
 
-        public ResultOption(string label, Action run, bool enabled = true)
+        public ResultOption(string label, Action run, bool enabled = true, int price = 0, int badge = 0, bool lifeCost = false)
         {
             Label = label;
             Run = run;
             Enabled = enabled;
+            Price = price;
+            Badge = badge;
+            LifeCost = lifeCost;
         }
     }
 
@@ -63,7 +72,11 @@ namespace Project.Contexts.Game
     // Ribbon, a picture in the well, the coins a win paid, then a main button and smaller ones under it.
     public sealed class ResultPopup : Popup
     {
-        private const float OptionSpacing = 240f;
+        private const float OptionSpacing = 170f;
+        private const float PriceShift = 80f;
+        // Gap between the frame's bottom edge and the hold-to-peek pill.
+        private const float PeekGap = 80f;
+        private static readonly Color DisabledText = new(0.16f, 0.12f, 0.38f);
 
         [SerializeField] private RectTransform _frame;
         [SerializeField] private Image _ribbon;
@@ -81,11 +94,14 @@ namespace Project.Contexts.Game
         [SerializeField] private TMP_Text _details;
         [SerializeField] private Button _double;
         [SerializeField] private Button _close;
+        // "Hold to see the board" pill, fail panel only.
+        [SerializeField] private GameObject _peek;
         [SerializeField] private Button _primary;
         [SerializeField] private Button _optionTemplate;
         // Frame height and main button y (from the frame top) for a win and for a fail.
-        [SerializeField] private Vector2 _winLayout = new(1331f, -1061f);
-        [SerializeField] private Vector2 _lossLayout = new(1331f, -1061f);
+        [SerializeField] private Vector2 _winLayout = new(900f, -750f);
+        // The fail frame is taller so the "-1 life" line under the last button stays inside the panel.
+        [SerializeField] private Vector2 _lossLayout = new(960f, -750f);
 
         private readonly List<Button> _options = new();
         private ResultArgs _result;
@@ -123,6 +139,7 @@ namespace Project.Contexts.Game
             _winPicture.SetActive(won);
             _lossPicture.SetActive(!won);
             _close.gameObject.SetActive(_result.Close != null);
+            if (_peek != null) _peek.SetActive(!won);
             if (_double != null)
             {
                 _double.gameObject.SetActive(_result.Double != null);
@@ -166,6 +183,9 @@ namespace Project.Contexts.Game
             _frame.sizeDelta = new Vector2(_frame.sizeDelta.x, _frameHeight + OptionSpacing * extra);
             // Grow both ways so a tall frame stays centred on short screens.
             _frame.anchoredPosition = _frameRest + new Vector2(0f, OptionSpacing * extra * 0.5f);
+            if (_peek != null)
+                ((RectTransform)_peek.transform).anchoredPosition =
+                    new Vector2(0f, _frame.anchoredPosition.y - _frame.sizeDelta.y - PeekGap);
             var start = ((RectTransform)_primary.transform).anchoredPosition - new Vector2(0f, OptionSpacing);
             for (var i = 0; i < _options.Count; i++)
             {
@@ -180,8 +200,33 @@ namespace Project.Contexts.Game
 
         private void Bind(Button button, ResultOption option)
         {
-            var label = button.GetComponentInChildren<TMP_Text>(true);
-            label.text = option.Label;
+            var label = (RectTransform)button.transform.Find("Label");
+            var labelText = label.GetComponent<TMP_Text>();
+            labelText.text = option.Label;
+            // The disabled sprite is light: switch to dark text so it stays readable.
+            var textColor = option.Enabled ? Color.white : DisabledText;
+            labelText.color = textColor;
+            // A price chip sits left of the label and pushes it right.
+            var price = button.transform.Find("Price");
+            if (price != null)
+            {
+                price.gameObject.SetActive(option.Price > 0);
+                if (option.Price > 0)
+                {
+                    var amount = price.GetComponentInChildren<TMP_Text>(true);
+                    amount.text = option.Price.ToString();
+                    amount.color = textColor;
+                }
+            }
+            label.anchoredPosition = new Vector2(option.Price > 0 ? PriceShift : 0f, label.anchoredPosition.y);
+            var badge = button.transform.Find("Badge");
+            if (badge != null)
+            {
+                badge.gameObject.SetActive(option.Badge > 0);
+                if (option.Badge > 0) badge.GetComponentInChildren<TMP_Text>(true).text = option.Badge.ToString();
+            }
+            var cost = button.transform.Find("Cost");
+            if (cost != null) cost.gameObject.SetActive(option.LifeCost);
             button.interactable = option.Enabled;
             button.onClick.RemoveAllListeners();
             button.onClick.AddListener(() =>
