@@ -202,7 +202,7 @@ namespace Project.Contexts.Game.Items
             stage.localRotation = Quaternion.identity;
             stage.localScale = Vector3.one * scale;
             _ribbonText.text = Services.TryGet<LocalizationService>(out var loc) ? loc.Get("result.win") : "Great!";
-            _ribbonText.fontSize = w.RibbonFontSize;
+            _ribbonText.fontSizeMax = w.RibbonFontSize;
             _ribbonText.alpha = 1f;
         }
 

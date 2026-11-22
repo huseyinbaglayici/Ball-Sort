@@ -60,7 +60,8 @@ namespace Project.Contexts.Game.Sort
         public float RibbonWidth = 0.85f;
         public float RibbonGap = 0.02f;
         public float RibbonDrop = 0.1f;
-        public float RibbonFontSize = 18f;
+        [Tooltip("The title's largest size; it shrinks to fit the ribbon's face.")]
+        public float RibbonFontSize = 14f;
 
         [Header("Title letters")]
         [Tooltip("From the ribbon's start: the letters pop in one after another, all within this time, each pop this long.")]

@@ -427,7 +427,7 @@ MonoBehaviour:
     RibbonWidth: 0.85
     RibbonGap: 0.02
     RibbonDrop: 0.1
-    RibbonFontSize: 18
+    RibbonFontSize: 14
     LetterDelay: 0.08
     LettersTime: 0.5
     LetterPopTime: 0.2

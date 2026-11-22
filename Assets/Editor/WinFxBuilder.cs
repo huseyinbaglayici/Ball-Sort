@@ -21,6 +21,8 @@ namespace Project.Editor
         private const int BehindOrder = -2;
         private const int FrontOrder = 30;
         private const int StageOrder = 40;
+        // The ribbon's flat face in skeleton units (its art is 780x222 px at 0.01 units per pixel); the title fits inside it.
+        private static readonly Vector2 RibbonFace = new(5.2f, 1.32f);
 
         // Null when an input is missing; textures come from ArtSource/Fx/make_fx.py, the atlas from ArtSource/Spine/make_win_atlas.py.
         public static WinFx Build(WinFxSettings settings)
@@ -73,11 +75,14 @@ namespace Project.Editor
             var text = new GameObject("Title").AddComponent<TextMeshPro>();
             text.transform.SetParent(skeletonObject.transform, false);
             text.font = font;
-            text.fontSize = settings.RibbonFontSize;
-            text.alignment = TextAlignmentOptions.Center;
+            // Shrinks to fit the face in every language, no larger than the setting; caps centred on the band.
+            text.enableAutoSizing = true;
+            text.fontSizeMin = 4f;
+            text.fontSizeMax = settings.RibbonFontSize;
+            text.alignment = TextAlignmentOptions.Capline;
             text.color = Color.white;
             text.textWrappingMode = TextWrappingModes.NoWrap;
-            text.rectTransform.sizeDelta = new Vector2(6f, 2f);
+            text.rectTransform.sizeDelta = RibbonFace;
             text.sortingOrder = 2;
             text.enabled = false;
             var letters = text.gameObject.AddComponent<TitleLetters>();
