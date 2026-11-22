@@ -147,7 +147,7 @@ namespace Project.Contexts.Home
             if (_progress == null) return;
             var finished = _progress.IsCampaignFinished;
             var level = _progress.Level;
-            _levelText.text = finished ? _localization.Get("meta.final_title") : _localization.Format("home.play_level", level);
+            _levelText.text = finished ? _localization.Get("meta.final_title") : _localization.Format("home.level", level);
             if (_poster != null) _poster.Show(level);
             _playButton.interactable = !finished;
             if (_difficulty != null)

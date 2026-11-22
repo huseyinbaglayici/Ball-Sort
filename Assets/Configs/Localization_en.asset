@@ -169,8 +169,6 @@ MonoBehaviour:
     Value: 'Road reward'
   - Key: road.body
     Value: 'Win level {0} to get: {1}'
-  - Key: home.play_level
-    Value: 'Play · Level {0}'
   - Key: home.period
     Value: 'Period {0}'
   - Key: settings.title

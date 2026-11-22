@@ -279,7 +279,7 @@ namespace Project.Editor
             // Play with the level, its bottom edge at y 2160.
             var bottom = Group("Bottom", bottomStage, new Vector2(0, -520), 0.4f);
             var play = ButtonRect("PlayButton", bottom, Center, At(585, 2015), new Vector2(680, 290), S("UI_Button_Play"));
-            var playLabel = Text("Label", play, new Vector2(0, 13), new Vector2(560, 110), "Play · Level 1", 78, White);
+            var playLabel = Text("Label", play, new Vector2(0, 13), new Vector2(560, 110), "Level 1", 78, White);
 
             // Home bar on the screen bottom: Shop, Event, Home (selected), Orbit Rush, Puzzle; 2312 is its top edge.
             var bar = Rect("HomeBar", bottom, Center, At(585, 2422), new Vector2(Reference.x, 220));
