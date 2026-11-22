@@ -30,6 +30,11 @@ namespace Project.Contexts.Game.Levels
 
         public int VariantCount(int level) => EntryFor(level)?.Variants.Count ?? 0;
 
-        private Entry EntryFor(int level) => _levels.Count == 0 ? null : _levels[Mathf.Max(0, level - 1) % _levels.Count];
+        private Entry EntryFor(int level)
+        {
+            if (_levels.Count == 0) return null;
+            if (level > _levels.Count) Debug.LogWarning($"[LevelCatalog] Level {level} is past the {_levels.Count} in the catalog; it repeats an earlier one.");
+            return _levels[Mathf.Max(0, level - 1) % _levels.Count];
+        }
     }
 }

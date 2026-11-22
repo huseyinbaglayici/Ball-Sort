@@ -15,6 +15,14 @@ namespace Project.Contexts.Game.Items
         private static readonly Dictionary<float, Sprite> GlowSprites = new();
         private static Material _additive;
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetOnPlay()
+        {
+            RimSprites.Clear();
+            GlowSprites.Clear();
+            _additive = null;
+        }
+
         private readonly SpriteRenderer _rim;
         private readonly SpriteRenderer _glow;
         private readonly int _rimOrder;

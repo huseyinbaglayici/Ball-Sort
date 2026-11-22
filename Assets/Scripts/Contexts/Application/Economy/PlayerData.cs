@@ -68,7 +68,7 @@ namespace Project.Contexts.Application.Economy
         // Mechanic flags.
         public int Mechanics;
         // Indexed by BoosterType.
-        public bool[] Boosters = new bool[3];
+        public bool[] Boosters = new bool[CampaignRules.BoosterCount];
     }
 
     // One file so a win's coins, road reward and next level are written together.
@@ -81,9 +81,9 @@ namespace Project.Contexts.Application.Economy
         // MaxLevel + 1 once the campaign is won.
         public int Level = 1;
         public int Coins = CampaignRules.StartingCoins;
-        public int[] BoosterStock = new int[3];
+        public int[] BoosterStock = new int[CampaignRules.BoosterCount];
         // Indexed by BoosterType.
-        public bool[] OpeningGranted = new bool[3];
+        public bool[] OpeningGranted = new bool[CampaignRules.BoosterCount];
         public LivesModel Lives = new();
         public bool NoAds;
         public bool FirstInterstitialSeen;
@@ -147,6 +147,16 @@ namespace Project.Contexts.Application.Economy
             _save.Save(Key, Model);
         }
 
+        // One slot per booster: a missing or wrong-sized array keeps what fits.
+        private static T[] FitBoosters<T>(T[] array, ref bool changed)
+        {
+            if (array != null && array.Length == CampaignRules.BoosterCount) return array;
+            var fitted = new T[CampaignRules.BoosterCount];
+            if (array != null) Array.Copy(array, fitted, Math.Min(fitted.Length, array.Length));
+            changed = true;
+            return fitted;
+        }
+
         // Upgrades an older or damaged model; returns whether anything changed.
         public static bool Migrate(ProgressModel model)
         {
@@ -155,19 +165,9 @@ namespace Project.Contexts.Application.Economy
             {
                 // Version 1 saves keep level and coins, lives start full; opening boosters come on level entry.
                 model.Lives = new LivesModel();
-                model.BoosterStock = new int[3];
-                model.OpeningGranted = new bool[3];
+                model.BoosterStock = new int[CampaignRules.BoosterCount];
+                model.OpeningGranted = new bool[CampaignRules.BoosterCount];
                 model.Version = 2;
-                changed = true;
-            }
-
-            if (model.Version < 3)
-            {
-                // Boosters a version 2 player has already passed need no intro.
-                model.Tutorial ??= new TutorialModel();
-                foreach (var type in CampaignRules.AllBoosters)
-                    if (model.Level > CampaignRules.UnlockLevel(type)) model.Tutorial.Boosters[(int)type] = true;
-                model.Version = 3;
                 changed = true;
             }
 
@@ -177,29 +177,19 @@ namespace Project.Contexts.Application.Economy
                 changed = true;
             }
 
-            if (model.Tutorial.Boosters == null || model.Tutorial.Boosters.Length != 3)
+            model.Tutorial.Boosters = FitBoosters(model.Tutorial.Boosters, ref changed);
+
+            if (model.Version < 3)
             {
-                var shown = new bool[3];
-                if (model.Tutorial.Boosters != null) Array.Copy(model.Tutorial.Boosters, shown, Math.Min(3, model.Tutorial.Boosters.Length));
-                model.Tutorial.Boosters = shown;
+                // Boosters a version 2 player has already passed need no intro.
+                foreach (var type in CampaignRules.AllBoosters)
+                    if (model.Level > CampaignRules.UnlockLevel(type)) model.Tutorial.Boosters[(int)type] = true;
+                model.Version = 3;
                 changed = true;
             }
 
-            if (model.BoosterStock == null || model.BoosterStock.Length != 3)
-            {
-                var stock = new int[3];
-                if (model.BoosterStock != null) Array.Copy(model.BoosterStock, stock, Math.Min(3, model.BoosterStock.Length));
-                model.BoosterStock = stock;
-                changed = true;
-            }
-
-            if (model.OpeningGranted == null || model.OpeningGranted.Length != 3)
-            {
-                var granted = new bool[3];
-                if (model.OpeningGranted != null) Array.Copy(model.OpeningGranted, granted, Math.Min(3, model.OpeningGranted.Length));
-                model.OpeningGranted = granted;
-                changed = true;
-            }
+            model.BoosterStock = FitBoosters(model.BoosterStock, ref changed);
+            model.OpeningGranted = FitBoosters(model.OpeningGranted, ref changed);
 
             if (model.Lives == null)
             {

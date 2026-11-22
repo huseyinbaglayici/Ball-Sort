@@ -118,6 +118,7 @@ namespace Project.Contexts.Application
                 _data.Model.Level = level + 1;
                 _data.Model.RetryCount = 0;
                 _data.Model.LastVariant = 0;
+                _data.Save();
                 _wallet.Add(CampaignRules.FirstWinCoins(level) + road.Coins);
                 foreach (var type in CampaignRules.AllBoosters) _boosters.Add(type, road.Boosters(type));
                 _lives.GrantUnlimited(road.UnlimitedLifeMinutes);
@@ -141,8 +142,8 @@ namespace Project.Contexts.Application
                 model.Level = 1;
                 model.RetryCount = 0;
                 model.LastVariant = 0;
-                model.BoosterStock = new int[3];
-                model.OpeningGranted = new bool[3];
+                model.BoosterStock = new int[CampaignRules.BoosterCount];
+                model.OpeningGranted = new bool[CampaignRules.BoosterCount];
                 model.Lives = new LivesModel();
                 model.NoAds = false;
                 model.FirstInterstitialSeen = false;

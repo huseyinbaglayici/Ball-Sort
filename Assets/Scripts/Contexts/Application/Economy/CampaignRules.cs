@@ -84,6 +84,7 @@ namespace Project.Contexts.Application.Economy
         public const int MaxMetaPeriod = 5;
 
         public static readonly BoosterType[] AllBoosters = { BoosterType.Undo, BoosterType.ExtraTube, BoosterType.FreeMove };
+        public const int BoosterCount = 3;
 
         public static readonly AdGroup[] AdGroups =
         {
