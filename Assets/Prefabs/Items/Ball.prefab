@@ -1211,7 +1211,7 @@ MonoBehaviour:
   _core: {fileID: 6089269428216198072}
   _innerGlow: {fileID: 2915379029788100982}
   _shell: {fileID: 0}
-  _break: {fileID: 0}
+  _revealFx: {fileID: 0}
   _keyRoot: {fileID: 6702968596525301919}
   _keyGlow: {fileID: 5381058435654464408}
   _key: {fileID: 4948703807347709505}

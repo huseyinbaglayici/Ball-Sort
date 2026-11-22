@@ -487,8 +487,8 @@ MonoBehaviour:
   HiddenShakeScale: 1.06
   HiddenShakeDegrees: 6
   HiddenShakeShift: 0.021052632
-  HiddenBreakDuration: 0.64
-  HiddenBreakScale: 1.45
+  HiddenBreakDuration: 0.32
+  HiddenBreakScale: 1.1
   HiddenOrbDelay: 0.04
   HiddenOrbDuration: 0.48
   HiddenOrbFrom: 0.55
@@ -499,8 +499,6 @@ MonoBehaviour:
   MeltDuration: 1.5
   MeltHalfAlpha: 0.5
   MeltOutDuration: 0.25
-  MeltShardIn: 0.25
-  MeltShardOut: 2.4
   MeltHopDuration: 0.64
   MeltHopStagger: 0.36
   ObstacleHopHeight: 0.11578947

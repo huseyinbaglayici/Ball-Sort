@@ -1,0 +1,53 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: ObstacleIce
+  m_Shader: {fileID: 4800000, guid: 0ef7cbfee01f4a44bb96f62e8a67a475, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _MainTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _Aspect: 2.667
+    - _CoolGain: 0.12
+    - _Crack: 0
+    - _CrackGlow: 1
+    - _CrackScale: 2.2
+    - _CrackWidth: 0.035
+    - _FrostGain: 0.35
+    - _FrostPower: 4
+    - _HalfWidth: 0.44
+    - _ShineGain: 0.1
+    - _ShinePeriod: 8
+    - _ShineSlope: 0.8
+    - _ShineWidth: 0.12
+    m_Colors:
+    - _CoolColor: {r: 0.62, g: 0.78, b: 1, a: 1}
+    - _CrackColor: {r: 0.78, g: 0.97, b: 1, a: 1}
+    - _CrackOrigin: {r: 0.5, g: 0.5, b: 0, a: 0}
+    - _FrostColor: {r: 0.9, g: 0.98, b: 1, a: 1}
+    - _Piece: {r: 0, g: 1, b: 0, a: 0}
+    - _ShineColor: {r: 0.92, g: 1, b: 1, a: 1}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1

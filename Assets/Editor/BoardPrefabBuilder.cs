@@ -31,6 +31,10 @@ namespace Project.Editor
         private const string AdditivePath = "Assets/Art/Materials/SpriteAdditive.mat";
         private const string TubeGlassShaderName = "Project/Tube Glass";
         private const string TubeGlassPath = "Assets/Art/Materials/TubeGlass.mat";
+        private const string ObstacleShellShaderName = "Project/Obstacle Shell";
+        private const string ObstacleShellPath = "Assets/Art/Materials/ObstacleShell.mat";
+        private const string ObstacleIceShaderName = "Project/Obstacle Ice";
+        private const string ObstacleIcePath = "Assets/Art/Materials/ObstacleIce.mat";
         // The soft outline outside the glass stays faint; the glass shader draws the crisp edge line.
         private const float TubeGlowAlpha = 0.22f;
         private const string AtlasPath = "Assets/Art/Atlases/GameplayAtlas.spriteatlasv2";
@@ -394,11 +398,13 @@ namespace Project.Editor
             var innerGlow = AddSprite(visual, "InnerGlow", sample.InnerGlow, 5, normal);
             var layers = new List<SpriteRenderer> { outerGlow, backRenderer, core, frontRenderer, innerGlow };
 
-            SpriteRenderer shell = null, shellBreak = null;
+            SpriteRenderer shell = null;
+            ShellBreakFx revealFx = null;
             if (type == ItemType.QuestionMark)
             {
-                shell = AddOverlay(visual, "Shell", art.Shell, 1, normal);
-                shellBreak = AddOverlay(root.transform, "Break", art.Break, 9, normal);
+                var shellMaterial = EnsureOrbMaterial(ObstacleShellPath, BlendMode.OneMinusSrcAlpha, ObstacleShellShaderName);
+                shell = AddOverlay(visual, "Shell", art.Shell, 1, shellMaterial);
+                revealFx = CreateRevealFx(root.transform, art.Shell, shellMaterial);
             }
             var keyRoot = new GameObject("Key").transform;
             keyRoot.SetParent(visual, false);
@@ -422,7 +428,7 @@ namespace Project.Editor
             so.FindProperty("_core").objectReferenceValue = core;
             so.FindProperty("_innerGlow").objectReferenceValue = innerGlow;
             so.FindProperty("_shell").objectReferenceValue = shell;
-            so.FindProperty("_break").objectReferenceValue = shellBreak;
+            so.FindProperty("_revealFx").objectReferenceValue = revealFx;
             so.FindProperty("_keyRoot").objectReferenceValue = keyRoot;
             so.FindProperty("_keyGlow").objectReferenceValue = keyGlow;
             so.FindProperty("_key").objectReferenceValue = key;
@@ -433,6 +439,35 @@ namespace Project.Editor
             so.FindProperty("_bombCount").objectReferenceValue = count;
             so.ApplyModifiedPropertiesWithoutUndo();
             return root;
+        }
+
+        // Ring halves, core glows and a glint round the ball, and three wedges of the shell; far ring and shards sit behind the orb.
+        private static ShellBreakFx CreateRevealFx(Transform root, Sprite shellArt, Material shellMaterial)
+        {
+            var fx = new GameObject("RevealFx").transform;
+            fx.SetParent(root, false);
+            var item = fx.gameObject.AddComponent<ShellBreakFx>();
+            var additive = CompleteFxBuilder.AdditiveMaterial("FxFinishSprite", null);
+            var halo = CompleteFxBuilder.ImportSprite("Halo", 128f);
+            var bead = CompleteFxBuilder.ImportSprite("Bead", 64f);
+            var ringFar = AddOverlay(fx, "RingFar", CompleteFxBuilder.ImportSprite("TouchLineFar", 128f), 0, additive);
+            ringFar.sortingOrder = 1;
+            var shards = new List<SpriteRenderer>();
+            for (var i = 0; i < 3; i++)
+            {
+                var shard = AddOverlay(fx, $"Shard{i}", shellArt, 0, shellMaterial);
+                shard.sortingOrder = 1;
+                shards.Add(shard);
+            }
+            var so = new SerializedObject(item);
+            so.FindProperty("_ringFar").objectReferenceValue = ringFar;
+            so.FindProperty("_glow").objectReferenceValue = AddOverlay(fx, "Glow", halo, 10, additive);
+            so.FindProperty("_hot").objectReferenceValue = AddOverlay(fx, "Hot", bead, 11, additive);
+            so.FindProperty("_ringNear").objectReferenceValue = AddOverlay(fx, "RingNear", CompleteFxBuilder.ImportSprite("TouchLineNear", 128f), 12, additive);
+            so.FindProperty("_spark").objectReferenceValue = AddOverlay(fx, "Spark", bead, 13, additive);
+            SetArray(so.FindProperty("_shards"), shards);
+            so.ApplyModifiedPropertiesWithoutUndo();
+            return item;
         }
 
         // Hidden until used; step orders it among the overlays.
@@ -481,12 +516,20 @@ namespace Project.Editor
             return material;
         }
 
-        // Ice over the tube art with the needed color's orb (all its layers) on the badge, and the melt art over both.
+        // Ice over the tube art with the needed color's orb (all its layers) on the badge; its pieces and break FX over both.
         private static GameObject CreateFrozenTube(ObstacleSprites art, Sprite back, Sprite front, OrbSkin sample)
         {
             var root = new GameObject("FrozenTube");
             var item = root.AddComponent<FrozenTubeItem>();
-            var ice = AddSprite(root.transform, "Ice", art.Frozen, TubeArt.FrozenOrder, null);
+            var iceMaterial = EnsureOrbMaterial(ObstacleIcePath, BlendMode.OneMinusSrcAlpha, ObstacleIceShaderName);
+            var ice = AddSprite(root.transform, "Ice", art.Frozen, TubeArt.FrozenOrder, iceMaterial);
+            var pieces = new List<SpriteRenderer>();
+            for (var i = 0; i < 3; i++)
+            {
+                var piece = AddSprite(root.transform, $"IcePiece{i}", art.Frozen, TubeArt.FrozenOrder, iceMaterial);
+                piece.enabled = false;
+                pieces.Add(piece);
+            }
             var badge = new GameObject("Badge").transform;
             badge.SetParent(root.transform, false);
             var normal = EnsureOrbMaterial(OrbLayerPath, BlendMode.OneMinusSrcAlpha);
@@ -500,12 +543,28 @@ namespace Project.Editor
             var frontRenderer = AddSprite(badge, "Front", front, order + 3, additive);
             frontRenderer.color = new Color(1f, 1f, 1f, OrbGlassAlpha);
             var innerGlow = AddSprite(badge, "InnerGlow", sample.InnerGlow, order + 4, normal);
-            var melt = AddSprite(root.transform, "Melt", art.Melt, TubeArt.MeltOrder, null);
-            melt.enabled = false;
 
+            var fx = new GameObject("BreakFx").transform;
+            fx.SetParent(root.transform, false);
+            var fxMaterial = CompleteFxBuilder.AdditiveMaterial("FxFinishSprite", null);
+            var halo = CompleteFxBuilder.ImportSprite("Halo", 128f);
+            var bead = CompleteFxBuilder.ImportSprite("Bead", 64f);
+            var top = TubeArt.MeltOrder;
             var so = new SerializedObject(item);
+            so.FindProperty("_ringFar").objectReferenceValue =
+                CompleteFxBuilder.AddSprite(fx, "RingFar", CompleteFxBuilder.ImportSprite("TouchLineFar", 128f), order, fxMaterial);
+            so.FindProperty("_glow").objectReferenceValue = CompleteFxBuilder.AddSprite(fx, "Glow", halo, order + 5, fxMaterial);
+            so.FindProperty("_hot").objectReferenceValue = CompleteFxBuilder.AddSprite(fx, "Hot", bead, order + 5, fxMaterial);
+            so.FindProperty("_ringNear").objectReferenceValue =
+                CompleteFxBuilder.AddSprite(fx, "RingNear", CompleteFxBuilder.ImportSprite("TouchLineNear", 128f), order + 5, fxMaterial);
+            SetArray(so.FindProperty("_vapour"), new List<SpriteRenderer>
+            {
+                CompleteFxBuilder.AddSprite(fx, "Vapour0", halo, top, fxMaterial),
+                CompleteFxBuilder.AddSprite(fx, "Vapour1", halo, top, fxMaterial)
+            });
+            so.FindProperty("_rimGlow").objectReferenceValue = CompleteFxBuilder.AddSprite(fx, "RimGlow", halo, top, fxMaterial);
+            SetArray(so.FindProperty("_pieces"), pieces);
             so.FindProperty("_frozen").objectReferenceValue = ice;
-            so.FindProperty("_melt").objectReferenceValue = melt;
             so.FindProperty("_badge").objectReferenceValue = badge;
             so.FindProperty("_badgeOuterGlow").objectReferenceValue = outerGlow;
             so.FindProperty("_badgeCore").objectReferenceValue = core;
@@ -630,8 +689,8 @@ namespace Project.Editor
 
         private sealed class ObstacleSprites
         {
-            public Sprite Shell, Break, Key, KeyGlow, BombBase, BombRing, BombFx, Defuse, Explode;
-            public Sprite Frozen, Melt, Curtain, Frame, Housing, PadlockBase, PadlockBody;
+            public Sprite Shell, Key, KeyGlow, BombBase, BombRing, BombFx, Defuse, Explode;
+            public Sprite Frozen, Curtain, Frame, Housing, PadlockBase, PadlockBody;
         }
 
         private static ObstacleSprites ImportObstacleArt()
@@ -639,7 +698,6 @@ namespace Project.Editor
             var art = new ObstacleSprites
             {
                 Shell = ImportObstacleSprite("Orb_Hidden_Shell"),
-                Break = ImportObstacleSprite("Orb_Hidden_Break"),
                 Key = ImportObstacleSprite("Orb_Key"),
                 KeyGlow = ImportObstacleSprite("Orb_Key_Glow"),
                 BombBase = ImportObstacleSprite("Orb_Bomb_Base"),
@@ -648,7 +706,6 @@ namespace Project.Editor
                 Defuse = ImportObstacleSprite("Orb_Bomb_Diffuse"),
                 Explode = ImportObstacleSprite("Orb_Bomb_Explode"),
                 Frozen = ImportObstacleSprite("Tube_Frozen"),
-                Melt = ImportObstacleSprite("Tube_Melt"),
                 Curtain = ImportObstacleSprite("Shutter_Curtain", ShutterBorder),
                 Frame = ImportObstacleSprite("Shutter_Frame", ShutterBorder),
                 Housing = ImportObstacleSprite("Shutter_Housing", HousingBorder),

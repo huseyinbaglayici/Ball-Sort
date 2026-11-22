@@ -42,6 +42,12 @@ namespace Project.Contexts.Game.Preview
         // Win section: a solved board whose last tube completes as the level-won beat plays.
         private bool _win;
         private float _wonAt = -1f;
+        // Obstacle sections: a hidden ball comes open, or a frozen tube melts, after one real move.
+        private enum Obstacle { None, Hidden, Frozen }
+        private Obstacle _obstacle;
+        private float _obstacleAt = -1f;
+        // A move's flight before the obstacle reacts, for the loop.
+        private const float MoveTime = 0.8f;
         // Loop restarts after the open has played out and rested a moment.
         private const float LoopRest = 1.6f;
         private SortBoard _model;
@@ -78,7 +84,7 @@ namespace Project.Contexts.Game.Preview
                 _factory.Release(tube);
             }
             _tubes.Clear();
-            if (_boosters || _shutterTubes > 0 || _win) return;
+            if (_boosters || _shutterTubes > 0 || _win || _obstacle != Obstacle.None) return;
 
             AddTube(-1, 4, new[] { 1, 2, 1 });
             var full = new int[_size];
@@ -135,6 +141,7 @@ namespace Project.Contexts.Game.Preview
             if (_level == null) _level = ScriptableObject.CreateInstance<LevelData>();
             _level.Bottles.Clear();
             _level.Lockboxes.Clear();
+            _level.Curtains.Clear();
             int[][] stacks = { new[] { 1, 1, 1 }, new[] { 2, 2, 1 }, new[] { 2, 2 }, new int[0] };
             for (var b = 0; b < stacks.Length; b++)
             {
@@ -154,6 +161,7 @@ namespace Project.Contexts.Game.Preview
             if (_level == null) _level = ScriptableObject.CreateInstance<LevelData>();
             _level.Bottles.Clear();
             _level.Lockboxes.Clear();
+            _level.Curtains.Clear();
             var tall = _shutterTubes > 4;
             var locked = tall ? 1 : _shutterTubes;
             var keyTube = BottleData.CreateEmpty(4, new Vector2(0f, 0f));
@@ -191,6 +199,15 @@ namespace Project.Contexts.Game.Preview
         private void Update()
         {
             if (!_loop) return;
+            if (_obstacle != Obstacle.None)
+            {
+                var play = _obstacle == Obstacle.Hidden
+                    ? _config.HiddenShakeDuration + _config.HiddenOrbDelay + _config.HiddenOrbDuration + _config.HiddenSparkTime
+                    : _config.MeltWobbleDuration + _config.MeltDuration + _config.FrozenVapourTime;
+                if (_obstacleAt >= 0f && Time.time - _obstacleAt < MoveTime + play + LoopRest) return;
+                PlayObstacle();
+                return;
+            }
             if (_win)
             {
                 var winCycle = WinFx.PanelAt(_config, 4) + _config.Win.AfterPanel + LoopRest;
@@ -212,6 +229,7 @@ namespace Project.Contexts.Game.Preview
             if (_level == null) _level = ScriptableObject.CreateInstance<LevelData>();
             _level.Bottles.Clear();
             _level.Lockboxes.Clear();
+            _level.Curtains.Clear();
             for (var b = 0; b < 4; b++)
             {
                 var bottle = BottleData.CreateEmpty(4, new Vector2(b, 0f));
@@ -231,16 +249,82 @@ namespace Project.Contexts.Game.Preview
             _boosters = false;
             _shutterTubes = 0;
             _loop = false;
+            _obstacle = Obstacle.None;
             _win = true;
             _camera.orthographicSize = MinOrthoSize;
             Build();
             PlayWin();
         }
 
+        private void ShowObstacle(Obstacle obstacle)
+        {
+            _boosters = false;
+            _win = false;
+            _shutterTubes = 0;
+            _obstacle = obstacle;
+            _camera.orthographicSize = MinOrthoSize;
+            Build();
+            BuildObstacleBoard();
+        }
+
+        // Hidden: three tubes with a hidden ball under a normal one and a spare. Frozen: a frozen tube that melts when tube 1 fills with its color.
+        private void BuildObstacleBoard()
+        {
+            _selected = -1;
+            _obstacleAt = -1f;
+            if (_level == null) _level = ScriptableObject.CreateInstance<LevelData>();
+            _level.Bottles.Clear();
+            _level.Lockboxes.Clear();
+            _level.Curtains.Clear();
+            int[][] stacks = _obstacle == Obstacle.Hidden
+                ? new[] { new[] { 1, 2, 3 }, new[] { 2, 3, 1 }, new[] { 3, 1, 2 }, new int[0] }
+                : new[] { new[] { 2, 3, 3 }, new[] { 1, 1, 1 }, new[] { 2, 1 }, new[] { 3 } };
+            for (var b = 0; b < stacks.Length; b++)
+            {
+                var bottle = BottleData.CreateEmpty(4, new Vector2(b, 0f));
+                for (var i = 0; i < stacks[b].Length; i++)
+                {
+                    var hidden = _obstacle == Obstacle.Hidden && i < 2;
+                    bottle.Slots[i] = new SlotData { Color = stacks[b][i], Hidden = hidden, Kind = hidden ? SlotKind.Special : SlotKind.Normal };
+                }
+                _level.Bottles.Add(bottle);
+            }
+            if (_obstacle == Obstacle.Frozen) _level.Curtains.Add(new CurtainData { Bottle = 0, Color = 1, Need = 4 });
+            _model = new SortBoard(_level);
+            _boardView.Build(_level, 1, _model, _factory, _palette);
+        }
+
+        // One real move: the hidden ball under it comes open, or tube 1 fills and the ice melts.
+        private void PlayObstacle()
+        {
+            BuildObstacleBoard();
+            if (_obstacle == Obstacle.Hidden) Move(0, 3);
+            else Move(2, 1);
+            _obstacleAt = Time.time;
+        }
+
+        private void ObstacleGui(float width)
+        {
+            var y = GuiHeight - 200f;
+            var third = (width - 40f) / 3f;
+            var since = _obstacleAt < 0f ? "-" : $"{Time.time - _obstacleAt:0.00}s";
+            var what = _obstacle == Obstacle.Hidden ? "Hidden: charge, crack light, shards, orb pop" : "Frozen: charge, crack light, thaw, split, vapour";
+            GUI.Label(new Rect(20f, y - 76f, width - 40f, 36f), what, _label);
+            GUI.Label(new Rect(20f, y - 40f, width - 40f, 36f), $"speed {Time.timeScale:0.##}x   t {since}", _label);
+            if (GUI.Button(new Rect(20f, y, third - 8f, 56f), "Replay", _button)) PlayObstacle();
+            if (GUI.Button(new Rect(20f + third, y, third - 8f, 56f), _loop ? "[Loop]" : "Loop", _button)) _loop = !_loop;
+            if (GUI.Button(new Rect(20f + third * 2f, y, third - 8f, 56f), _slow ? "[0.25x]" : "0.25x", _button))
+            {
+                _slow = !_slow;
+                Time.timeScale = _slow ? SlowMotion : 1f;
+            }
+        }
+
         private void ShowShutters(int tubes)
         {
             _boosters = false;
             _win = false;
+            _obstacle = Obstacle.None;
             _shutterTubes = tubes;
             _camera.orthographicSize = MinOrthoSize;
             Build();
@@ -252,6 +336,7 @@ namespace Project.Contexts.Game.Preview
             _shutterTubes = 0;
             _loop = false;
             _win = false;
+            _obstacle = Obstacle.None;
             _boosters = boosters;
             if (!boosters) _boardView.Clear();
             _camera.orthographicSize = MinOrthoSize;
@@ -325,12 +410,21 @@ namespace Project.Contexts.Game.Preview
             _button ??= new GUIStyle(GUI.skin.button) { fontSize = 22 };
             _label ??= new GUIStyle(GUI.skin.label) { fontSize = 22, normal = { textColor = Color.white } };
 
-            var top = (width - 40f) / 4f;
-            var finish = !_boosters && _shutterTubes == 0 && !_win;
+            var top = (width - 40f) / 6f;
+            var finish = !_boosters && _shutterTubes == 0 && !_win && _obstacle == Obstacle.None;
             if (GUI.Button(new Rect(20f, 20f, top - 8f, 56f), finish ? "[Finish]" : "Finish", _button)) ShowSection(false);
             if (GUI.Button(new Rect(20f + top, 20f, top - 8f, 56f), _boosters ? "[Boosters]" : "Boosters", _button)) ShowSection(true);
             if (GUI.Button(new Rect(20f + top * 2f, 20f, top - 8f, 56f), _shutterTubes > 0 ? "[Shutter]" : "Shutter", _button)) ShowShutters(1);
             if (GUI.Button(new Rect(20f + top * 3f, 20f, top - 8f, 56f), _win ? "[Win]" : "Win", _button)) ShowWin();
+            if (GUI.Button(new Rect(20f + top * 4f, 20f, top - 8f, 56f), _obstacle == Obstacle.Hidden ? "[Hidden]" : "Hidden", _button))
+                ShowObstacle(Obstacle.Hidden);
+            if (GUI.Button(new Rect(20f + top * 5f, 20f, top - 8f, 56f), _obstacle == Obstacle.Frozen ? "[Frozen]" : "Frozen", _button))
+                ShowObstacle(Obstacle.Frozen);
+            if (_obstacle != Obstacle.None)
+            {
+                ObstacleGui(width);
+                return;
+            }
             if (_win)
             {
                 WinGui(width);

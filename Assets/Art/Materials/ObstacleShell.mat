@@ -1,0 +1,51 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: ObstacleShell
+  m_Shader: {fileID: 4800000, guid: 2a8e983ea08c9244ab385317ef7d4075, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _MainTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _BandGain: 0.28
+    - _BandPeriod: 3.6
+    - _BandTravel: 0.55
+    - _BandWave: 0.18
+    - _BandWidth: 0.14
+    - _Crack: 0
+    - _CrackScale: 2.4
+    - _CrackWidth: 0.035
+    - _EnergyGain: 0.35
+    - _PortalHeat: 0
+    - _SwirlSpeed: 0.12
+    m_Colors:
+    - _BandColor: {r: 0.75, g: 0.95, b: 1, a: 1}
+    - _CrackColor: {r: 0.8, g: 0.97, b: 1, a: 1}
+    - _EnergyColor: {r: 0.2, g: 0.08, b: 0.5, a: 1}
+    - _PortalCut: {r: 100000, g: 0, b: 1, a: 0}
+    - _Sphere: {r: 0.5, g: 0.5, b: 0.42, a: 0}
+    - _Wedge: {r: 0, g: 0, b: 0, a: 0}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1

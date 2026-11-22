@@ -30,9 +30,9 @@ namespace Project.Contexts.Game.Items
         [SerializeField] private SpriteRenderer _ring;
         [SerializeField] private SpriteRenderer _core;
         [SerializeField] private SpriteRenderer _innerGlow;
-        // Hidden balls only: the shell drawn instead of the orb, and its break art.
+        // Hidden balls only: the shell drawn instead of the orb, and its reveal effect.
         [SerializeField] private SpriteRenderer _shell;
-        [SerializeField] private SpriteRenderer _break;
+        [SerializeField] private ShellBreakFx _revealFx;
         // Scaled as one by the key's use.
         [SerializeField] private Transform _keyRoot;
         [SerializeField] private SpriteRenderer _keyGlow;
@@ -122,7 +122,7 @@ namespace Project.Contexts.Game.Items
                 top = Mathf.Max(top, _baseOrders[i]);
                 pop.Add(_layers[i].transform);
             }
-            // Only overlays on the visual are cut by the portals; the break and defuse never fly.
+            // Only overlays on the visual are cut by the portals; the reveal and defuse never fly.
             foreach (var part in new[] { _shell, _keyGlow, _key, _bombBase, _bombRing, _bombFx })
                 if (part != null) masked.Add(part);
             foreach (var part in new[] { _keyGlow, _key, _bombBase, _bombRing, _bombFx })
@@ -130,8 +130,9 @@ namespace Project.Contexts.Game.Items
             _popParts = pop.ToArray();
 
             var overlays = new List<Renderer>();
-            foreach (Renderer part in new Renderer[] { _shell, _break, _keyGlow, _key, _bombBase, _bombRing, _bombFx, _defuse })
+            foreach (Renderer part in new Renderer[] { _shell, _keyGlow, _key, _bombBase, _bombRing, _bombFx, _defuse })
                 if (part != null) overlays.Add(part);
+            if (_revealFx != null) overlays.AddRange(_revealFx.Renderers);
             if (_bombCount != null) overlays.Add(_bombCountRenderer = _bombCount.GetComponent<Renderer>());
             _overlays = overlays.ToArray();
             _overlayOrders = new int[_overlays.Length];
@@ -171,7 +172,7 @@ namespace Project.Contexts.Game.Items
             ApplyLook();
         }
 
-        // The shell trembles and breaks; the real orb pops in under the break.
+        // The shell trembles, squashes as a ring snaps in, cracks with light and breaks; the real orb pops in under the shards.
         public void Reveal(OrbSkin orb, Color color, BallAnimationConfig config)
         {
             if (!IsHidden) return;
@@ -180,17 +181,38 @@ namespace Project.Contexts.Game.Items
             Color = color;
             SetOrb(orb);
             var shake = config.HiddenShakeDuration;
+            var crackAt = Mathf.Max(shake - config.HiddenCrackTime, 0f);
+            var chargeAt = Mathf.Max(crackAt - config.HiddenChargeTime, 0f);
+            var orbAt = shake + config.HiddenOrbDelay;
             _reveal = PrimeTween.Sequence.Create()
-                .Chain(PrimeTween.Tween.Custom(this, 0f, 1f, shake, (ball, k) => ball.TrembleShell(k, config)))
+                .Chain(PrimeTween.Tween.Custom(this, 0f, 1f, Mathf.Max(chargeAt, 0.0001f), (ball, k) => ball.TrembleShell(k, config)))
+                .Chain(PrimeTween.Tween.Custom(this, chargeAt, shake, Mathf.Max(shake - chargeAt, 0.0001f),
+                    (ball, t) => ball.ChargeShell(t - chargeAt, t - crackAt, config)))
                 .ChainCallback(this, ball => ball.BreakShell(color, config))
-                .Chain(PrimeTween.Tween.Custom(this, 0f, 1f, config.HiddenBreakDuration, (ball, k) =>
-                {
-                    ball._break.transform.localScale = Vector3.one * Mathf.Lerp(1f, config.HiddenBreakScale, k);
-                    ball._break.color = new Color(1f, 1f, 1f, 1f - k * k);
-                }))
-                .Insert(shake + config.HiddenOrbDelay, PrimeTween.Tween.Custom(this, config.HiddenOrbFrom, 1f,
-                    config.HiddenOrbDuration, (ball, s) => ball.SetPartsScale(s), PrimeTween.Ease.OutBack))
+                .Insert(shake, PrimeTween.Tween.Custom(this, 0f, 1f, config.HiddenBreakDuration, (ball, k) => ball._revealFx.Shards(config, k)))
+                .Insert(shake, PrimeTween.Tween.Custom(this, 0f, 1f, config.HiddenHorizonTime, (ball, k) => ball._revealFx.Hit(config, k)))
+                .Insert(orbAt, PrimeTween.Tween.Custom(this, 0f, 1f, config.HiddenOrbDuration,
+                    (ball, k) => ball.SetPartsScale(Mathf.LerpUnclamped(config.HiddenOrbFrom, 1f, BackOut(k, config.HiddenOrbOvershoot)))))
+                .Insert(orbAt + config.HiddenOrbDuration * config.HiddenSparkAt, PrimeTween.Tween.Custom(this, 0f, 1f, config.HiddenSparkTime,
+                    (ball, k) => ball._revealFx.Spark(config, k)))
                 .ChainCallback(this, ball => ball.EndReveal());
+        }
+
+        // Charge then crack: times since each began.
+        private void ChargeShell(float sinceCharge, float sinceCrack, BallAnimationConfig config)
+        {
+            var charge = Mathf.Clamp01(sinceCharge / Mathf.Max(config.HiddenChargeTime, 0.0001f));
+            SquashShell(charge, config);
+            _revealFx.Charge(config, charge);
+            var crack = Mathf.Clamp01(sinceCrack / Mathf.Max(config.HiddenCrackTime, 0.0001f));
+            ShellBreakFx.Crack(_shell, 1f - (1f - crack) * (1f - crack) * (1f - crack));
+        }
+
+        // Ease out with a settable overshoot.
+        private static float BackOut(float k, float overshoot)
+        {
+            var t = k - 1f;
+            return 1f + t * t * ((overshoot + 1f) * t + overshoot);
         }
 
         // Grows harder toward the end.
@@ -204,13 +226,21 @@ namespace Project.Contexts.Game.Items
                 0f, t.localPosition.z);
         }
 
+        // Still and pressed flat from the tremble's peak size, bottom kept.
+        private void SquashShell(float k, BallAnimationConfig config)
+        {
+            var t = _shell.transform;
+            var squash = Vector2.Lerp(Vector2.one, config.HiddenSquash, k * k) * config.HiddenShakeScale;
+            t.localScale = new Vector3(squash.x, squash.y, 1f);
+            t.localRotation = Quaternion.identity;
+            t.localPosition = new Vector3(0f, (squash.y - 1f) * TubeArt.BallDiameter * 0.5f, t.localPosition.z);
+        }
+
         private void BreakShell(Color color, BallAnimationConfig config)
         {
             ResetShell();
             _shellShown = false;
-            _break.enabled = true;
-            _break.color = Color.white;
-            _break.transform.localScale = Vector3.one;
+            _revealFx.Break();
             SetPartsScale(config.HiddenOrbFrom);
             _highlight.SetTint(color);
             ApplyLook();
@@ -218,7 +248,7 @@ namespace Project.Contexts.Game.Items
 
         private void EndReveal()
         {
-            if (_break != null) _break.enabled = false;
+            if (_revealFx != null) _revealFx.Hide();
             SetPartsScale(1f);
         }
 
@@ -233,7 +263,7 @@ namespace Project.Contexts.Game.Items
             transform.localRotation = Quaternion.identity;
             if (_shell == null) return;
             ResetShell();
-            _break.enabled = false;
+            _revealFx.Hide();
             _shellShown = IsHidden;
             ApplyLook();
         }
@@ -244,6 +274,7 @@ namespace Project.Contexts.Game.Items
             t.localScale = Vector3.one;
             t.localRotation = Quaternion.identity;
             t.localPosition = new Vector3(0f, 0f, t.localPosition.z);
+            ShellBreakFx.Crack(_shell, 0f);
         }
 
         // id null removes it; tint is the lock's Surface color.

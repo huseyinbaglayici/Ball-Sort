@@ -75,7 +75,7 @@ namespace Project.Contexts.Game.Items
         public const int RimFrontOrder = 65;
         public const int CompletedCapOrder = 71;
         public const int GemOrder = 72;
-        // Ice over every tube layer, its badge orb and melt art above it.
+        // Ice over every tube layer, its badge orb and break FX above it.
         public const int FrozenOrder = 80;
         public const int FrozenBadgeOrder = 81;
         public const int MeltOrder = 87;
