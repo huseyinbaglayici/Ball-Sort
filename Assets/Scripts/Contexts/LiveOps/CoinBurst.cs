@@ -10,6 +10,13 @@ namespace Project.Contexts.LiveOps
     // A few coins (or other collectables) fly from a reward to their counter, then land with a punch.
     public static class CoinBurst
     {
+        private const float Stagger = 0.05f;
+        private const float SpreadTime = 0.22f;
+        private const float HomeTime = 0.38f;
+
+        // From the first coin leaving to the last one landing.
+        public static float Duration(int count) => Mathf.Max(count - 1, 0) * Stagger + SpreadTime + HomeTime;
+
         public static void Play(RectTransform from, RectTransform to, Sprite coin, int count = 7, float size = 90f,
             Action<int> landed = null)
         {
@@ -46,12 +53,12 @@ namespace Project.Contexts.LiveOps
                 image.raycastTarget = false;
                 var spread = (Vector3)(Random.insideUnitCircle * 140f);
                 rect.localPosition = start;
-                var delay = i * 0.05f;
+                var delay = i * Stagger;
                 var index = i;
                 var last = i == count - 1;
                 Sequence.Create(useUnscaledTime: true)
-                    .Chain(Tween.LocalPosition(rect, start + spread, 0.22f, Ease.OutCubic, startDelay: delay))
-                    .Chain(Tween.LocalPosition(rect, end, 0.38f, Ease.InCubic))
+                    .Chain(Tween.LocalPosition(rect, start + spread, SpreadTime, Ease.OutCubic, startDelay: delay))
+                    .Chain(Tween.LocalPosition(rect, end, HomeTime, Ease.InCubic))
                     .OnComplete(() =>
                     {
                         Object.Destroy(go);

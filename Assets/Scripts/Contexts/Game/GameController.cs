@@ -36,11 +36,8 @@ namespace Project.Contexts.Game
         [Header("UI")]
         [SerializeField] private GameObject _hud;
         [SerializeField] private TMP_Text _levelText;
-        [SerializeField] private TMP_Text _movesText;
         [SerializeField] private ResultPopup _resultPopup;
         [SerializeField] private MessagePopup _messagePopup;
-        [SerializeField] private Button _homeButton;
-        [SerializeField] private Button _restartButton;
         [SerializeField] private BoosterBar _boosters;
         [SerializeField] private DifficultyTag _difficulty;
         [SerializeField] private SettingsMenu _settings;
@@ -103,8 +100,6 @@ namespace Project.Contexts.Game
             _loc = Services.Get<LocalizationService>();
             _continue = Services.Get<ContinueService>();
             _popups = Services.Get<PopupService>();
-            if (_homeButton != null) _homeButton.onClick.AddListener(Quit);
-            if (_restartButton != null) _restartButton.onClick.AddListener(Restart);
             if (_settings != null) _settings.ExitPressed += RequestQuit;
             _audio = Services.Get<AudioManager>();
             _haptics = Services.Get<HapticModule>();
@@ -121,8 +116,6 @@ namespace Project.Contexts.Game
         private void OnDestroy()
         {
             if (_boosters != null) _boosters.Pressed -= OnBoosterPressed;
-            if (_homeButton != null) _homeButton.onClick.RemoveListener(Quit);
-            if (_restartButton != null) _restartButton.onClick.RemoveListener(Restart);
             if (_settings != null) _settings.ExitPressed -= RequestQuit;
         }
 
@@ -301,7 +294,7 @@ namespace Project.Contexts.Game
         // Never runs for a move whose flight was cancelled.
         private void OnMoveLanded(MoveResult move)
         {
-            if (_leaving) return;
+            if (_leaving || _states.CurrentKey != GameState.Playing) return;
             _readableAt = FailWindow.ReadableAt(Time.time, _movedAt, move, _board.Animation);
             foreach (var bottle in move.Completed)
                 if (_model.IsCompleted(bottle)) _board.SetCompleted(bottle, true);
@@ -474,8 +467,11 @@ namespace Project.Contexts.Game
                 return;
             }
             _ads.EndActivePlay();
-            _progress.FailAttempt();
-            if (_tryHasMoves) _audio.PlayOneShotSound("retry");
+            if (_tryHasMoves)
+            {
+                _progress.FailAttempt();
+                _audio.PlayOneShotSound("retry");
+            }
             _states.ChangeState(GameState.Playing);
         }
 
@@ -536,7 +532,7 @@ namespace Project.Contexts.Game
 
         private void Win()
         {
-            if (_states.CurrentKey == GameState.Playing) _states.ChangeState(GameState.Won);
+            if (_states.CurrentKey == GameState.Playing && !_winPending) _states.ChangeState(GameState.Won);
         }
 
         private void Lose()
@@ -547,7 +543,6 @@ namespace Project.Contexts.Game
         private void RefreshHud()
         {
             _levelText.text = _loc.Format("home.level", _level);
-            if (_movesText != null) _movesText.text = _model != null ? $"Moves {_model.MoveCount}" : string.Empty;
             if (_difficulty != null)
             {
                 var difficulty = CampaignRules.DifficultyOf(_level);
@@ -726,7 +721,7 @@ namespace Project.Contexts.Game
                     note.Append('\n').Append(loc.Format("rush.lose_streak", rush.Multiplier));
 
                 // Home is the popup's X; the first option is the main button.
-                _c._popups.Show(_c._resultPopup, ResultArgs.Loss(_c._level, options, note.ToString(), Leave));
+                _c._popups.Show(_c._resultPopup, new ResultArgs(options, note.ToString(), Leave));
             }
 
             // Bomb fail: pay one Undo (stock, else coins), then take back the exploding transfer.
@@ -798,8 +793,6 @@ namespace Project.Contexts.Game
             // Coins on screen per win, and the beat after the last one lands before moving on.
             private const int MinFlyingCoins = 4;
             private const int MaxFlyingCoins = 10;
-            private const float CoinStagger = 0.05f;
-            private const float CoinFlight = 0.6f;
             private const float AfterCollect = 0.35f;
 
             private readonly GameController _c;
@@ -847,7 +840,7 @@ namespace Project.Contexts.Game
                     if (_c._coinHud != null) _c._coinHud.Release(coins * (i + 1) / count - coins * i / count);
                     _c._haptics.Haptic(HapticModule.HapticType.Light);
                 });
-                var done = (count - 1) * CoinStagger + CoinFlight + AfterCollect;
+                var done = CoinBurst.Duration(count) + AfterCollect;
                 PrimeTween.Tween.Delay(this, done, state => state.ShowMetaTransition());
             }
 

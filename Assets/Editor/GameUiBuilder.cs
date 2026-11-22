@@ -55,7 +55,6 @@ namespace Project.Editor
         private static readonly Color Ink = new(0.11f, 0.09f, 0.25f);
         // #28105A, the art's text outline.
         private static readonly Color Outline = new(0.157f, 0.063f, 0.353f);
-        private static readonly Color Cream = new(1f, 0.96f, 0.86f);
         private static readonly Color Dim = new(0.04f, 0.03f, 0.10f, 0.72f);
         private static readonly Color Armed = new(0.45f, 1f, 0.85f, 0.7f);
 
@@ -304,7 +303,6 @@ namespace Project.Editor
             var hud = area.gameObject.AddComponent<EconomyHud>();
             Set(hud, "_coins", coins);
             Set(hud, "_livesCount", livesCount);
-            Set(hud, "_livesTimer", null);
             Set(hud, "_heart", heart);
             Set(hud, "_heartSprite", S("UI_Icon_Heart"));
             Set(hud, "_unlimitedSprite", S("UI_Icon_HeartInfinite"));
@@ -313,14 +311,8 @@ namespace Project.Editor
             Set(screen, "_view", canvas.gameObject);
             Set(screen, "_levelText", playLabel);
             Set(screen, "_poster", poster);
-            Set(screen, "_difficulty", null);
-            Set(screen, "_metaText", null);
-            Set(screen, "_road", null);
-            Set(screen, "_roadButton", null);
             Set(screen, "_playButton", play.GetComponent<Button>());
             Set(screen, "_starterPackButton", shop);
-            Set(screen, "_challengeButton", null);
-            Set(screen, "_rewardedLifeButton", null);
             Set(screen, "_settingsButton", settings.GetComponent<Button>());
             // Daily, both event buttons and the Orbit Rush tab are wired by the live-ops builder.
             SetArray(screen, "_comingSoon", new Object[] { noAds, puzzle });
@@ -608,9 +600,6 @@ namespace Project.Editor
             var game = Root(scene, "GameController").GetComponent<GameController>();
             Set(game, "_hud", canvas.gameObject);
             Set(game, "_levelText", levelText);
-            Set(game, "_movesText", null);
-            Set(game, "_homeButton", null);
-            Set(game, "_restartButton", null);
             Set(game, "_boosters", bar);
             Set(game, "_difficulty", difficulty);
             Set(game, "_settings", settings);
@@ -1040,9 +1029,17 @@ namespace Project.Editor
             var pill = Rect("Coins", rect, Top, new Vector2(0, DesignTop - 400f), Reference, new Vector2(0.5f, 1f));
             var bar = Pic("CoinBar", pill, Center, At(201, 262), new Vector2(284, 100), S("UI_Pill_Well_96"));
             var amount = Text("Amount", bar, new Vector2(27, -2), new Vector2(162, 66), "0", 46, White);
-            Pic("Coin", pill, Center, At(93, 254), new Vector2(93, 93), S("UI_Icon_Coin"));
+            var coin = Pic("Coin", pill, Center, At(93, 254), new Vector2(93, 93), S("UI_Icon_Coin"));
             var hud = pill.gameObject.AddComponent<EconomyHud>();
             Set(hud, "_coins", amount);
+            // On Home the counter matches the Home bar's own spot, so it never covers the lives pill.
+            var spot = pill.gameObject.AddComponent<PopupCoinSpot>();
+            Set(spot, "_bar", bar.rectTransform);
+            Set(spot, "_coin", coin.rectTransform);
+            SetRect(spot, "_levelBar", At(201, 262), new Vector2(284, 100));
+            SetRect(spot, "_levelCoin", At(93, 254), new Vector2(93, 93));
+            SetRect(spot, "_homeBar", At(806, 228), new Vector2(292, 96));
+            SetRect(spot, "_homeCoin", At(676, 226), new Vector2(118, 118));
             return root;
         }
 
@@ -1241,6 +1238,16 @@ namespace Project.Editor
             var property = so.FindProperty(field);
             if (property == null) throw new System.InvalidOperationException($"[GameUI] {target.GetType().Name}.{field} not found.");
             property.objectReferenceValue = value;
+            so.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        // A Rect field set from an anchored position and a size.
+        private static void SetRect(Object target, string field, Vector2 position, Vector2 size)
+        {
+            var so = new SerializedObject(target);
+            var property = so.FindProperty(field);
+            if (property == null) throw new System.InvalidOperationException($"[GameUI] {target.GetType().Name}.{field} not found.");
+            property.rectValue = new Rect(position, size);
             so.ApplyModifiedPropertiesWithoutUndo();
         }
 
