@@ -3,9 +3,11 @@ using Project.Common.UI;
 using Project.Common.UI.PopUps;
 using Project.Contexts.Application.Economy;
 using Project.Contexts.Game;
+using Project.Contexts.LiveOps;
 using Project.Contexts.Main;
 using Project.Core.Audio;
 using Project.Core.Debugging;
+using Project.Core.Events;
 using Project.Core.Haptics;
 using Project.Core.Localization;
 using Project.Core.Pooling;
@@ -60,6 +62,11 @@ namespace Project.Contexts.Application
             Services.Register(new MonetizationService(playerData, lives));
             Services.Register(new ProgressService(playerData, wallet, boosters, lives));
             Services.Register(new ContinueService(playerData, wallet));
+            Services.Register(new DailyRewardService(playerData, wallet));
+            var orbitRush = new OrbitRushService(playerData, wallet);
+            Services.Register(orbitRush);
+            // Every campaign win is one step on the event path.
+            EventBus<LevelCompleted>.Subscribe(_ => orbitRush.RecordWin());
             Services.Register(_loadingOverlay);
 
             RegisterDebugActions();
@@ -93,6 +100,7 @@ namespace Project.Contexts.Application
                 Debug.Log($"[Ads] Interstitial group {ads.Group.Name}: from L{ads.Group.StartLevel}, " +
                           $"{ads.Group.Points} wins and {ads.Group.ActiveSeconds} s between ads.");
             });
+            DebugPanel.AddAction("Orbit Rush +1 win", () => Services.Get<OrbitRushService>().RecordWin());
             DebugPanel.AddAction("Reset progress", () => Services.Get<ProgressService>().ResetProgress());
             DebugPanel.AddAction("Toggle language", () =>
             {

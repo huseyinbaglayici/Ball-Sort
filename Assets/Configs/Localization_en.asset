@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: Localization_en
   m_EditorClassIdentifier: Project.Core::Project.Core.Localization.LocalizationTable
   _languageCode: en
+  _nativeName: English
   _entries:
   - Key: home.title
     Value: Orbit Sort
@@ -174,9 +175,77 @@ MonoBehaviour:
     Value: 'Period {0}'
   - Key: settings.title
     Value: 'Settings'
+  - Key: settings.language
+    Value: 'Language'
+  - Key: settings.language_row
+    Value: 'Language · {0}'
+  - Key: settings.help
+    Value: 'How to play?'
+  - Key: settings.feedback
+    Value: 'Send feedback'
+  - Key: settings.copy_address
+    Value: 'Copy {0}'
+  - Key: settings.copied
+    Value: 'Copied'
+  - Key: settings.feedback_subject
+    Value: '{0} feedback'
+  - Key: settings.back
+    Value: 'Back'
+  - Key: settings.privacy
+    Value: 'Privacy'
+  - Key: settings.terms
+    Value: 'Terms'
+  - Key: help.title
+    Value: 'How to play'
+  - Key: help.move
+    Value: 'Tap a tube to lift its top group of same-colour balls, then tap where they go.'
+  - Key: help.target
+    Value: 'They land on the same colour or in an empty tube.'
+  - Key: help.capacity
+    Value: 'A tube holds only so many balls; only what fits moves.'
+  - Key: help.same
+    Value: 'Tap the same tube again to drop the balls back.'
+  - Key: help.hidden
+    Value: 'Hidden balls show their colour once they reach an open top.'
+  - Key: help.frozen
+    Value: 'Ice opens once a tube of its colour is complete.'
+  - Key: help.shutter
+    Value: 'Shutters lift when their key ball reaches an open top.'
+  - Key: help.bomb
+    Value: 'Bombs count down with each move; complete their tube before they reach zero.'
+  - Key: help.portal
+    Value: 'Balls warp between tubes through portals.'
+  - Key: help.tower
+    Value: 'Towers are tall tubes that hold more balls.'
   - Key: game.life_cost
     Value: '-1 life'
   - Key: result.peek
     Value: 'Hold to see the board'
   - Key: continue.gives
     Value: 'Continue adds a 4-slot tube{0}'
+  - Key: daily.title
+    Value: 'Daily Reward'
+  - Key: daily.day
+    Value: 'Day {0}'
+  - Key: daily.claim
+    Value: 'Claim'
+  - Key: daily.come_back
+    Value: 'Come back tomorrow'
+  - Key: daily.button
+    Value: 'Daily'
+  - Key: rush.title
+    Value: 'Orbit Rush'
+  - Key: rush.claim
+    Value: 'Claim'
+  - Key: rush.button
+    Value: 'Event'
+  - Key: rush.progress
+    Value: '{0} / {1}'
+  - Key: liveops.time_dh
+    Value: '{0}d {1}h'
+  - Key: liveops.time_hm
+    Value: '{0}h {1}m'
+  - Key: liveops.time_ms
+    Value: '{0}m {1}s'
+  - Key: home.no_ads
+    Value: 'No Ads'

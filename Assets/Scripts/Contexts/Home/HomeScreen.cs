@@ -15,7 +15,9 @@ namespace Project.Contexts.Home
     public sealed class HomeScreen : MonoBehaviour
     {
         [SerializeField] private GameObject _view;
+        // Play button label with the level number.
         [SerializeField] private TMP_Text _levelText;
+        [SerializeField] private HomePoster _poster;
         [SerializeField] private DifficultyTag _difficulty;
         [SerializeField] private TMP_Text _metaText;
         [SerializeField] private JourneyRoad _road;
@@ -32,6 +34,8 @@ namespace Project.Contexts.Home
         [SerializeField] private MessagePopup _messagePopup;
         // The level orb the level-open zoom grows out of, and what fades away around it.
         [SerializeField] private RectTransform _orb;
+        // Full-screen Home content; it pushes in about the orb while a level opens.
+        [SerializeField] private RectTransform _content;
         [SerializeField] private CanvasGroup[] _chrome = System.Array.Empty<CanvasGroup>();
         [SerializeField] private float _leaveTime = 0.22f;
 
@@ -75,7 +79,23 @@ namespace Project.Contexts.Home
                 PrimeTween.Tween.StopAll(group);
                 group.alpha = 1f;
             }
+            Push(1f);
             Refresh();
+        }
+
+        // Scales the content about the orb; 1 puts it back.
+        public void Push(float scale)
+        {
+            if (_content == null) return;
+            if (_orb != null)
+            {
+                var corners = new Vector3[4];
+                _orb.GetWorldCorners(corners);
+                var local = _content.InverseTransformPoint((corners[0] + corners[2]) * 0.5f);
+                var rect = _content.rect;
+                _content.pivot = new Vector2(Mathf.InverseLerp(rect.xMin, rect.xMax, local.x), Mathf.InverseLerp(rect.yMin, rect.yMax, local.y));
+            }
+            _content.localScale = Vector3.one * scale;
         }
 
         // Bars and mascot fade out, leaving the orb alone for the zoom.
@@ -127,7 +147,8 @@ namespace Project.Contexts.Home
             if (_progress == null) return;
             var finished = _progress.IsCampaignFinished;
             var level = _progress.Level;
-            _levelText.text = finished ? _localization.Get("meta.final_title") : _localization.Format("home.level", level);
+            _levelText.text = finished ? _localization.Get("meta.final_title") : _localization.Format("home.play_level", level);
+            if (_poster != null) _poster.Show(level);
             _playButton.interactable = !finished;
             if (_difficulty != null)
             {

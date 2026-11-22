@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: Localization_tr
   m_EditorClassIdentifier: Project.Core::Project.Core.Localization.LocalizationTable
   _languageCode: tr
+  _nativeName: Türkçe
   _entries:
   - Key: home.title
     Value: Orbit Sort
@@ -145,7 +146,7 @@ MonoBehaviour:
   - Key: booster.no_coins_body
     Value: 'Bu booster için {0} gold gerekiyor.'
   - Key: nav.home
-    Value: 'Ana Ekran'
+    Value: 'Ana Sayfa'
   - Key: nav.soon_title
     Value: 'Yakında'
   - Key: nav.soon_body
@@ -169,14 +170,82 @@ MonoBehaviour:
   - Key: road.body
     Value: '{0}. seviyeyi geç, kazan: {1}'
   - Key: home.play_level
-    Value: 'Oyna · Seviye {0}'
+    Value: 'Oyna · Bölüm {0}'
   - Key: home.period
     Value: 'Dönem {0}'
   - Key: settings.title
     Value: 'Ayarlar'
+  - Key: settings.language
+    Value: 'Dil'
+  - Key: settings.language_row
+    Value: 'Dil · {0}'
+  - Key: settings.help
+    Value: 'Nasıl oynanır?'
+  - Key: settings.feedback
+    Value: 'Geri bildirim gönder'
+  - Key: settings.copy_address
+    Value: '{0} kopyala'
+  - Key: settings.copied
+    Value: 'Kopyalandı'
+  - Key: settings.feedback_subject
+    Value: '{0} geri bildirim'
+  - Key: settings.back
+    Value: 'Geri'
+  - Key: settings.privacy
+    Value: 'Gizlilik'
+  - Key: settings.terms
+    Value: 'Koşullar'
+  - Key: help.title
+    Value: 'Nasıl oynanır'
+  - Key: help.move
+    Value: 'Bir tüpe dokun, üstteki aynı renk topları kaldır; sonra gidecekleri yere dokun.'
+  - Key: help.target
+    Value: 'Toplar aynı rengin üstüne ya da boş bir tüpe iner.'
+  - Key: help.capacity
+    Value: 'Her tüpün bir sınırı var; yalnız sığan kadarı geçer.'
+  - Key: help.same
+    Value: 'Topları geri bırakmak için aynı tüpe yine dokun.'
+  - Key: help.hidden
+    Value: 'Gizli toplar açık bir ağza gelince rengini gösterir.'
+  - Key: help.frozen
+    Value: 'Buz, kendi rengindeki bir tüp tamamlanınca açılır.'
+  - Key: help.shutter
+    Value: 'Kepenk, anahtar top açık bir ağza gelince kalkar.'
+  - Key: help.bomb
+    Value: 'Bombalar her hamlede geri sayar; sıfıra inmeden tüplerini tamamla.'
+  - Key: help.portal
+    Value: 'Toplar tüpler arasında portallarla geçer.'
+  - Key: help.tower
+    Value: 'Kuleler daha çok top alan uzun tüplerdir.'
   - Key: game.life_cost
     Value: '-1 can'
   - Key: result.peek
     Value: 'Tahtayı görmek için basılı tut'
   - Key: continue.gives
     Value: 'Devam: 4''lü tüp eklenir{0}'
+  - Key: daily.title
+    Value: 'Günlük Ödül'
+  - Key: daily.day
+    Value: '{0}. Gün'
+  - Key: daily.claim
+    Value: 'Topla'
+  - Key: daily.come_back
+    Value: 'Yarın gel'
+  - Key: daily.button
+    Value: 'Günlük'
+  - Key: rush.title
+    Value: 'Orbit Rush'
+  - Key: rush.claim
+    Value: 'Topla'
+  - Key: rush.button
+    Value: 'Etkinlik'
+  - Key: rush.progress
+    Value: '{0} / {1}'
+  - Key: liveops.time_dh
+    Value: '{0}g {1}s'
+  - Key: liveops.time_hm
+    Value: '{0}s {1}d'
+  - Key: liveops.time_ms
+    Value: '{0}d {1}sn'
+  - Key: home.no_ads
+    Value: 'Reklamsız'

@@ -16,7 +16,7 @@ using UnityEngine.UI;
 namespace Project.Editor
 {
     // Rebuilds the art-team UI on a 1170x2532 canvas: Home, HUD, popups and the space background.
-    public static class GameUiBuilder
+    public static partial class GameUiBuilder
     {
         private const string MainScenePath = "Assets/Scenes/Main.unity";
         private const string ResultPopupPath = "Assets/Prefabs/Popups/ResultPopup.prefab";
@@ -36,8 +36,9 @@ namespace Project.Editor
         // 9-slice borders (left, bottom, right, top) from the art notes.
         private static readonly Dictionary<string, Vector4> Borders = new()
         {
-            ["UI_Pill_Well_60"] = new Vector4(30, 0, 30, 0),
-            ["UI_Pill_Well_96"] = new Vector4(48, 0, 48, 0),
+            ["UI_Pill_Well_60"] = new Vector4(32, 0, 32, 0),
+            ["UI_Pill_Well_96"] = new Vector4(50, 0, 50, 0),
+            ["UI_Button_Play"] = new Vector4(145, 0, 145, 0),
             ["UI_InLevel_LevelPill"] = new Vector4(62, 0, 62, 0),
             ["UI_Badge_Hard"] = new Vector4(33, 0, 33, 0),
             ["UI_Badge_SuperHard"] = new Vector4(33, 0, 33, 0),
@@ -52,6 +53,8 @@ namespace Project.Editor
 
         private static readonly Color White = Color.white;
         private static readonly Color Ink = new(0.11f, 0.09f, 0.25f);
+        // #28105A, the art's text outline.
+        private static readonly Color Outline = new(0.157f, 0.063f, 0.353f);
         private static readonly Color Cream = new(1f, 0.96f, 0.86f);
         private static readonly Color Dim = new(0.04f, 0.03f, 0.10f, 0.72f);
         private static readonly Color Armed = new(0.45f, 1f, 0.85f, 0.7f);
@@ -74,6 +77,8 @@ namespace Project.Editor
             var message = BuildMessagePopup();
             var result = BuildResultPopup();
             var settings = BuildSettingsPopup();
+            var daily = BuildDailyRewardPopup();
+            var orbitRush = BuildOrbitRushScreen();
 
             var scene = SceneManager.GetSceneByPath(MainScenePath);
             var openedHere = !scene.isLoaded;
@@ -96,6 +101,7 @@ namespace Project.Editor
                 if (popupArea != null) SetMinimumInsets(popupArea);
                 BuildBackground(scene);
                 BuildHome(scene, message, settings);
+                BuildLiveOpsHome(scene, daily, orbitRush);
                 BuildHud(scene, message, result);
                 BuildLevelOpen(scene);
                 EditorSceneManager.MarkSceneDirty(scene);
@@ -106,8 +112,9 @@ namespace Project.Editor
                 if (openedHere) EditorSceneManager.CloseScene(scene, true);
             }
 
+            BuildSplash();
             AssetDatabase.SaveAssets();
-            Debug.Log("[GameUI] Home, HUD, popups and background built.");
+            Debug.Log("[GameUI] Home, HUD, popups, background and splash built.");
         }
 
         // ---------------------------------------------------------------- Font
@@ -116,7 +123,12 @@ namespace Project.Editor
         private static TMP_FontAsset BuildFont()
         {
             var existing = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FontAssetPath);
-            if (existing != null) return existing;
+            if (existing != null)
+            {
+                existing.material.SetColor(ShaderUtilities.ID_OutlineColor, Outline);
+                EditorUtility.SetDirty(existing.material);
+                return existing;
+            }
 
             var source = AssetDatabase.LoadAssetAtPath<Font>(FontPath);
             if (source == null) throw new System.InvalidOperationException($"[GameUI] Font missing at {FontPath}.");
@@ -141,7 +153,7 @@ namespace Project.Editor
 
             material.EnableKeyword(ShaderUtilities.Keyword_Outline);
             material.SetFloat(ShaderUtilities.ID_OutlineWidth, 0.12f);
-            material.SetColor(ShaderUtilities.ID_OutlineColor, new Color(0.16f, 0.12f, 0.38f));
+            material.SetColor(ShaderUtilities.ID_OutlineColor, Outline);
             EditorUtility.SetDirty(asset);
             AssetDatabase.SaveAssets();
             return asset;
@@ -160,11 +172,15 @@ namespace Project.Editor
                 var importer = (TextureImporter)AssetImporter.GetAtPath(path);
                 var name = System.IO.Path.GetFileNameWithoutExtension(path);
                 var border = Borders.TryGetValue(name, out var b) ? b : Vector4.zero;
+                // Full-screen art is compressed; small UI stays exact.
+                var compression = path.Contains("/Posters/") || path.Contains("/Splash/")
+                    ? TextureImporterCompression.CompressedHQ
+                    : TextureImporterCompression.Uncompressed;
                 var settings = new TextureImporterSettings();
                 importer.ReadTextureSettings(settings);
                 var changed = importer.textureType != TextureImporterType.Sprite || importer.spriteBorder != border ||
                               importer.mipmapEnabled || importer.maxTextureSize < 4096 ||
-                              importer.textureCompression != TextureImporterCompression.Uncompressed ||
+                              importer.textureCompression != compression ||
                               settings.spriteMeshType != SpriteMeshType.FullRect;
                 if (!changed) continue;
                 importer.textureType = TextureImporterType.Sprite;
@@ -177,8 +193,7 @@ namespace Project.Editor
                 importer.wrapMode = TextureWrapMode.Clamp;
                 importer.filterMode = FilterMode.Bilinear;
                 importer.maxTextureSize = 4096;
-                // No compression: gradients and soft edges stay clean.
-                importer.textureCompression = TextureImporterCompression.Uncompressed;
+                importer.textureCompression = compression;
                 importer.sRGBTexture = true;
                 importer.npotScale = TextureImporterNPOTScale.None;
                 importer.ReadTextureSettings(settings);
@@ -229,95 +244,253 @@ namespace Project.Editor
         {
             var canvas = Root(scene, "Home Canvas").transform;
             Clear(canvas);
-            var (area, topStage, bottomStage) = EdgeStages(canvas);
+            // Poster, shade and UI share one full-screen root so the level-open push scales them together.
+            var content = Span("Content", canvas, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+            var poster = BuildPoster(content);
+            var shade = Span("Shade", content, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+            Shade(shade, "TopShade", 520f, 0.6f, true);
+            Shade(shade, "BottomShade", 630f, 0.65f, false);
+            var (area, topStage, bottomStage) = EdgeStages(content);
 
-            // Top bar: avatar, then coins and lives sharing the rest; settings lives in the tab bar.
+            // Top bar: lives and coins in wells, settings on its base.
             var top = Group("Top", topStage, new Vector2(0, 360), 0.4f);
-            Pic("Avatar", top, Center, At(100, 228), new Vector2(150, 150), S("UI_InLevel_IconBase")).raycastTarget = false;
-            Pic("Face", top, Center, At(100, 222), new Vector2(124, 124), S("Luno_512")).raycastTarget = false;
-            var coinBar = Pic("CoinBar", top, Center, At(458, 229), new Vector2(360, 96), S("UI_Pill_Well_96"));
-            var coins = Text("Amount", coinBar, new Vector2(30, 2), new Vector2(240, 70), "0", 48, White);
-            Pic("Coin", top, Center, At(270, 229), new Vector2(116, 116), S("UI_Icon_Coin"));
-            var livesBar = Pic("LivesBar", top, Center, At(935, 229), new Vector2(360, 96), S("UI_Pill_Well_96"));
-            var livesTimer = Text("Timer", livesBar, new Vector2(10, 2), new Vector2(220, 64), "Full", 40, White);
-            var heart = Pic("Heart", top, Center, At(748, 223), new Vector2(128, 128), S("UI_Icon_Heart"));
-            var livesCount = Text("Count", heart, new Vector2(0, 6), new Vector2(90, 70), "5", 50, White);
-            var lifeAd = ButtonRect("RewardedLifeButton", top, Center, At(1110, 229), new Vector2(72, 72), S("UI_Icon_Ad"));
+            Pic("LivesBar", top, Center, At(195, 228), new Vector2(250, 96), S("UI_Pill_Well_96")).raycastTarget = false;
+            var heart = Pic("Heart", top, Center, At(86, 226), new Vector2(116, 116), S("UI_Icon_Heart"));
+            heart.raycastTarget = false;
+            var livesCount = Text("Count", top, At(200, 226), new Vector2(120, 70), "5", 56, White);
+            Pic("CoinBar", top, Center, At(806, 228), new Vector2(292, 96), S("UI_Pill_Well_96")).raycastTarget = false;
+            Pic("Coin", top, Center, At(676, 226), new Vector2(118, 118), S("UI_Icon_Coin")).raycastTarget = false;
+            var coins = Text("Amount", top, At(830, 226), new Vector2(180, 70), "0", 54, White);
+            var settings = ButtonRect("SettingsButton", top, Center, At(1050, 229), new Vector2(120, 126), S("UI_InLevel_IconBase"));
+            Pic("Icon", settings, Center, new Vector2(0, 3), new Vector2(80, 80), S("UI_Icon_Settings")).raycastTarget = false;
 
-            // Centre piece: the current level on a big orb, the mascot beside it; sits mid-screen at every aspect.
-            var centre = Rect("Centre", area, Center, new Vector2(0, 110), new Vector2(Reference.x, 900));
-            Entrance(centre, new Vector2(0, -120), 0.4f, 0.05f, PrimeTween.Ease.OutCubic);
-            // The level orb and its labels fade together when a level opens; the mascot stays, holding the zoom's orb.
-            var levelOrb = Rect("LevelOrb", centre, Center, Vector2.zero, new Vector2(Reference.x, 900));
-            levelOrb.gameObject.AddComponent<CanvasGroup>();
-            var glow = Pic("Glow", levelOrb, Center, Vector2.zero, new Vector2(760, 760), S("UI_Toggle_Knob"));
-            glow.color = new Color(1f, 0.78f, 0.35f, 0.3f);
-            glow.raycastTarget = false;
-            Pic("Orb", levelOrb, Center, Vector2.zero, new Vector2(560, 560), S("UI_Toggle_Knob")).raycastTarget = false;
-            var difficulty = DifficultyBadge(levelOrb, new Vector2(0, 150), new Vector2(300, 66), new Vector2(0, 215));
-            var levelText = Text("Level", levelOrb, new Vector2(0, -10), new Vector2(460, 130), "Level 1", 96, Ink);
-            var mascot = Pic("Mascot", centre, Center, new Vector2(260, -210), new Vector2(300, 300), S("Luno_512"));
-            mascot.raycastTarget = false;
-            // The orb in the mascot's hand, measured on the art; the level zooms out of and back into it.
-            var handOrb = Rect("HandOrb", mascot, Center, HandOrbAt * mascot.rectTransform.sizeDelta,
-                Vector2.one * (HandOrbSize * mascot.rectTransform.sizeDelta.x));
+            // Side buttons: daily and no-ads on the left, the timed event on the right.
+            var side = Group("Side", topStage, new Vector2(0, 0), 0.4f);
+            var daily = SideButton(side, "DailyButton", At(90, 880), S("UI_Icon_Daily"), "daily.button");
+            NoticeBadge(daily.transform, new Vector2(52, 54));
+            var noAds = SideButton(side, "NoAdsButton", At(90, 1090), S("UI_Icon_NoAds"), "home.no_ads");
+            var eventButton = SideButton(side, "EventButton", At(1080, 880), S("UI_Icon_Challenge"), "rush.button");
+            var timerPill = Pic("TimerPill", eventButton, Center, new Vector2(0, 86), new Vector2(150, 60), S("UI_Pill_Well_60"));
+            timerPill.raycastTarget = false;
+            Text("Timer", timerPill, new Vector2(0, 2), new Vector2(130, 44), "2d 14h", 32, White);
+            // Below the timer pill so the time stays readable.
+            NoticeBadge(eventButton.transform, new Vector2(58, 18));
 
-            // Play, with the next road reward chest as its badge.
+            // Play with the level, its bottom edge at y 2160.
             var bottom = Group("Bottom", bottomStage, new Vector2(0, -520), 0.4f);
-            var play = ButtonRect("PlayButton", bottom, Center, At(585, 2045), new Vector2(640, 170), S("UI_Button_Wide_Go"));
-            Text("Label", play, new Vector2(0, 8), new Vector2(500, 100), "Play", 68, White, "home.play");
-            var chest = ButtonRect("RoadChest", bottom, Center, At(860, 1955), new Vector2(130, 130), S("UI_Icon_RewardChest"));
+            var play = ButtonRect("PlayButton", bottom, Center, At(585, 2015), new Vector2(680, 290), S("UI_Button_Play"));
+            var playLabel = Text("Label", play, new Vector2(0, 13), new Vector2(560, 110), "Play · Level 1", 78, White);
 
-            // Tab bar: shop, events, Home (raised, selected), daily puzzle, settings.
-            Pic("TabBar", bottom, Center, At(585, 2340), new Vector2(1190, 250), S("UI_InLevel_Tray")).raycastTarget = false;
-            var starter = IconButton(bottom, "StarterPackButton", At(117, 2330), S("UI_Icon_Shop"), 170f, 124f);
-            var challenge = IconButton(bottom, "ChallengeButton", At(351, 2330), S("UI_Icon_Challenge"), 170f, 124f);
-            var homeTab = Pic("HomeTab", bottom, Center, At(585, 2290), new Vector2(240, 238), S("UI_InLevel_BoosterBase_Up"));
+            // Home bar on the screen bottom: Shop, Event, Home (selected), Orbit Rush, Puzzle; 2312 is its top edge.
+            var bar = Rect("HomeBar", bottom, Center, At(585, 2422), new Vector2(Reference.x, 220));
+            // A flat strip, wide enough for any aspect.
+            var strip = Pic("Strip", bar, Center, Vector2.zero, new Vector2(Reference.x * 3f, 220), S("UI_HomeBar_BG"));
+            strip.preserveAspect = false;
+            strip.raycastTarget = false;
+            Pic("Divider", bar, Center, new Vector2(210 - 585, 0), new Vector2(8, 150), S("UI_HomeBar_Divider")).raycastTarget = false;
+            Pic("Divider", bar, Center, new Vector2(960 - 585, 0), new Vector2(8, 150), S("UI_HomeBar_Divider")).raycastTarget = false;
+            var shop = Tab(bar, "ShopTab", 105, S("UI_Icon_Shop"));
+            Tab(bar, "EventTab", 315, S("UI_Icon_Challenge"));
+            // Selected slot: its bottom edge 40 below the screen, the bigger icon rising above the dome.
+            var homeTab = Pic("HomeTab", bar, Center, Vector2.zero, new Vector2(330, 300), S("UI_HomeBar_TabSelected"));
             homeTab.raycastTarget = false;
-            Pic("Icon", homeTab, Center, new Vector2(0, 22), new Vector2(140, 140), S("UI_Icon_Daily")).raycastTarget = false;
-            Text("Label", homeTab, new Vector2(0, -80), new Vector2(200, 44), "Home", 34, White, "nav.home");
-            var puzzle = IconButton(bottom, "DailyPuzzleButton", At(819, 2330), S("UI_Icon_DailyPuzzle"), 170f, 124f);
-            var settingsTab = IconButton(bottom, "SettingsTab", At(1053, 2330), S("UI_Icon_Settings"), 170f, 116f);
+            Pic("Icon", homeTab, Center, new Vector2(0, 53), new Vector2(200, 200), S("UI_Icon_Home")).raycastTarget = false;
+            Text("Label", homeTab, new Vector2(0, -68), new Vector2(300, 56), "Home", 44, White, "nav.home");
+            Tab(bar, "OrbitRushTab", 855, S("UI_Icon_OrbitRush"));
+            var puzzle = Tab(bar, "PuzzleTab", 1065, S("UI_Icon_DailyPuzzle"));
 
             var hud = area.gameObject.AddComponent<EconomyHud>();
             Set(hud, "_coins", coins);
             Set(hud, "_livesCount", livesCount);
-            Set(hud, "_livesTimer", livesTimer);
+            Set(hud, "_livesTimer", null);
             Set(hud, "_heart", heart);
             Set(hud, "_heartSprite", S("UI_Icon_Heart"));
             Set(hud, "_unlimitedSprite", S("UI_Icon_HeartInfinite"));
 
             var screen = Root(scene, "HomeScreen").GetComponent<HomeScreen>();
             Set(screen, "_view", canvas.gameObject);
-            Set(screen, "_levelText", levelText);
-            Set(screen, "_difficulty", difficulty);
+            Set(screen, "_levelText", playLabel);
+            Set(screen, "_poster", poster);
+            Set(screen, "_difficulty", null);
             Set(screen, "_metaText", null);
             Set(screen, "_road", null);
-            Set(screen, "_roadButton", chest.GetComponent<Button>());
+            Set(screen, "_roadButton", null);
             Set(screen, "_playButton", play.GetComponent<Button>());
-            Set(screen, "_starterPackButton", starter);
-            Set(screen, "_challengeButton", challenge);
-            Set(screen, "_rewardedLifeButton", lifeAd.GetComponent<Button>());
-            Set(screen, "_settingsButton", settingsTab);
-            SetArray(screen, "_comingSoon", new Object[] { puzzle });
+            Set(screen, "_starterPackButton", shop);
+            Set(screen, "_challengeButton", null);
+            Set(screen, "_rewardedLifeButton", null);
+            Set(screen, "_settingsButton", settings.GetComponent<Button>());
+            // Daily, both event buttons and the Orbit Rush tab are wired by the live-ops builder.
+            SetArray(screen, "_comingSoon", new Object[] { noAds, puzzle });
             Set(screen, "_settingsPopup", settingsPopup);
             Set(screen, "_messagePopup", message);
-            // The level-open zoom grows out of the orb while bars and mascot fade.
-            Set(screen, "_orb", handOrb);
+            // The level opens out of the orb in the poster Luno's hand; bars and buttons fade, the poster stays.
+            Set(screen, "_orb", poster.transform.Find("Art/HandOrb"));
+            Set(screen, "_content", content);
             SetArray(screen, "_chrome", new Object[]
             {
-                top.gameObject.AddComponent<CanvasGroup>(), bottom.gameObject.AddComponent<CanvasGroup>(),
-                levelOrb.GetComponent<CanvasGroup>()
+                top.gameObject.AddComponent<CanvasGroup>(), side.gameObject.AddComponent<CanvasGroup>(),
+                bottom.gameObject.AddComponent<CanvasGroup>()
             });
+        }
+
+        private const string ChapterArtPath = "Assets/Configs/ChapterArt.asset";
+        private const string PosterFolder = UiArtRoot + "/Home/Posters";
+
+        // Full-bleed chapter poster: two layers for the crossfade and the hand orb, placed per chapter at runtime.
+        private static HomePoster BuildPoster(RectTransform content)
+        {
+            var root = Span("Poster", content, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+            var art = Rect("Art", root, Center, Vector2.zero, Reference);
+            var fitter = art.gameObject.AddComponent<AspectRatioFitter>();
+            fitter.aspectMode = AspectRatioFitter.AspectMode.EnvelopeParent;
+            var chapters = ChapterArtAsset();
+            var first = chapters.Count > 0 ? chapters[0].Poster : null;
+            if (first != null) fitter.aspectRatio = first.rect.width / first.rect.height;
+            var back = Layer(art, "Back", first);
+            var front = Layer(art, "Front", first);
+            var orb = Span("HandOrb", art, Center, Center, Vector2.zero, Vector2.zero);
+
+            var poster = root.gameObject.AddComponent<HomePoster>();
+            Set(poster, "_art", chapters);
+            Set(poster, "_fitter", fitter);
+            Set(poster, "_back", back);
+            Set(poster, "_front", front);
+            Set(poster, "_orb", orb);
+            return poster;
+        }
+
+        private static Image Layer(RectTransform art, string name, Sprite sprite)
+        {
+            var image = Span(name, art, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero).gameObject.AddComponent<Image>();
+            image.sprite = sprite;
+            image.raycastTarget = false;
+            return image;
+        }
+
+        // Made once with the default chapters; later edits live in the asset.
+        private static ChapterArt ChapterArtAsset()
+        {
+            var asset = AssetDatabase.LoadAssetAtPath<ChapterArt>(ChapterArtPath);
+            if (asset != null) return asset;
+            // Poster file, hand-orb centre (share of the poster from its top-left) and orb width (share of the poster width).
+            var defaults = new (string File, Vector2 Orb, float Size)[]
+            {
+                ("Poster_1_StartTheAdventure", new Vector2(0.824f, 0.351f), 0.063f),
+                ("Poster_2_Ice", new Vector2(0.707f, 0.235f), 0.081f),
+                ("Poster_3_Jungle", new Vector2(0.864f, 0.208f), 0.135f),
+                ("Poster_4_Desert", new Vector2(0.761f, 0.592f), 0.038f),
+                ("Poster_5_Ocean", new Vector2(0.704f, 0.488f), 0.063f)
+            };
+            asset = ScriptableObject.CreateInstance<ChapterArt>();
+            AssetDatabase.CreateAsset(asset, ChapterArtPath);
+            var so = new SerializedObject(asset);
+            var list = so.FindProperty("_chapters");
+            list.arraySize = defaults.Length;
+            for (var i = 0; i < defaults.Length; i++)
+            {
+                var item = list.GetArrayElementAtIndex(i);
+                item.FindPropertyRelative("Poster").objectReferenceValue =
+                    AssetDatabase.LoadAssetAtPath<Sprite>($"{PosterFolder}/{defaults[i].File}.png");
+                item.FindPropertyRelative("Orb").vector2Value = defaults[i].Orb;
+                item.FindPropertyRelative("OrbSize").floatValue = defaults[i].Size;
+            }
+            so.ApplyModifiedPropertiesWithoutUndo();
+            AssetDatabase.SaveAssets();
+            return asset;
+        }
+
+        // A home-bar tab centred in its slot at x, 118 below the bar top.
+        private static Button Tab(RectTransform bar, string name, float x, Sprite icon)
+        {
+            var rect = Rect(name, bar, Center, new Vector2(x - 585, -8), new Vector2(200, 200));
+            // Invisible hit area over the slot.
+            var hit = rect.gameObject.AddComponent<Image>();
+            hit.color = Color.clear;
+            var button = rect.gameObject.AddComponent<Button>();
+            button.targetGraphic = hit;
+            rect.gameObject.AddComponent<ButtonFeedback>();
+            Pic("Icon", rect, Center, Vector2.zero, new Vector2(150, 150), icon).raycastTarget = false;
+            NoticeBadge(rect, new Vector2(55, 60));
+            return button;
+        }
+
+        // Hidden red badge with a 40 px count at the icon's top-right.
+        private static void NoticeBadge(Transform parent, Vector2 at)
+        {
+            var badge = Pic("Badge", parent, Center, at, new Vector2(72, 72), S("UI_Badge_Notification"));
+            badge.raycastTarget = false;
+            Text("Count", badge, new Vector2(0, 2), new Vector2(60, 50), "1", 40, White);
+            badge.gameObject.SetActive(false);
+        }
+
+        // #0E0828 fading out from the screen edge so the bars read over the poster.
+        private static void Shade(RectTransform parent, string name, float height, float alpha, bool top)
+        {
+            var edge = top ? 1f : 0f;
+            var rect = Span(name, parent, new Vector2(0, edge), new Vector2(1, edge), new Vector2(0, top ? -height * 0.5f : height * 0.5f),
+                new Vector2(0, height));
+            // The sprite is darkest at its top; the bottom shade flips it.
+            if (!top) rect.localScale = new Vector3(1, -1, 1);
+            var image = rect.gameObject.AddComponent<Image>();
+            image.sprite = S("UI_Home_Shade");
+            image.color = new Color(0.055f, 0.031f, 0.157f, alpha);
+            image.raycastTarget = false;
+        }
+
+        // ---------------------------------------------------------------- Splash
+
+        private const string BootScenePath = "Assets/Scenes/Boot.unity";
+        // Deep violet of the opening art's lower edge; fills any bars around it.
+        private static readonly Color SplashFill = new(0.133f, 0.098f, 0.494f);
+
+        // The Boot splash: the opening art full-bleed, the logo near the top, the load bar near the bottom.
+        private static void BuildSplash()
+        {
+            var scene = SceneManager.GetSceneByPath(BootScenePath);
+            var openedHere = !scene.isLoaded;
+            if (openedHere) scene = EditorSceneManager.OpenScene(BootScenePath, OpenSceneMode.Additive);
+            try
+            {
+                var background = Root(scene, "Splash").transform.Find("Background");
+                foreach (var old in new[] { "Art", "Logo" })
+                {
+                    var child = background.Find(old);
+                    if (child != null) Object.DestroyImmediate(child.gameObject);
+                }
+                background.GetComponent<Image>().color = SplashFill;
+
+                var opening = AssetDatabase.LoadAssetAtPath<Sprite>(UiArtRoot + "/Splash/Splash_OpeningScene.png");
+                var art = Rect("Art", background, Center, Vector2.zero, new Vector2(1080, 1920));
+                art.SetAsFirstSibling();
+                var fitter = art.gameObject.AddComponent<AspectRatioFitter>();
+                fitter.aspectMode = AspectRatioFitter.AspectMode.EnvelopeParent;
+                fitter.aspectRatio = opening.rect.width / opening.rect.height;
+                var image = art.gameObject.AddComponent<Image>();
+                image.sprite = opening;
+
+                var logo = AssetDatabase.LoadAssetAtPath<Sprite>(UiArtRoot + "/Splash/Splash_Logo.png");
+                var logoRect = Rect("Logo", background, Top, new Vector2(0, -150), new Vector2(760, 760 * logo.rect.height / logo.rect.width),
+                    new Vector2(0.5f, 1f));
+                var logoImage = logoRect.gameObject.AddComponent<Image>();
+                logoImage.sprite = logo;
+                logoImage.raycastTarget = false;
+
+                var bar = background.Find("ProgressBackground") as RectTransform;
+                if (bar != null) Anchor(bar, Bottom, new Vector2(0, 150));
+                EditorSceneManager.MarkSceneDirty(scene);
+                EditorSceneManager.SaveScene(scene);
+            }
+            finally
+            {
+                if (openedHere) EditorSceneManager.CloseScene(scene, true);
+            }
         }
 
         // ---------------------------------------------------------------- Level open
 
         private const string LevelOpenShaderPath = "Assets/Art/Shaders/LevelOpenMask.shader";
         private const string LevelOpenSettingsPath = "Assets/Configs/LevelOpenSettings.asset";
-        // Centre and width of the orb in the mascot's hand, as shares of the Luno_512 art from its middle.
-        private static readonly Vector2 HandOrbAt = new(0.371f, 0.133f);
-        private const float HandOrbSize = 0.11f;
 
         // One full-screen image over every canvas; its material cuts the feathered hole at runtime.
         private static void BuildLevelOpen(Scene scene)
@@ -614,21 +787,34 @@ namespace Project.Editor
             return AssetDatabase.LoadAssetAtPath<ResultPopup>(ResultPopupPath);
         }
 
-        // Full-screen settings page: title and close on top, three round switches in a row.
+        private const string AppLinksPath = "Assets/Configs/AppLinks.asset";
+        private const string LevelCatalogPath = "Assets/Configs/LevelCatalog.asset";
+
+        // Full-screen settings page: switches, the rows well, a language page and a help page; version footer below.
         private static SettingsPopup BuildSettingsPopup()
         {
+            var links = AssetDatabase.LoadAssetAtPath<Project.Core.Settings.AppLinks>(AppLinksPath);
+            if (links == null)
+            {
+                links = ScriptableObject.CreateInstance<Project.Core.Settings.AppLinks>();
+                AssetDatabase.CreateAsset(links, AppLinksPath);
+            }
+            var buildInfo = BuildInfoWriter.Write(EditorUserBuildSettings.activeBuildTarget);
+
             var root = PopupRoot("SettingsPopup", new Color(0.212f, 0.125f, 0.588f, 1f), coins: false);
             try
             {
                 var content = Rect("Content", root.transform, Center, Vector2.zero, Reference);
                 // Title row hangs from the safe top like the screens' top bars (the root reaches 400 past it).
                 var header = Rect("Header", root.transform, Top, new Vector2(0, DesignTop - 400f), Reference, new Vector2(0.5f, 1f));
-                Text("Title", header, At(585, 228), new Vector2(600, 100), "settings.title", 72, White, "settings.title");
+                var title = Text("Title", header, At(585, 228), new Vector2(600, 100), "settings.title", 72, White, "settings.title");
                 var close = ButtonRect("CloseButton", header, Center, At(1048, 228), new Vector2(124, 128), S("UI_Button_Close"));
+
+                var mainPage = Span("MainPage", content, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
 
                 ToggleSwitch Switch(string name, float x, string icon, string key)
                 {
-                    var button = ButtonRect(name, content, Center, At(x, 896), new Vector2(235, 235), S("UI_InLevel_IconBase"));
+                    var button = ButtonRect(name, mainPage, Center, At(x, 896), new Vector2(235, 235), S("UI_InLevel_IconBase"));
                     button.GetComponent<Button>().transition = Selectable.Transition.None;
                     var iconImage = Pic("Icon", button, Center, new Vector2(0, 6), new Vector2(150, 150), S(icon));
                     iconImage.raycastTarget = false;
@@ -651,16 +837,153 @@ namespace Project.Editor
                 var haptics = Switch("Vibration", 585, "UI_Icon_Vibration", "home.haptics");
                 var music = Switch("Music", 894, "UI_Icon_Music", "home.music");
 
+                // Rows stack from the well's top; the popup places them and sizes the well.
+                var rowPanel = Pic("Rows", mainPage, Center, At(585, 1160), new Vector2(760, 400), S("UI_InLevel_Tray"), new Vector2(0.5f, 1f));
+                rowPanel.raycastTarget = false;
+                Button Row(string name, string key)
+                {
+                    var row = ButtonRect(name, rowPanel, Top, new Vector2(0, -115), new Vector2(630, 150), S("UI_Button_Wide_Purple"));
+                    Text("Label", row, new Vector2(0, 8), new Vector2(560, 90), key ?? "", 50, White, key);
+                    return row.GetComponent<Button>();
+                }
+                var languageRow = Row("LanguageRow", null);
+                var helpRow = Row("HelpRow", "settings.help");
+                var feedbackRow = Row("FeedbackRow", "settings.feedback");
+                var copyRow = Row("CopyAddressRow", null);
+
+                // Language page: one button per language table, a check on the current one.
+                var languagePage = Span("LanguagePage", content, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+                var list = Rect("List", languagePage, Center, At(585, 640), new Vector2(630, 900), new Vector2(0.5f, 1f));
+                var listLayout = list.gameObject.AddComponent<VerticalLayoutGroup>();
+                listLayout.spacing = 30f;
+                listLayout.childAlignment = TextAnchor.UpperCenter;
+                listLayout.childControlWidth = listLayout.childControlHeight = false;
+                listLayout.childForceExpandWidth = listLayout.childForceExpandHeight = false;
+                var template = ButtonRect("LanguageTemplate", list, Top, Vector2.zero, new Vector2(630, 150), S("UI_Button_Wide_Purple"));
+                Text("Label", template, new Vector2(0, 8), new Vector2(440, 90), "Language", 54, White);
+                Pic("Check", template, Center, new Vector2(240, 8), new Vector2(80, 80), S("UI_Icon_Check")).raycastTarget = false;
+                var languageBack = WideBack(languagePage, 1900);
+                languagePage.gameObject.SetActive(false);
+
+                // Help page: the basics, then one note per mechanic met; scrolls on short screens.
+                var helpPage = Span("HelpPage", content, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+                var helpWell = Pic("Well", helpPage, Center, At(585, 1160), new Vector2(960, 1300), S("UI_InLevel_Tray"));
+                var viewport = Span("Viewport", helpWell, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+                Stretch(viewport, 30f, 36f);
+                viewport.gameObject.AddComponent<RectMask2D>();
+                var body = Rect("Body", viewport, Top, Vector2.zero, new Vector2(900, 0), new Vector2(0.5f, 1f));
+                body.anchorMin = new Vector2(0f, 1f);
+                body.anchorMax = new Vector2(1f, 1f);
+                body.sizeDelta = Vector2.zero;
+                var bodyLayout = body.gameObject.AddComponent<VerticalLayoutGroup>();
+                bodyLayout.padding = new RectOffset(24, 24, 24, 24);
+                bodyLayout.spacing = 30f;
+                bodyLayout.childControlWidth = bodyLayout.childControlHeight = true;
+                bodyLayout.childForceExpandWidth = true;
+                bodyLayout.childForceExpandHeight = false;
+                body.gameObject.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+                var scroll = helpWell.gameObject.AddComponent<ScrollRect>();
+                scroll.viewport = viewport;
+                scroll.content = body;
+                scroll.horizontal = false;
+                scroll.movementType = ScrollRect.MovementType.Clamped;
+                helpWell.raycastTarget = true;
+
+                GameObject Line(string key)
+                {
+                    var line = Text(key, body, Vector2.zero, new Vector2(840, 60), key, 40, White, key);
+                    line.enableAutoSizing = false;
+                    line.textWrappingMode = TextWrappingModes.Normal;
+                    line.alignment = TextAlignmentOptions.Left;
+                    return line.gameObject;
+                }
+                foreach (var key in new[] { "help.move", "help.target", "help.capacity", "help.same" }) Line(key);
+                var notes = new (Project.Contexts.Game.Levels.Mechanic Mechanic, string Key)[]
+                {
+                    (Project.Contexts.Game.Levels.Mechanic.Portal, "help.portal"), (Project.Contexts.Game.Levels.Mechanic.HiddenBall, "help.hidden"), (Project.Contexts.Game.Levels.Mechanic.FrozenTube, "help.frozen"),
+                    (Project.Contexts.Game.Levels.Mechanic.ShutterKey, "help.shutter"), (Project.Contexts.Game.Levels.Mechanic.Bomb, "help.bomb"), (Project.Contexts.Game.Levels.Mechanic.Tower, "help.tower")
+                };
+                var help = helpPage.gameObject.AddComponent<HelpPage>();
+                Set(help, "_catalog", AssetDatabase.LoadAssetAtPath<Project.Contexts.Game.Levels.LevelCatalog>(LevelCatalogPath));
+                var helpSo = new SerializedObject(help);
+                var noteList = helpSo.FindProperty("_notes");
+                noteList.arraySize = notes.Length;
+                for (var i = 0; i < notes.Length; i++)
+                {
+                    var item = noteList.GetArrayElementAtIndex(i);
+                    item.FindPropertyRelative("Mechanic").intValue = (int)notes[i].Mechanic;
+                    item.FindPropertyRelative("Item").objectReferenceValue = Line(notes[i].Key);
+                }
+                helpSo.ApplyModifiedPropertiesWithoutUndo();
+                var helpBack = WideBack(helpPage, 1950);
+                helpPage.gameObject.SetActive(false);
+
+                // Footer on the safe bottom: name, version and build; legal links above it once their pages exist.
+                var footerY = 400f + DesignBottom + 50f;
+                var footer = Rect("Footer", root.transform, Bottom, new Vector2(0, footerY), new Vector2(760, 80));
+                var footerHit = footer.gameObject.AddComponent<Image>();
+                footerHit.color = Color.clear;
+                var footerButton = footer.gameObject.AddComponent<Button>();
+                footerButton.targetGraphic = footerHit;
+                footer.gameObject.AddComponent<ButtonFeedback>();
+                var footerLabel = Text("Label", footer, Vector2.zero, new Vector2(740, 60), "Orbit Sort", 34, White);
+                Button Link(string name, float x, string key)
+                {
+                    var link = Rect(name, root.transform, Bottom, new Vector2(x, footerY + 80f), new Vector2(300, 70));
+                    var hit = link.gameObject.AddComponent<Image>();
+                    hit.color = Color.clear;
+                    var button = link.gameObject.AddComponent<Button>();
+                    button.targetGraphic = hit;
+                    link.gameObject.AddComponent<ButtonFeedback>();
+                    Text("Label", link, Vector2.zero, new Vector2(280, 56), key, 36, White, key);
+                    link.gameObject.SetActive(false);
+                    return button;
+                }
+                var privacy = Link("PrivacyLink", -170f, "settings.privacy");
+                var terms = Link("TermsLink", 170f, "settings.terms");
+
+                var toast = Pic("Toast", root.transform, Bottom, new Vector2(0, footerY + 170f), new Vector2(420, 96), S("UI_Pill_Well_96"));
+                toast.raycastTarget = false;
+                var toastGroup = toast.gameObject.AddComponent<CanvasGroup>();
+                toastGroup.alpha = 0f;
+                toastGroup.blocksRaycasts = false;
+                toastGroup.interactable = false;
+                var toastLabel = Text("Label", toast, new Vector2(0, 2), new Vector2(360, 64), "settings.copied", 38, White);
+
                 var popup = root.AddComponent<SettingsPopup>();
                 // A full page: shows at once, no panel motion.
                 var entrance = new SerializedObject(popup);
                 entrance.FindProperty("_entrance").enumValueIndex = (int)PopupEntrance.None;
+                entrance.FindProperty("_rowStep").floatValue = 170f;
+                entrance.FindProperty("_rowPadding").floatValue = 30f;
                 entrance.ApplyModifiedPropertiesWithoutUndo();
                 Set(popup, "_content", content);
                 Set(popup, "_sound", sound);
                 Set(popup, "_music", music);
                 Set(popup, "_haptics", haptics);
                 Set(popup, "_close", close.GetComponent<Button>());
+                Set(popup, "_title", title.GetComponent<LocalizedText>());
+                Set(popup, "_mainPage", mainPage.gameObject);
+                Set(popup, "_languagePage", languagePage.gameObject);
+                Set(popup, "_helpPage", helpPage.gameObject);
+                SetArray(popup, "_backButtons", new Object[] { languageBack, helpBack });
+                Set(popup, "_rowPanel", rowPanel.rectTransform);
+                Set(popup, "_languageRow", languageRow);
+                Set(popup, "_languageLabel", languageRow.GetComponentInChildren<TMP_Text>());
+                Set(popup, "_helpRow", helpRow);
+                Set(popup, "_feedbackRow", feedbackRow);
+                Set(popup, "_copyRow", copyRow);
+                Set(popup, "_copyLabel", copyRow.GetComponentInChildren<TMP_Text>());
+                Set(popup, "_languageList", list);
+                Set(popup, "_languageTemplate", template.GetComponent<Button>());
+                Set(popup, "_footer", footerButton);
+                Set(popup, "_footerLabel", footerLabel);
+                Set(popup, "_privacy", privacy);
+                Set(popup, "_terms", terms);
+                Set(popup, "_toast", toastGroup);
+                Set(popup, "_toastLabel", toastLabel);
+                Set(popup, "_links", links);
+                Set(popup, "_buildInfo", buildInfo);
                 PrefabUtility.SaveAsPrefabAsset(root, SettingsPopupPath);
             }
             finally
@@ -668,6 +991,14 @@ namespace Project.Editor
                 Object.DestroyImmediate(root);
             }
             return AssetDatabase.LoadAssetAtPath<SettingsPopup>(SettingsPopupPath);
+        }
+
+        // Purple Back button centred at y on the design screen.
+        private static Button WideBack(RectTransform page, float y)
+        {
+            var back = ButtonRect("BackButton", page, Center, At(585, y), new Vector2(630, 150), S("UI_Button_Wide_Purple"));
+            Text("Label", back, new Vector2(0, 8), new Vector2(440, 90), "settings.back", 54, White, "settings.back");
+            return back.GetComponent<Button>();
         }
 
         // ---------------------------------------------------------------- Shared pieces
@@ -780,11 +1111,13 @@ namespace Project.Editor
             return rect.GetComponent<Button>();
         }
 
+        // Home side button: 150x157 base, 120 icon, 32 px label 92 below the centre.
         private static Button SideButton(RectTransform parent, string name, Vector2 position, Sprite icon, string key)
         {
-            var button = IconButton(parent, name, position, icon, 150f, 110f);
-            Text("Label", button.transform, new Vector2(0, -100), new Vector2(160, 46), key, 32, White, key);
-            return button;
+            var rect = ButtonRect(name, parent, Center, position, new Vector2(150, 157), S("UI_InLevel_IconBase"));
+            Pic("Icon", rect, Center, new Vector2(0, 4), new Vector2(120, 120), icon).raycastTarget = false;
+            Text("Label", rect, new Vector2(0, -92), new Vector2(200, 46), key, 32, White, key);
+            return rect.GetComponent<Button>();
         }
 
         private static RectTransform Group(string name, Component parent, Vector2 offset, float duration)
