@@ -13,7 +13,7 @@ namespace Project.Editor
     {
         private const string IntroPopupPath = "Assets/Prefabs/Popups/IntroPopup.prefab";
         // Fingertip on the hand art.
-        private static readonly Vector2 HandTip = new(0.19f, 0.95f);
+        private static readonly Vector2 HandTip = new(0.14f, 0.96f);
 
         private static Sprite Art(string path)
         {
@@ -29,9 +29,9 @@ namespace Project.Editor
             layer.SetAsLastSibling();
 
             var line = Text("Line", layer, Vector2.zero, new Vector2(1050, 100), "tutorial.pick", 60, White, "tutorial.pick");
-            var yes = Pic("Yes", layer, Center, Vector2.zero, new Vector2(110, 110), S("UI_Icon_Check"));
-            var no = Pic("No", layer, Center, Vector2.zero, new Vector2(110, 114), S("UI_Button_Close"));
-            var hand = Pic("Hand", layer, Center, Vector2.zero, new Vector2(196, 290), S("UI_Tutorial_Hand"));
+            var yes = Pic("Yes", layer, Center, Vector2.zero, new Vector2(110, 105), S("UI_Tutorial_Yes"));
+            var no = Pic("No", layer, Center, Vector2.zero, new Vector2(110, 110), S("UI_Tutorial_No"));
+            var hand = Pic("Hand", layer, Center, Vector2.zero, new Vector2(162, 300), S("UI_Tutorial_Hand"));
             hand.rectTransform.pivot = HandTip;
             foreach (var image in new[] { yes, no, hand }) image.raycastTarget = false;
 
