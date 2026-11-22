@@ -7,9 +7,11 @@ using UnityEngine;
 
 namespace Project.Editor.LevelEditor
 {
-    public sealed class LevelEditorWindow : EditorWindow
+    // Level list, the board preview and saving; tube editing and the solvability check live in their own parts.
+    public sealed partial class LevelEditorWindow : EditorWindow
     {
         private const float ListWidth = 180f;
+        private const float SideWidth = 300f;
 
         private readonly List<string> _errors = new();
         private List<LevelGroup> _groups = new();
@@ -17,10 +19,11 @@ namespace Project.Editor.LevelEditor
         private LevelData _level;
         private LevelPalette _palette;
         private Vector2 _listScroll;
+        private Vector2 _sideScroll;
         private int _selectedBottle = -1;
-        private int _perRow = 5;
-
-        private SlotData _brush = new() { Color = 0 };
+        private int _perRow = LevelRules.MaxPerRow;
+        // Bumped on every edit, so a solvability result knows when it is out of date.
+        private int _revision;
 
         [MenuItem("Tools/Project/Level Editor")]
         private static void Open() => GetWindow<LevelEditorWindow>("Level Editor");
@@ -29,10 +32,16 @@ namespace Project.Editor.LevelEditor
         {
             _palette = LevelAssetStore.FindOrCreatePalette();
             Refresh();
-            Undo.undoRedoPerformed += Repaint;
+            Undo.undoRedoPerformed += OnUndoRedo;
         }
 
-        private void OnDisable() => Undo.undoRedoPerformed -= Repaint;
+        private void OnDisable() => Undo.undoRedoPerformed -= OnUndoRedo;
+
+        private void OnUndoRedo()
+        {
+            _revision++;
+            Repaint();
+        }
 
         private void OnProjectChange() => Refresh();
 
@@ -53,6 +62,7 @@ namespace Project.Editor.LevelEditor
             _level = level;
             _group = LevelGrouping.Find(_groups, level);
             _selectedBottle = -1;
+            _revision++;
         }
 
         private void OnGUI()
@@ -61,10 +71,19 @@ namespace Project.Editor.LevelEditor
             using (new EditorGUILayout.HorizontalScope())
             {
                 DrawLevelList();
-                using (new EditorGUILayout.VerticalScope())
+                if (_level == null)
                 {
-                    if (_level == null) EditorGUILayout.HelpBox("Create a level or import a JSON file.", MessageType.Info);
-                    else DrawLevel();
+                    EditorGUILayout.HelpBox("Create a level or import a JSON file.", MessageType.Info);
+                    return;
+                }
+                using (new EditorGUILayout.VerticalScope()) DrawBoard();
+                using (var side = new EditorGUILayout.ScrollViewScope(_sideScroll, GUILayout.Width(SideWidth)))
+                {
+                    _sideScroll = side.scrollPosition;
+                    DrawBrush();
+                    DrawSelectedBottle();
+                    DrawLockboxes();
+                    DrawSolvability();
                 }
             }
         }
@@ -75,6 +94,8 @@ namespace Project.Editor.LevelEditor
             {
                 if (GUILayout.Button("New", EditorStyles.toolbarButton, GUILayout.Width(50))) CreateLevel();
                 if (GUILayout.Button("Import JSON...", EditorStyles.toolbarButton, GUILayout.Width(100))) ImportJson();
+                if (GUILayout.Button("Rebuild Catalog", EditorStyles.toolbarButton, GUILayout.Width(110))) LevelCatalogBuilder.Rebuild();
+                if (GUILayout.Button("Check All Levels", EditorStyles.toolbarButton, GUILayout.Width(115))) LevelSolver.CheckAllLayouts();
                 GUILayout.FlexibleSpace();
                 _palette = (LevelPalette)EditorGUILayout.ObjectField(_palette, typeof(LevelPalette), false, GUILayout.Width(160));
             }
@@ -104,79 +125,62 @@ namespace Project.Editor.LevelEditor
             if (chosen != current) Select(_group.Variants[chosen].Level);
         }
 
-        private void DrawLevel()
+        private void DrawBoard()
         {
             DrawVariantPopup();
             using (new EditorGUILayout.HorizontalScope())
             {
                 EditorGUILayout.ObjectField(_level, typeof(LevelData), false);
-                GUILayout.Label($"{_level.Bottles.Count} bottles, {_level.ColorCount} colors", GUILayout.Width(140));
+                GUILayout.Label($"{_level.Bottles.Count} tubes, {_level.ColorCount} colors · {LevelMechanics.Of(_level)}", GUILayout.Width(320));
             }
 
             using (new EditorGUILayout.HorizontalScope())
             {
-                var capacity = EditorGUILayout.IntField("Capacity", _level.Capacity);
-                if (capacity != _level.Capacity) Edit("Change Capacity", () => _level.Capacity = capacity);
-            }
-
-            using (new EditorGUILayout.HorizontalScope())
-            {
-                if (GUILayout.Button("Add Bottle")) Edit("Add Bottle", AddBottle);
-                using (new EditorGUI.DisabledScope(_selectedBottle < 0 || _selectedBottle >= _level.Bottles.Count))
-                    if (GUILayout.Button("Remove Selected")) Edit("Remove Bottle", RemoveSelectedBottle);
-                _perRow = Mathf.Max(1, EditorGUILayout.IntField(_perRow, GUILayout.Width(30)));
+                if (GUILayout.Button("Add Tube")) Edit("Add Tube", AddBottle);
+                using (new EditorGUI.DisabledScope(!HasSelection))
+                    if (GUILayout.Button("Remove Selected")) Edit("Remove Tube", RemoveSelectedBottle);
+                GUILayout.Label("Per row", GUILayout.Width(50));
+                _perRow = Mathf.Clamp(EditorGUILayout.IntField(_perRow, GUILayout.Width(30)), 1, LevelRules.MaxPerRow);
                 if (GUILayout.Button("Auto Layout")) Edit("Auto Layout", () => LevelLayout.Arrange(_level, _perRow));
             }
-
-            DrawBrush();
+            EditorGUILayout.LabelField("Left click paints a slot · right click selects a tube", EditorStyles.miniLabel);
 
             var area = GUILayoutUtility.GetRect(10f, 10000f, 10f, 10000f);
             var hit = LevelPreview.Draw(area, _level, _palette, _selectedBottle);
-            if (hit.HasValue) Paint(hit.Value);
+            if (hit.HasValue)
+            {
+                _selectedBottle = hit.Value.Bottle;
+                if (hit.Value.Paints) Paint(hit.Value);
+                Repaint();
+            }
 
             LevelValidator.Validate(_level, _errors);
-            if (_errors.Count == 0) EditorGUILayout.HelpBox("Level is valid.", MessageType.None);
+            if (_errors.Count == 0) EditorGUILayout.HelpBox("Layout is valid.", MessageType.None);
             else EditorGUILayout.HelpBox(string.Join("\n", _errors), MessageType.Warning);
         }
 
-        private void DrawBrush()
-        {
-            using (new EditorGUILayout.HorizontalScope())
-            {
-                GUILayout.Label("Brush", GUILayout.Width(40));
-                if (GUILayout.Toggle(_brush.IsEmpty, "Erase", EditorStyles.miniButton, GUILayout.Width(44))) _brush.Color = SlotData.EmptyColor;
-                for (var i = 0; i < _palette.Count; i++)
-                {
-                    var old = GUI.backgroundColor;
-                    GUI.backgroundColor = _palette.Get(i);
-                    if (GUILayout.Toggle(_brush.Color == i, i.ToString(), EditorStyles.miniButton, GUILayout.Width(26))) _brush.Color = i;
-                    GUI.backgroundColor = old;
-                }
-                GUILayout.FlexibleSpace();
-            }
-            using (new EditorGUILayout.HorizontalScope())
-            {
-                _brush.Kind = (SlotKind)EditorGUILayout.EnumPopup("Kind", _brush.Kind);
-                _brush.Hidden = EditorGUILayout.ToggleLeft("Hidden (?)", _brush.Hidden, GUILayout.Width(90));
-            }
-        }
-
-        private void Paint(LevelPreview.SlotHit hit)
-        {
-            _selectedBottle = hit.Bottle;
-            var slot = _brush.IsEmpty ? SlotData.Empty : _brush;
-            Edit("Paint Slot", () => _level.Bottles[hit.Bottle].Slots[hit.Slot] = slot);
-        }
+        private bool HasSelection => _selectedBottle >= 0 && _selectedBottle < _level.Bottles.Count;
 
         private void AddBottle()
         {
-            _level.Bottles.Add(BottleData.CreateEmpty(_level.Capacity, Vector2.zero));
+            _level.Bottles.Add(BottleData.CreateEmpty(LevelRules.TubeCapacities[0], Vector2.zero));
             LevelLayout.Arrange(_level, _perRow);
         }
 
+        // Obstacles keep pointing at the same tubes: indices above the removed one shift down.
         private void RemoveSelectedBottle()
         {
-            _level.Bottles.RemoveAt(_selectedBottle);
+            var removed = _selectedBottle;
+            _level.Bottles.RemoveAt(removed);
+            _level.Curtains.RemoveAll(c => c.Bottle == removed);
+            foreach (var curtain in _level.Curtains)
+                if (curtain.Bottle > removed) curtain.Bottle--;
+            foreach (var box in _level.Lockboxes)
+            {
+                box.Bottles.Remove(removed);
+                for (var i = 0; i < box.Bottles.Count; i++)
+                    if (box.Bottles[i] > removed) box.Bottles[i]--;
+            }
             _selectedBottle = -1;
         }
 
@@ -185,13 +189,14 @@ namespace Project.Editor.LevelEditor
             Undo.RecordObject(_level, undoName);
             change();
             EditorUtility.SetDirty(_level);
+            _revision++;
             Repaint();
         }
 
         private void CreateLevel()
         {
             var level = CreateInstance<LevelData>();
-            for (var i = 0; i < 3; i++) level.Bottles.Add(BottleData.CreateEmpty(level.Capacity, Vector2.zero));
+            for (var i = 0; i < 3; i++) level.Bottles.Add(BottleData.CreateEmpty(LevelRules.TubeCapacities[0], Vector2.zero));
             LevelLayout.Arrange(level, _perRow);
             var saved = LevelAssetStore.Save(level, LevelGrouping.NextName(_groups));
             AssetDatabase.SaveAssets();

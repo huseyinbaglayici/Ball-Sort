@@ -1,51 +1,85 @@
+using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using Project.Contexts.Game.Levels;
 using Project.Contexts.Game.Sort;
 using UnityEditor;
-using UnityEngine;
+using Debug = UnityEngine.Debug;
 
 namespace Project.Editor.LevelEditor
 {
-    // Checks a layout is solvable, so a rule change that breaks levels shows up at once.
+    // Checks a layout is solvable without boosters, so a rule change or an edit that breaks a level shows up at once.
     public static class LevelSolver
     {
+        public const int DefaultNodeLimit = 3000000;
+        public const int DefaultTimeoutMs = 20000;
+
         public enum Outcome
         {
             Solved,
+            // Every reachable position was tried; no line finishes it.
             Unsolvable,
-            LimitReached
+            // The search stopped at its node, time or depth limit before it could tell.
+            NotProven,
+            // The layout itself is broken (validator errors or a board that can't be built).
+            Invalid
         }
 
-        public static Outcome Solve(LevelData level, int nodeLimit, out int moveCount)
+        public sealed class Report
         {
-            var path = new List<Vector2Int>();
-            var outcome = Solve(level, nodeLimit, path);
-            moveCount = path.Count;
-            return outcome;
-        }
+            public Outcome Outcome;
+            public readonly List<(int From, int To)> Route = new();
+            public long Milliseconds;
+            public string Detail = string.Empty;
 
-        // Solution moves are (from, to) bottle indices.
-        public static Outcome Solve(LevelData level, int nodeLimit, List<Vector2Int> solution)
-        {
-            var route = new List<(int From, int To)>();
-            var outcome = BoardSolver.Solve(new SortBoard(level), route, nodeLimit);
-            solution.Clear();
-            foreach (var (from, to) in route) solution.Add(new Vector2Int(from, to));
-            return outcome switch
+            public string Summary => Outcome switch
             {
-                BoardSolver.Outcome.Solved => Outcome.Solved,
-                BoardSolver.Outcome.Unsolvable => Outcome.Unsolvable,
-                _ => Outcome.LimitReached
+                Outcome.Solved => $"Solvable in {Route.Count} moves ({Milliseconds} ms)",
+                Outcome.Unsolvable => $"Unsolvable: every position was tried ({Milliseconds} ms)",
+                Outcome.NotProven => $"Not proven: the search hit its limit after {Milliseconds} ms",
+                _ => $"Invalid: {Detail}"
             };
         }
 
+        public static Report Check(LevelData level, int nodeLimit = DefaultNodeLimit, int timeoutMs = DefaultTimeoutMs)
+        {
+            var report = new Report();
+            var errors = new List<string>();
+            LevelValidator.Validate(level, errors);
+            if (errors.Count > 0)
+            {
+                report.Outcome = Outcome.Invalid;
+                report.Detail = errors[0];
+                return report;
+            }
+
+            var clock = Stopwatch.StartNew();
+            try
+            {
+                var outcome = BoardSolver.Solve(new SortBoard(level), report.Route, nodeLimit, timeoutMs);
+                report.Outcome = outcome switch
+                {
+                    BoardSolver.Outcome.Solved => Outcome.Solved,
+                    BoardSolver.Outcome.Unsolvable => Outcome.Unsolvable,
+                    _ => Outcome.NotProven
+                };
+            }
+            catch (Exception e)
+            {
+                report.Outcome = Outcome.Invalid;
+                report.Detail = e.Message;
+            }
+            report.Milliseconds = clock.ElapsedMilliseconds;
+            return report;
+        }
+
         [MenuItem("Tools/Project/Check Levels Solvable (first layouts)")]
-        private static void CheckFirstLayouts() => CheckAll(allLayouts: false);
+        private static void CheckFirstLayouts() => CheckCatalog(allLayouts: false);
 
         [MenuItem("Tools/Project/Check Levels Solvable (all layouts)")]
-        private static void CheckAllLayouts() => CheckAll(allLayouts: true);
+        public static void CheckAllLayouts() => CheckCatalog(allLayouts: true);
 
-        private static void CheckAll(bool allLayouts)
+        private static void CheckCatalog(bool allLayouts)
         {
             var catalog = AssetDatabase.LoadAssetAtPath<LevelCatalog>(LevelCatalogBuilder.CatalogPath);
             if (catalog == null)
@@ -54,26 +88,34 @@ namespace Project.Editor.LevelEditor
                 return;
             }
 
-            int solved = 0, unsolvable = 0, limit = 0, total = 0;
+            var counts = new int[Enum.GetValues(typeof(Outcome)).Length];
             var problems = new List<string>();
-            foreach (var entry in catalog.Levels)
+            var total = 0;
+            try
             {
-                var count = allLayouts ? entry.Variants.Count : System.Math.Min(1, entry.Variants.Count);
-                for (var v = 0; v < count; v++)
+                foreach (var entry in catalog.Levels)
                 {
-                    total++;
-                    var outcome = Solve(entry.Variants[v], 200000, out _);
-                    if (outcome == Outcome.Solved) solved++;
-                    else
+                    var count = allLayouts ? entry.Variants.Count : Math.Min(1, entry.Variants.Count);
+                    for (var v = 0; v < count; v++)
                     {
-                        if (outcome == Outcome.Unsolvable) unsolvable++; else limit++;
-                        problems.Add($"{entry.Variants[v].name}: {outcome}");
+                        var level = entry.Variants[v];
+                        if (EditorUtility.DisplayCancelableProgressBar("Checking levels", level.name, entry.Number / (float)catalog.Count)) return;
+                        total++;
+                        var report = Check(level, DefaultNodeLimit, 5000);
+                        counts[(int)report.Outcome]++;
+                        if (report.Outcome != Outcome.Solved) problems.Add($"{level.name}: {report.Summary}");
                     }
                 }
             }
+            finally
+            {
+                EditorUtility.ClearProgressBar();
+            }
 
-            Debug.Log($"[LevelSolver] {total} layouts: {solved} solved, {unsolvable} unsolvable, {limit} hit the search limit." +
-                      (problems.Count > 0 ? "\n" + string.Join("\n", problems.GetRange(0, System.Math.Min(30, problems.Count))) : string.Empty));
+            var line = $"[LevelSolver] {total} layouts: {counts[(int)Outcome.Solved]} solvable, {counts[(int)Outcome.Unsolvable]} unsolvable, " +
+                       $"{counts[(int)Outcome.NotProven]} not proven, {counts[(int)Outcome.Invalid]} invalid.";
+            if (problems.Count == 0) Debug.Log(line);
+            else Debug.LogWarning(line + "\n" + string.Join("\n", problems));
         }
     }
 }

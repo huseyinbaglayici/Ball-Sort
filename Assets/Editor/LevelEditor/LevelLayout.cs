@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Project.Editor.LevelEditor
 {
-    // Centered rows, top row first.
+    // Centered rows, top row first, never wider than the game lays out.
     public static class LevelLayout
     {
         public const float BottleSpacing = 2.1f;
@@ -12,7 +12,7 @@ namespace Project.Editor.LevelEditor
         public static void Arrange(LevelData level, int perRow)
         {
             var bottles = level.Bottles;
-            perRow = Mathf.Max(1, perRow);
+            perRow = Mathf.Clamp(perRow, 1, LevelRules.MaxPerRow);
             var rows = Mathf.CeilToInt(bottles.Count / (float)perRow);
             for (var i = 0; i < bottles.Count; i++)
             {
