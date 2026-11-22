@@ -3,25 +3,26 @@ using System.Collections.Generic;
 using Project.Contexts.Game.Sort;
 using Project.Core.Localization;
 using Project.Core.Services;
+using Spine.Unity;
 using TMPro;
 using UnityEngine;
 
 namespace Project.Contexts.Game.Items
 {
-    // Level won: caps pulse, an orbit ring collapses into a gold burst, the mascot swings in under the ribbon, then the win panel.
+    // Level won: caps pulse, an orbit ring collapses into a gold burst, then the stage skeleton plays its intro (the mascot
+    // swings in and lands, the ribbon drops over it) and its celebrate loop until the coins fly.
     public sealed class WinFx : Item
     {
         // Lifetime of the longest grain, so nothing is cut when the item is released.
         private const float Tail = 1.5f;
         // The dim reaches past the screen on every side.
         private const float DimMargin = 1.5f;
-        // The mascot leans toward its heading by this share, at most this far, and catches up at this rate.
-        private const float LeanShare = 0.25f;
-        private const float LeanRate = 10f;
-        private const int GhostSpacing = 2;
-        // Glow behind the mascot and the ribbon's text, in the mascot's and ribbon's own units.
-        private const float MascotGlowScale = 1.6f;
-        private const float RibbonTextLift = 0.16f;
+        // Skeleton units per source pixel and the mascot's drawn width in pixels; the stage is scaled so the mascot fills its share of the screen.
+        private const float SkeletonScale = 0.01f;
+        private const float MascotPx = 512f;
+        private const string IntroAnimation = "intro";
+        private const string CelebrateAnimation = "celebrate";
+        private const string RibbonSlot = "ribbon";
 
         [SerializeField] private SpriteRenderer _dim;
         [SerializeField] private SpriteRenderer _flash;
@@ -31,21 +32,13 @@ namespace Project.Contexts.Game.Items
         [SerializeField] private SpriteRenderer _glowFar;
         [SerializeField] private ParticleSystem _dust;
         [SerializeField] private ParticleSystem _sparks;
-        [SerializeField] private SpriteRenderer _mascot;
-        [SerializeField] private SpriteRenderer _mascotGlow;
-        [SerializeField] private SpriteRenderer[] _ghosts;
-        [SerializeField] private SpriteRenderer _ribbon;
+        [SerializeField] private SkeletonAnimation _stage;
+        [SerializeField] private MeshRenderer _stageRenderer;
         [SerializeField] private TMP_Text _ribbonText;
 
         private static Sprite _dimSprite;
-        private readonly Vector3[] _history = new Vector3[16];
-        private readonly float[] _historyAngle = new float[16];
-        private int _historyCount;
         private Action<WinFx> _onFinished;
-        private float _lean;
-        private Vector3 _previous;
-        private Vector3 _mascotRest;
-        private float _mascotScale;
+        private Spine.Slot _ribbonSlot;
         // The screen in the board's units, so the stage reads the same on a narrow and a wide board.
         private float _view;
         private float _viewHeight;
@@ -99,8 +92,8 @@ namespace Project.Contexts.Game.Items
             Sweep(w, f, ringAt);
             PrimeTween.Tween.Delay(this, burstAt, fx => fx.Burst(w, f));
             Dim(w, f, burstAt);
-            Mascot(w, f, mascotAt);
-            Ribbon(w, ribbonAt);
+            PrepareStage(w);
+            PrimeTween.Tween.Delay(this, burstAt, fx => fx.PlayStage());
 
             var total = Mathf.Max(panelAt + w.AfterPanel, ribbonAt + w.RibbonTime + Tail);
             PrimeTween.Tween.Delay(this, total, fx => fx.Finish());
@@ -196,134 +189,40 @@ namespace Project.Contexts.Game.Items
                 }, PrimeTween.Ease.OutQuad, startDelay: at);
         }
 
-        // Swings in from below on an arc, leaning into the turn, lands with a squash and bobs while it waits.
-        private void Mascot(WinFxSettings w, FinishFxSettings f, float at)
+        // The stage is scaled so the mascot takes its share of the screen width; the title text follows the ribbon bone.
+        private void PrepareStage(WinFxSettings w)
         {
-            var native = Mathf.Max(_mascot.sprite != null ? _mascot.sprite.bounds.size.x : 1f, 0.0001f);
-            _mascotScale = _view * w.MascotSize / native;
-            _mascotRest = new Vector3(w.MascotRest.x * _view, w.MascotRest.y * _viewHeight, 0f);
-            var from = new Vector3(w.MascotFrom.x * _view, w.MascotFrom.y * _viewHeight, 0f);
-            // The arc's control point: out to the side and above the rest, so it swings in from over the shoulder.
-            var control = new Vector3(from.x * 0.85f, _mascotRest.y + _viewHeight * 0.15f, 0f);
-            _previous = from;
-            _lean = 0f;
-            _historyCount = 0;
-            var glowColor = f.Violet;
-            PrimeTween.Tween.Custom(this, 0f, 1f, Mathf.Max(w.MascotTime, 0.0001f), (fx, t) =>
-                {
-                    var k = PrimeTween.Easing.Evaluate(t, PrimeTween.Ease.OutCubic);
-                    var u = 1f - k;
-                    var position = u * u * from + 2f * u * k * control + k * k * fx._mascotRest;
-                    fx.Fly(position, w, glowColor, t);
-                }, PrimeTween.Ease.Linear, startDelay: at)
-                .OnComplete(this, fx => fx.Land(w));
-        }
-
-        private void Fly(Vector3 position, WinFxSettings w, Color glow, float t)
-        {
-            var dt = Mathf.Max(Time.deltaTime, 0.0001f);
-            var velocity = (position - _previous) / dt;
-            _previous = position;
-            var heading = velocity.sqrMagnitude > 0.01f ? Mathf.Atan2(velocity.y, velocity.x) * Mathf.Rad2Deg : 90f;
-            // Lean toward the heading, upright at the end.
-            var target = Mathf.Clamp(Mathf.DeltaAngle(90f, heading) * LeanShare, -w.MascotLean, w.MascotLean) * (1f - t);
-            _lean = Mathf.Lerp(_lean, target, 1f - Mathf.Exp(-LeanRate * dt));
-            var mascot = _mascot.transform;
-            mascot.localPosition = position;
-            mascot.localRotation = Quaternion.Euler(0f, 0f, _lean);
-            // Grows in from a little smaller, as if coming closer.
-            mascot.localScale = Vector3.one * (_mascotScale * Mathf.Lerp(0.8f, 1f, t));
-            _mascot.enabled = true;
-            var glowRenderer = _mascotGlow;
-            glowRenderer.enabled = true;
-            glowRenderer.transform.localPosition = position;
-            glowRenderer.transform.localScale = mascot.localScale * MascotGlowScale;
-            glowRenderer.color = new Color(glow.r, glow.g, glow.b, 0.55f * Mathf.Clamp01(t * 4f));
-            Ghosts(position, _lean, mascot.localScale, w, glow, 1f - t);
-        }
-
-        // Violet ghosts of the mascot trail its path and fade as it slows.
-        private void Ghosts(Vector3 position, float angle, Vector3 scale, WinFxSettings w, Color glow, float strength)
-        {
-            if (_historyCount == 0 || Time.frameCount % GhostSpacing == 0)
-            {
-                for (var i = Mathf.Min(_historyCount, _history.Length - 1); i > 0; i--)
-                {
-                    _history[i] = _history[i - 1];
-                    _historyAngle[i] = _historyAngle[i - 1];
-                }
-                _history[0] = position;
-                _historyAngle[0] = angle;
-                _historyCount = Mathf.Min(_historyCount + 1, _history.Length);
-            }
-            for (var i = 0; i < _ghosts.Length; i++)
-            {
-                var slot = (i + 1) * 2;
-                var ghost = _ghosts[i];
-                if (slot >= _historyCount)
-                {
-                    ghost.enabled = false;
-                    continue;
-                }
-                ghost.enabled = true;
-                ghost.transform.localPosition = _history[slot];
-                ghost.transform.localRotation = Quaternion.Euler(0f, 0f, _historyAngle[slot]);
-                ghost.transform.localScale = scale;
-                var alpha = w.TrailAlpha * strength * (1f - (float)i / _ghosts.Length);
-                ghost.color = new Color(glow.r, glow.g, glow.b, alpha);
-            }
-        }
-
-        private void Land(WinFxSettings w)
-        {
-            foreach (var ghost in _ghosts) ghost.enabled = false;
-            var mascot = _mascot.transform;
-            mascot.localPosition = _mascotRest;
-            mascot.localRotation = Quaternion.identity;
-            var rest = Vector3.one * _mascotScale;
-            var squash = new Vector3(rest.x * w.MascotSquash.x, rest.y * w.MascotSquash.y, 1f);
-            PrimeTween.Tween.Scale(mascot, rest, squash, Mathf.Max(w.MascotSquashTime, 0.0001f), PrimeTween.Ease.OutQuad)
-                .Chain(PrimeTween.Tween.Scale(mascot, squash, rest, Mathf.Max(w.MascotRecover, 0.0001f), PrimeTween.Ease.OutBack))
-                .ChainCallback(this, fx => fx.Bob(w));
-            PrimeTween.Tween.Custom(this, 0f, 1f, Mathf.Max(w.MascotRecover, 0.0001f), (fx, t) =>
-                fx._mascotGlow.transform.localScale = Vector3.one * (fx._mascotScale * MascotGlowScale * Mathf.Lerp(1f, 1.15f, Mathf.Sin(Mathf.PI * t))),
-                PrimeTween.Ease.Linear);
-        }
-
-        private void Bob(WinFxSettings w)
-        {
-            var period = Mathf.Max(w.MascotBobPeriod, 0.0001f);
-            PrimeTween.Tween.Custom(this, 0f, 1f, period, (fx, t) =>
-                {
-                    var lift = w.MascotBob * fx._mascotScale * Mathf.Sin(Mathf.PI * 2f * t);
-                    fx._mascot.transform.localPosition = fx._mascotRest + Vector3.up * lift;
-                    fx._mascotGlow.transform.localPosition = fx._mascot.transform.localPosition;
-                }, PrimeTween.Ease.Linear, cycles: -1);
-        }
-
-        // Drops in over the mascot from a little higher, overshooting into place; the text settles with it.
-        private void Ribbon(WinFxSettings w, float at)
-        {
-            var native = _ribbon.sprite != null ? _ribbon.sprite.bounds.size : Vector3.one;
-            var scale = _view * w.RibbonWidth / Mathf.Max(native.x, 0.0001f);
-            var mascotTop = _mascotRest.y + (_mascot.sprite != null ? _mascot.sprite.bounds.extents.y : 0f) * _mascotScale;
-            var rest = new Vector3(0f, mascotTop + _view * w.RibbonGap + native.y * scale * 0.5f, 0f);
-            var drop = _view * w.RibbonDrop;
+            var scale = _view * w.MascotSize / (MascotPx * SkeletonScale);
+            var stage = _stage.transform;
+            stage.localPosition = Vector3.zero;
+            stage.localRotation = Quaternion.identity;
+            stage.localScale = Vector3.one * scale;
             _ribbonText.text = Services.TryGet<LocalizationService>(out var loc) ? loc.Get("result.win") : "Great!";
             _ribbonText.fontSize = w.RibbonFontSize;
-            _ribbonText.transform.localPosition = new Vector3(0f, RibbonTextLift, 0f);
-            var ribbon = _ribbon.transform;
-            PrimeTween.Tween.Custom(this, 0f, 1f, Mathf.Max(w.RibbonTime, 0.0001f), (fx, t) =>
-                {
-                    var k = PrimeTween.Easing.Evaluate(t, PrimeTween.Ease.OutBack);
-                    fx._ribbon.enabled = true;
-                    fx._ribbonText.enabled = true;
-                    ribbon.localPosition = rest + Vector3.up * (drop * (1f - k));
-                    ribbon.localScale = Vector3.one * (scale * Mathf.LerpUnclamped(0.7f, 1f, k));
-                    var alpha = Mathf.Clamp01(t * 3f);
-                    fx._ribbon.color = new Color(1f, 1f, 1f, alpha);
-                    fx._ribbonText.alpha = alpha;
-                }, PrimeTween.Ease.Linear, startDelay: at);
+            _ribbonText.alpha = 0f;
+        }
+
+        // Intro once, then the celebrate loop; both are authored in the skeleton from the same settings.
+        private void PlayStage()
+        {
+            _stage.Initialize(false);
+            var skeleton = _stage.Skeleton;
+            if (skeleton == null) return;
+            skeleton.SetupPose();
+            _ribbonSlot = skeleton.FindSlot(RibbonSlot);
+            var state = _stage.AnimationState;
+            state.ClearTracks();
+            state.SetAnimation(0, IntroAnimation, false);
+            state.AddAnimation(0, CelebrateAnimation, true, 0f);
+            _stage.Update(0f);
+            _stageRenderer.enabled = true;
+            _ribbonText.enabled = true;
+        }
+
+        // The title fades with its ribbon; the bone follower keeps it on the band.
+        private void LateUpdate()
+        {
+            if (_ribbonText.enabled && _ribbonSlot != null) _ribbonText.alpha = _ribbonSlot.Pose.GetColor().a;
         }
 
         private void HideRing() => _ringNear.enabled = _ringFar.enabled = _glowNear.enabled = _glowFar.enabled = false;
@@ -347,10 +246,11 @@ namespace Project.Contexts.Game.Items
         private void Stop()
         {
             PrimeTween.Tween.StopAll(this);
-            PrimeTween.Tween.StopAll(_mascot.transform);
-            _dim.enabled = _flash.enabled = _mascot.enabled = _mascotGlow.enabled = _ribbon.enabled = false;
+            _dim.enabled = _flash.enabled = false;
+            _stageRenderer.enabled = false;
             _ribbonText.enabled = false;
-            foreach (var ghost in _ghosts) ghost.enabled = false;
+            _ribbonSlot = null;
+            if (_stage.AnimationState != null) _stage.AnimationState.ClearTracks();
             HideRing();
             _dust.Clear();
             _sparks.Clear();

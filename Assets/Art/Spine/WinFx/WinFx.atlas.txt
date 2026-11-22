@@ -1,0 +1,22 @@
+WinFx.png
+size: 1024,750
+filter: Linear,Linear
+pma: false
+body
+bounds: 2,2,286,340
+head
+bounds: 290,2,256,228
+ribbon
+bounds: 2,344,780,222
+armL
+bounds: 784,344,138,186
+armR
+bounds: 2,568,182,180
+halo
+bounds: 186,568,128,128
+antenna
+bounds: 316,568,48,64
+orb
+bounds: 366,568,60,60
+spark
+bounds: 428,568,64,16

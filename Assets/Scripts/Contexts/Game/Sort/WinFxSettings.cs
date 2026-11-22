@@ -3,7 +3,8 @@ using UnityEngine;
 
 namespace Project.Contexts.Game.Sort
 {
-    // The level-won beat over the board, from the last landing to the win panel: caps, orbit sweep, burst, mascot, ribbon.
+    // The level-won beat over the board, from the last landing to the coins: caps, orbit sweep, burst, mascot, ribbon.
+    // The mascot and ribbon values are baked into the stage skeleton by the prefab builder; rebuild the prefabs after tuning them.
     [Serializable]
     public sealed class WinFxSettings
     {
@@ -51,7 +52,6 @@ namespace Project.Contexts.Game.Sort
         public float MascotRecover = 0.22f;
         public float MascotBob = 0.03f;
         public float MascotBobPeriod = 1.4f;
-        [Range(0f, 1f)] public float TrailAlpha = 0.35f;
 
         [Header("Ribbon")]
         [Tooltip("From the mascot's landing: the ribbon drops in above it and settles, sized to the screen width, this gap over the mascot.")]

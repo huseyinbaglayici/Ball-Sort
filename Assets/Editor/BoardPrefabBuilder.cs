@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Project.Contexts.Game.Items;
+using Project.Contexts.Game.Sort;
 using Project.Contexts.Game.Levels;
 using TMPro;
 using UnityEditor;
@@ -72,7 +73,8 @@ namespace Project.Editor
             if (completeFx == null) return;
             var resultFx = ResultFxBuilder.Build();
             if (resultFx == null) return;
-            var winFx = WinFxBuilder.Build();
+            var config = AssetDatabase.LoadAssetAtPath<BallAnimationConfig>("Assets/Configs/BallAnimationConfig.asset");
+            var winFx = config != null ? WinFxBuilder.Build(config.Win) : null;
             if (winFx == null) return;
             var keyFlight = KeyFlightFxBuilder.Build(art.Key);
             if (keyFlight == null) return;

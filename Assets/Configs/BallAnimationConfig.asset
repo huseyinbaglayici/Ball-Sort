@@ -422,7 +422,6 @@ MonoBehaviour:
     MascotRecover: 0.22
     MascotBob: 0.03
     MascotBobPeriod: 1.4
-    TrailAlpha: 0.35
     RibbonDelay: 0.1
     RibbonTime: 0.32
     RibbonWidth: 0.85
