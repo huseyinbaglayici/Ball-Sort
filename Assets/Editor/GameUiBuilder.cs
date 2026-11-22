@@ -470,8 +470,16 @@ namespace Project.Editor
                 logoImage.sprite = logo;
                 logoImage.raycastTarget = false;
 
-                var bar = background.Find("ProgressBackground") as RectTransform;
-                if (bar != null) Anchor(bar, Bottom, new Vector2(0, 150));
+                // A "Loading..." line replaces the progress bar.
+                foreach (var old in new[] { "ProgressBackground", "Loading" })
+                {
+                    var child = background.Find(old);
+                    if (child != null) Object.DestroyImmediate(child.gameObject);
+                }
+                var loading = Text("Loading", background, Vector2.zero, new Vector2(700, 90), "Loading...", 60, White);
+                loading.horizontalAlignment = HorizontalAlignmentOptions.Center;
+                Anchor(loading.rectTransform, Bottom, new Vector2(0, 170));
+                Set(Root(scene, "Splash").GetComponent<Project.Contexts.Application.Splash>(), "_loading", loading);
                 EditorSceneManager.MarkSceneDirty(scene);
                 EditorSceneManager.SaveScene(scene);
             }

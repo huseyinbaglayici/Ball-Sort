@@ -1,19 +1,25 @@
 using Project.Common.Tween;
 using Project.Contexts.Main;
 using Project.Core.Events;
+using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
-using UnityEngine.UI;
 
 namespace Project.Contexts.Application
 {
-    // Boot scene: shows the opening art while Main loads, holds it a moment (a tap skips), then fades out.
+    // Boot scene: shows the opening art with a "Loading..." line while Main loads, holds it a moment (a tap skips), then fades out.
     public sealed class Splash : MonoBehaviour, IPointerDownHandler
     {
+        private const int MaxDots = 3;
+
         [SerializeField] private CanvasGroup _group;
-        [SerializeField] private Image _progressFill;
+        [SerializeField] private TMP_Text _loading;
+        [SerializeField] private float _dotTime = 0.35f;
         [SerializeField] private float _holdSeconds = 1.2f;
+
+        // Localization starts with Main, so the word follows the device language.
+        private string _word;
 
         private bool _mainReady;
         private bool _skipped;
@@ -29,7 +35,8 @@ namespace Project.Contexts.Application
         private async void Start()
         {
             var shownAt = Time.realtimeSinceStartup;
-            SetProgress(0f);
+            _word = UnityEngine.Application.systemLanguage == SystemLanguage.Turkish ? "Yükleniyor" : "Loading";
+            ShowDots(Time.realtimeSinceStartup);
             var load = SceneManager.LoadSceneAsync(SceneNames.Main);
             if (load == null)
             {
@@ -39,14 +46,14 @@ namespace Project.Contexts.Application
 
             while (!load.isDone)
             {
-                SetProgress(load.progress / 0.9f);
+                ShowDots(Time.realtimeSinceStartup);
                 await Awaitable.NextFrameAsync();
             }
-            SetProgress(1f);
 
             while (!_mainReady || (!_skipped && Time.realtimeSinceStartup - shownAt < _holdSeconds))
             {
                 if (this == null) return;
+                ShowDots(Time.realtimeSinceStartup);
                 await Awaitable.NextFrameAsync();
             }
 
@@ -58,9 +65,12 @@ namespace Project.Contexts.Application
 
         public void OnPointerDown(PointerEventData eventData) => _skipped = true;
 
-        private void SetProgress(float value)
+        // One to three dots; the hidden rest keep the line's width, so the word never shifts.
+        private void ShowDots(float time)
         {
-            if (_progressFill != null) _progressFill.fillAmount = Mathf.Clamp01(value);
+            if (_loading == null) return;
+            var shown = 1 + (int)(time / Mathf.Max(_dotTime, 0.05f)) % MaxDots;
+            _loading.text = _word + new string('.', shown) + "<alpha=#00>" + new string('.', MaxDots - shown);
         }
     }
 }
