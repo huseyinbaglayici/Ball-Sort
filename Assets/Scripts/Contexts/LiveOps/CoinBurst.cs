@@ -63,7 +63,8 @@ namespace Project.Contexts.LiveOps
                     {
                         Object.Destroy(go);
                         landed?.Invoke(index);
-                        if (last && to != null) Tween.PunchScale(to, Vector3.one * 0.12f, 0.2f, useUnscaledTime: true);
+                        // The counter may have closed with its popup before the last coin lands.
+                        if (last && to != null && to.gameObject.activeInHierarchy) Tween.PunchScale(to, Vector3.one * 0.12f, 0.2f, useUnscaledTime: true);
                     });
             }
         }

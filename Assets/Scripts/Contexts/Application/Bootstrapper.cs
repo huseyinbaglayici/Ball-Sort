@@ -33,9 +33,13 @@ namespace Project.Contexts.Application
         [SerializeField] private List<LocalizationTable> _localizationTables = new();
         [SerializeField] private int _targetFrameRate = 60;
 
+        private const int TweenCapacity = 1000;
+
         private void Awake()
         {
             UnityEngine.Application.targetFrameRate = _targetFrameRate;
+            // Big boards finish many tubes at once; a pool this size never grows mid-level.
+            PrimeTween.PrimeTweenConfig.SetTweensCapacity(TweenCapacity);
 
             var save = new SaveService();
             _audio.Initialize();
