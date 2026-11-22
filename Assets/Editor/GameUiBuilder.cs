@@ -616,11 +616,11 @@ namespace Project.Editor
             Set(game, "_settings", settings);
             Set(game, "_messagePopup", message);
             Set(game, "_resultPopup", result);
-        }
-
             Set(game, "_coinHud", hud);
             Set(game, "_coinTarget", coinIcon.rectTransform);
             Set(game, "_coinSprite", S("UI_Icon_Coin"));
+        }
+
         // Four round slots under the settings button, the tint behind them.
         private static SettingsMenu BuildSettingsMenu(RectTransform parent)
         {

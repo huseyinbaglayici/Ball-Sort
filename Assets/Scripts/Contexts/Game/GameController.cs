@@ -792,15 +792,9 @@ namespace Project.Contexts.Game
             }
         }
 
+        // No result panel: the win's coins fly into the HUD counter, then the next level (or Home) follows by itself.
         private sealed class WonState : State
         {
-            private readonly GameController _c;
-            public WonState(GameController controller) => _c = controller;
-
-            public override void Enter()
-        // No result panel: the win's coins fly into the HUD counter, then the next level (or Home) follows by itself.
-            {
-                _c.Deselect();
             // Coins on screen per win, and the beat after the last one lands before moving on.
             private const int MinFlyingCoins = 4;
             private const int MaxFlyingCoins = 10;
@@ -808,8 +802,14 @@ namespace Project.Contexts.Game
             private const float CoinFlight = 0.6f;
             private const float AfterCollect = 0.35f;
 
-                _c._ads.EndActivePlay();
+            private readonly GameController _c;
             private LevelResult _result;
+            public WonState(GameController controller) => _c = controller;
+
+            public override void Enter()
+            {
+                _c.Deselect();
+                _c._ads.EndActivePlay();
                 _c._board.PlayResult(true);
                 _result = _c._progress.CompleteLevel();
                 // The counter leaves the new coins out until they land.
@@ -878,13 +878,13 @@ namespace Project.Contexts.Game
             // Order after a win: coins, then the meta transition, then the road (Home) or the next chain level.
             private void ShowMetaTransition()
             {
+                var result = _result;
                 if (!result.MetaChanged)
                 {
                     LeaveToRoad(result);
                     return;
                 }
 
-                var result = _result;
                 var body = result.CampaignFinal
                     ? _c._loc.Get("meta.final_body")
                     : _c._loc.Format("meta.period_body", result.MetaPeriod);
