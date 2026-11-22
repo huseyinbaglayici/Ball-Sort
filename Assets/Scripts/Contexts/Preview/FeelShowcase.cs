@@ -30,7 +30,6 @@ namespace Project.Contexts.Preview
     {
         private const string BoardScenePath = "Assets/Scenes/Debug/TubeFxPreview.unity";
         private const string MainScene = "Main";
-        private const string PendingKey = "FeelShowcase.PendingRestore";
         private const int SeedLevel = 40;
         private const float GuiHeight = 1280f;
         private const float SlowMotion = 0.25f;
@@ -49,13 +48,12 @@ namespace Project.Contexts.Preview
         private GUIStyle _button, _header, _status;
         private Texture2D _backing;
 
-        private static string SaveFolder => Path.Combine(UnityEngine.Application.persistentDataPath, "save");
-        private static string BackupFolder => Path.Combine(UnityEngine.Application.persistentDataPath, "save_showcase_backup");
+        private static string SeedFolder => Path.Combine(UnityEngine.Application.persistentDataPath, "save_showcase");
 
         private void Awake()
         {
             DontDestroyOnLoad(gameObject);
-            SwapInSeedSave();
+            UseSeedSave();
             BuildSections();
             SceneManager.LoadScene(0);
         }
@@ -386,16 +384,10 @@ namespace Project.Contexts.Preview
 
         private static void Call(object owner, string method) => owner?.GetType().GetMethod(method, Private)?.Invoke(owner, null);
 
-        // The real save is set aside for the session and comes back when Play stops.
-        private static void SwapInSeedSave()
+        // The game plays on its own seeded folder, so the real save is never read or written.
+        private static void UseSeedSave()
         {
-            if (SessionState.GetBool(PendingKey, false)) RestoreSave();
-            if (Directory.Exists(BackupFolder)) Directory.Delete(BackupFolder, true);
-            Directory.CreateDirectory(SaveFolder);
-            CopyFolder(SaveFolder, BackupFolder);
-            SessionState.SetBool(PendingKey, true);
-            foreach (var file in Directory.GetFiles(SaveFolder, PlayerData.Key + ".json*")) File.Delete(file);
-
+            if (Directory.Exists(SeedFolder)) Directory.Delete(SeedFolder, true);
             var model = new ProgressModel { Level = SeedLevel, Coins = 5000, BoosterStock = new[] { 5, 5, 5 } };
             model.Lives.UnlimitedUntilTicks = DateTime.UtcNow.AddDays(7).Ticks;
             var today = DailyRewardService.DayNumber(DateTime.Now);
@@ -405,32 +397,8 @@ namespace Project.Contexts.Preview
             // Cards only from their buttons.
             model.Tutorial.Mechanics = ~0;
             model.Tutorial.Boosters = new[] { true, true, true };
-            new SaveService().Save(PlayerData.Key, model);
-        }
-
-        private static void RestoreSave()
-        {
-            SessionState.SetBool(PendingKey, false);
-            if (!Directory.Exists(BackupFolder)) return;
-            if (Directory.Exists(SaveFolder)) Directory.Delete(SaveFolder, true);
-            Directory.Move(BackupFolder, SaveFolder);
-            Debug.Log("[FeelShowcase] Your save is back.");
-        }
-
-        private static void CopyFolder(string from, string to)
-        {
-            Directory.CreateDirectory(to);
-            foreach (var file in Directory.GetFiles(from)) File.Copy(file, Path.Combine(to, Path.GetFileName(file)));
-        }
-
-        [InitializeOnLoadMethod]
-        private static void WatchPlayMode()
-        {
-            EditorApplication.playModeStateChanged += state =>
-            {
-                if (state == PlayModeStateChange.EnteredEditMode && SessionState.GetBool(PendingKey, false)) RestoreSave();
-            };
-            if (!EditorApplication.isPlayingOrWillChangePlaymode && SessionState.GetBool(PendingKey, false)) RestoreSave();
+            new SaveService(SeedFolder).Save(PlayerData.Key, model);
+            SaveService.EditorFolder = SeedFolder;
         }
     }
 }

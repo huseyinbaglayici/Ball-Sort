@@ -9,8 +9,19 @@ namespace Project.Core.Save
     {
         private readonly string _folder;
 
+#if UNITY_EDITOR
+        // An editor tool can play on its own folder so the real save is never touched; cleared every Play.
+        public static string EditorFolder { get; set; }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetOnPlay() => EditorFolder = null;
+#endif
+
         public SaveService(string folder = null)
         {
+#if UNITY_EDITOR
+            folder ??= EditorFolder;
+#endif
             _folder = folder ?? Path.Combine(Application.persistentDataPath, "save");
             Directory.CreateDirectory(_folder);
         }
