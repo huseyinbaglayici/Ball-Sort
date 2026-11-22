@@ -103,8 +103,8 @@ namespace Project.Contexts.Game.Sort
                         if (!_board.CanMove(from, to)) continue;
                         var amount = _board.MoveAmount(from, to);
                         var toEmpty = _board.IsEmpty(to);
-                        // Pouring a whole one-color bottle into an empty one no bigger than it changes nothing.
-                        if (toEmpty && run == count && _board.Capacity(to) <= _board.Capacity(from)) continue;
+                        // Pouring a whole one-color bottle into an empty one no bigger than it changes nothing, unless it flips a key to the top.
+                        if (toEmpty && run == count && _board.Capacity(to) <= _board.Capacity(from) && !RunHoldsKey(from, run)) continue;
 
                         var score = amount * 3;
                         if (!toEmpty) score += 35;
@@ -122,6 +122,14 @@ namespace Project.Contexts.Game.Sort
                 }
                 list.Sort((a, b) => b.Score.CompareTo(a.Score));
                 return list;
+            }
+
+            private bool RunHoldsKey(int bottle, int run)
+            {
+                var count = _board.Count(bottle);
+                for (var slot = count - run; slot < count; slot++)
+                    if (_board.KeyAt(bottle, slot) != null) return true;
+                return false;
             }
 
             private bool CurtainWaitsFor(int color)

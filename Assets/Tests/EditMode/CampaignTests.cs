@@ -82,6 +82,20 @@ namespace Project.Tests
             Assert.IsTrue(board.IsSolved(), "the solution does not reach the goal");
         }
 
+        // The in-game solver backs the fail screen, so it must finish every board a player can get.
+        [Test]
+        public void SolverFinishesEveryBoard()
+        {
+            var failures = new List<string>();
+            var route = new List<(int From, int To)>();
+            foreach (var (_, _, level) in Boards())
+            {
+                var outcome = BoardSolver.Solve(new SortBoard(level), route, 400000, 5000);
+                if (outcome != BoardSolver.Outcome.Solved) failures.Add($"{level.name}: {outcome}");
+            }
+            CollectionAssert.IsEmpty(failures);
+        }
+
         [Test]
         public void NoBoardAfterLevelTenIsWonInOneMove()
         {
