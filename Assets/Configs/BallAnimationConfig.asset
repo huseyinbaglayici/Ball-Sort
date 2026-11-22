@@ -530,7 +530,7 @@ MonoBehaviour:
   ShutterFxLinger: 0.25
   ShutterFxRimHeight: 0.8
   ShutterFxRimAlpha: 0.45
-  FailReadableWindow: 1
+  FailReadableWindow: 1.5
   KeyUseScale: 1.25
   KeyUsePop: 0.2
   KeyUseFade: 0.4

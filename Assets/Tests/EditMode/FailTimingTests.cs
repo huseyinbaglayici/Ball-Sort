@@ -78,7 +78,7 @@ namespace Project.Tests
             Assert.LessOrEqual(config.ShutterShakeDuration + config.ShutterRollDelay, 0.1f + 1e-4f, "door moves within 0.10 s");
             Assert.LessOrEqual(config.LockDropDuration, config.ShutterRollDuration, "the padlock drop overlaps the roll");
             Assert.AreEqual(0.1f, config.ShutterFadeDuration, 1e-4f);
-            Assert.AreEqual(1f, config.FailReadableWindow, 1e-4f);
+            Assert.AreEqual(1.5f, config.FailReadableWindow, 1e-4f);
         }
     }
 }

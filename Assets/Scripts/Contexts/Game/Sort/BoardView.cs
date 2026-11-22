@@ -81,8 +81,8 @@ namespace Project.Contexts.Game.Sort
             Services.TryGet(out _haptics);
         }
 
-        // An obstacle still showing over a tube that the model already opened locks it too.
-        public bool IsLocked(int bottle) => _locks[bottle] > 0 || Time.time < _settledAt || _markers.IsCovered(bottle);
+        // Also locked: a tube under a still-showing obstacle, and one the model has but the view has not placed yet.
+        public bool IsLocked(int bottle) => bottle >= _locks.Length || _locks[bottle] > 0 || Time.time < _settledAt || _markers.IsCovered(bottle);
 
         public float WinPopupDelay => _animation.WinPopupDelay;
         public BallAnimationConfig Animation => _animation;

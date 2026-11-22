@@ -5,8 +5,7 @@ using UnityEngine.UI;
 
 namespace Project.Contexts.Main
 {
-    // Home-to-level reveal drawn over everything: a dark cover with a feathered round hole on the orb in the mascot's hand.
-    // Opening grows the hole out of the orb over the built level; closing shrinks it back. One clock drives it.
+    // Home-to-level reveal: a dark cover whose feathered hole grows out of the mascot's hand orb, and shrinks back on close.
     [RequireComponent(typeof(CanvasGroup), typeof(Image))]
     public sealed class LevelOpenView : MonoBehaviour
     {
@@ -51,8 +50,7 @@ namespace Project.Contexts.Main
             _image.material = _material;
         }
 
-        // Darkens around the orb, runs onCovered (the level is built unseen), then reveals it out of the orb.
-        // push gets the Home content's scale as the view moves into the orb.
+        // Darkens around the orb, builds the level unseen in onCovered, then reveals it; push scales the Home content.
         public Awaitable OpenAsync(RectTransform orb, Action<float> push, Action onCovered)
         {
             Init();

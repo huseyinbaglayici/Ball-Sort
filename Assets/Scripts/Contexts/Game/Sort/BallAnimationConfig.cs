@@ -266,21 +266,23 @@ namespace Project.Contexts.Game.Sort
         [Tooltip("At the break the ring widens to this many ball widths and fades.")]
         public float HiddenHorizonTime = 0.22f;
         public float HiddenHorizonTo = 1.9f;
-        [Tooltip("The shell splits into three shards that fly this far, drop, turn and grow to this scale while they fade.")]
+        [Tooltip("The shell's halves part this far on short arcs, drop, turn and grow to this scale while they fade.")]
         public float HiddenBreakDuration = 0.32f;
         public float HiddenBreakScale = 1.1f;
-        public float HiddenShardDistance = 0.34f;
-        public float HiddenShardDrop = 0.12f;
-        public float HiddenShardSpin = 25f;
+        public float HiddenShardDistance = 0.22f;
+        public float HiddenShardDrop = 0.16f;
+        public float HiddenShardSpin = 14f;
         [Tooltip("The real orb pops in under the shards this long after the break, from this scale, with this overshoot.")]
         public float HiddenOrbDelay = 0.04f;
         public float HiddenOrbDuration = 0.48f;
         public float HiddenOrbFrom = 0.55f;
         public float HiddenOrbOvershoot = 2.4f;
+        [Tooltip("The orb's rim light flares to full and settles over this time as it pops in.")]
+        public float HiddenFlareTime = 0.36f;
         [Tooltip("A gold glint on the orb starts at this share of the pop: time and size in ball widths.")]
         [Range(0f, 1f)] public float HiddenSparkAt = 0.5f;
         public float HiddenSparkTime = 0.2f;
-        public float HiddenSparkSize = 0.5f;
+        public float HiddenSparkSize = 0.42f;
 
         [Header("Frozen tube")]
         [Tooltip("On-screen width of the needed color's orb on the ice badge, in tube units (the tube is about 1.8 wide).")]
@@ -300,14 +302,14 @@ namespace Project.Contexts.Game.Sort
         [Tooltip("The hit: the ring widens to this share of the tube's width and fades.")]
         public float FrozenHorizonTime = 0.25f;
         public float FrozenHorizonTo = 1.1f;
-        [Tooltip("The crack light runs over the ice in FrozenCrackTime; its strength at the hit, settled, and just before the split.")]
-        public float FrozenCrackTime = 0.35f;
-        public Vector3 FrozenCrackGlow = new(1.2f, 0.4f, 1.1f);
+        [Tooltip("The crack light runs from the badge out along every stroke in this time; the hit punches the ice by this scale.")]
+        public float FrozenCrackTime = 0.3f;
+        [Range(0f, 0.1f)] public float FrozenPunch = 0.03f;
         [Tooltip("At the split three pieces slide this far, drop, turn and fade; their cut lines are this jagged.")]
         public float FrozenPieceTime = 0.45f;
-        public float FrozenPieceSlide = 0.3f;
+        public float FrozenPieceSlide = 0.42f;
         public float FrozenPieceDrop = 0.3f;
-        public float FrozenPieceSpin = 6f;
+        public float FrozenPieceSpin = 8f;
         [Range(0f, 0.1f)] public float FrozenPieceJag = 0.025f;
         [Tooltip("The badge orb swells to this scale and fades.")]
         public float FrozenBadgePopTime = 0.3f;
@@ -367,7 +369,7 @@ namespace Project.Contexts.Game.Sort
 
         [Header("Fail")]
         [Tooltip("The fail board stays readable this long after its last meaningful change before the panel opens.")]
-        public float FailReadableWindow = 1f;
+        public float FailReadableWindow = 1.5f;
 
         // From the key to the tubes being usable (curtain up).
         public float ShutterClearTime => ShutterShakeDuration + ShutterRollDelay + ShutterRollDuration;

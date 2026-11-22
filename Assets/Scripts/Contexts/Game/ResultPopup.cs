@@ -74,8 +74,6 @@ namespace Project.Contexts.Game
     {
         private const float OptionSpacing = 170f;
         private const float PriceShift = 80f;
-        // Gap between the frame's bottom edge and the hold-to-peek pill.
-        private const float PeekGap = 80f;
         private static readonly Color DisabledText = new(0.16f, 0.12f, 0.38f);
 
         [SerializeField] private RectTransform _frame;
@@ -94,14 +92,14 @@ namespace Project.Contexts.Game
         [SerializeField] private TMP_Text _details;
         [SerializeField] private Button _double;
         [SerializeField] private Button _close;
-        // "Hold to see the board" pill, fail panel only.
+        // "Hold to see the board" caption on the fail panel's floor.
         [SerializeField] private GameObject _peek;
         [SerializeField] private Button _primary;
         [SerializeField] private Button _optionTemplate;
         // Frame height and main button y (from the frame top) for a win and for a fail.
         [SerializeField] private Vector2 _winLayout = new(900f, -750f);
-        // The fail frame is taller so the "-1 life" line under the last button stays inside the panel.
-        [SerializeField] private Vector2 _lossLayout = new(960f, -750f);
+        // The fail frame is taller: the "-1 life" line and the hold-to-peek caption sit inside it.
+        [SerializeField] private Vector2 _lossLayout = new(1030f, -750f);
 
         private readonly List<Button> _options = new();
         private ResultArgs _result;
@@ -183,9 +181,6 @@ namespace Project.Contexts.Game
             _frame.sizeDelta = new Vector2(_frame.sizeDelta.x, _frameHeight + OptionSpacing * extra);
             // Grow both ways so a tall frame stays centred on short screens.
             _frame.anchoredPosition = _frameRest + new Vector2(0f, OptionSpacing * extra * 0.5f);
-            if (_peek != null)
-                ((RectTransform)_peek.transform).anchoredPosition =
-                    new Vector2(0f, _frame.anchoredPosition.y - _frame.sizeDelta.y - PeekGap);
             var start = ((RectTransform)_primary.transform).anchoredPosition - new Vector2(0f, OptionSpacing);
             for (var i = 0; i < _options.Count; i++)
             {

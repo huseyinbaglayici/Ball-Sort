@@ -37,6 +37,9 @@ namespace Project.Contexts.Main
 
         public MainState Current => _states.CurrentKey ?? MainState.None;
 
+        // A Home/Game switch is running; the state changes only once the screen is covered.
+        public bool IsSwitching => _busy;
+
         private void Awake()
         {
             _overlay = Services.Get<LoadingOverlay>();

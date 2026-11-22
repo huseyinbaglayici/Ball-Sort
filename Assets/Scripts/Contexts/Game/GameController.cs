@@ -4,6 +4,7 @@ using Project.Contexts.Application.Economy;
 using Project.Contexts.Game.Items;
 using Project.Contexts.Game.Levels;
 using Project.Contexts.Game.Sort;
+using Project.Contexts.LiveOps;
 using Project.Contexts.Main;
 using Project.Core.Audio;
 using Project.Core.Debugging;
@@ -64,6 +65,8 @@ namespace Project.Contexts.Game
         private BottleItem _selected;
         // The winning move is made in the model; input waits until its last ball lands.
         private bool _winPending;
+        // Home was chosen; until the switch covers the board, landing moves and taps must not change the try.
+        private bool _leaving;
         // Set when a move's last ball lands; checked once the board is still. Undo keeps it.
         private bool _stuckCheckPending;
         private int _level;
@@ -178,6 +181,7 @@ namespace Project.Contexts.Game
             _model = new SortBoard(data);
             _selected = null;
             _winPending = false;
+            _leaving = false;
             _stuckCheckPending = false;
             _tryHasMoves = false;
             _extraTubes = 0;
@@ -222,7 +226,7 @@ namespace Project.Contexts.Game
 
         private void OnBottleTapped(BottleTapped evt)
         {
-            if (_winPending || _model == null || _states.CurrentKey != GameState.Playing) return;
+            if (_winPending || _leaving || _model == null || _states.CurrentKey != GameState.Playing) return;
 
             var tapped = evt.Bottle;
             if (_selected == null)
@@ -286,6 +290,7 @@ namespace Project.Contexts.Game
         // Never runs for a move whose flight was cancelled.
         private void OnMoveLanded(MoveResult move)
         {
+            if (_leaving) return;
             _readableAt = FailWindow.ReadableAt(Time.time, _movedAt, move, _board.Animation);
             foreach (var bottle in move.Completed)
                 if (_model.IsCompleted(bottle)) _board.SetCompleted(bottle, true);
@@ -356,7 +361,7 @@ namespace Project.Contexts.Game
         }
 
 
-        private bool CanUseBoosters => !_winPending && _model != null && _states.CurrentKey == GameState.Playing;
+        private bool CanUseBoosters => !_winPending && !_leaving && _model != null && _states.CurrentKey == GameState.Playing;
 
         private void OnBoosterPressed(BoosterType type)
         {
@@ -448,7 +453,7 @@ namespace Project.Contexts.Game
         // Costs a life when the try had a move.
         private void Restart()
         {
-            if (_states.CurrentKey != GameState.Playing) return;
+            if (_states.CurrentKey != GameState.Playing || _winPending || _leaving) return;
             if (_tryHasMoves && !_lives.TrySpend())
             {
                 ShowOutOfLives();
@@ -463,6 +468,8 @@ namespace Project.Contexts.Game
         // Leaving now would cost a life, so it asks first.
         private void RequestQuit()
         {
+            // The winning move is already made; its result comes next.
+            if (_states.CurrentKey == GameState.Playing && _winPending) return;
             var costsLife = _states.CurrentKey == GameState.Playing && _tryHasMoves && !_lives.IsUnlimited &&
                             _lives.Count > 0;
             if (!costsLife)
@@ -480,10 +487,15 @@ namespace Project.Contexts.Game
         // A try with a move costs a life if one is left.
         private void Quit()
         {
-            if (_states.CurrentKey == GameState.Playing && _tryHasMoves)
+            if (_states.CurrentKey == GameState.Playing)
             {
-                _lives.TrySpend();
-                _progress.FailAttempt();
+                if (_winPending || _leaving) return;
+                _leaving = true;
+                if (_tryHasMoves)
+                {
+                    _lives.TrySpend();
+                    _progress.FailAttempt();
+                }
             }
             _ads.EndActivePlay();
             _ = Services.Get<MainFlow>().GoHomeAsync();
@@ -501,7 +513,11 @@ namespace Project.Contexts.Game
         {
             _popups.Show(_messagePopup, new MessageArgs("lives.out_title",
                 _loc.Format("lives.out_body", EconomyText.Timer(_lives.NextLifeIn)), "common.home",
-                () => _ = Services.Get<MainFlow>().GoHomeAsync()));
+                () =>
+                {
+                    _leaving = true;
+                    _ = Services.Get<MainFlow>().GoHomeAsync();
+                }));
         }
 
         private void Win()
@@ -542,6 +558,7 @@ namespace Project.Contexts.Game
                 _c._board.Clear();
                 _c._model = null;
                 _c._winPending = false;
+                _c._leaving = false;
                 _c._stuckCheckPending = false;
                 _c._hud.SetActive(false);
             }
@@ -570,7 +587,7 @@ namespace Project.Contexts.Game
 
             public override void Tick(float deltaTime)
             {
-                if (!_c._stuckCheckPending || _c._board.IsAnimating) return;
+                if (!_c._stuckCheckPending || _c._leaving || _c._board.IsAnimating) return;
                 _c._stuckCheckPending = false;
                 if (_c._model != null && !_c._winPending && _c._model.HasNoMove()) _c._states.ChangeState(GameState.Lost);
             }
@@ -688,6 +705,11 @@ namespace Project.Contexts.Game
                         options.Add(new ResultOption(loc.Get("lives.ad"), () => _c._ads.ShowRewardedLife(_ => Show())));
                 }
 
+                // The event race warns that leaving without a win drops its streak gear.
+                var rush = Services.Get<OrbitRushService>();
+                if (rush.State == OrbitRushState.Racing && rush.Gear > 0)
+                    note.Append('\n').Append(loc.Format("rush.lose_streak", rush.Multiplier));
+
                 // Home is the popup's X; the first option is the main button.
                 _c._popups.Show(_c._resultPopup, ResultArgs.Loss(_c._level, options, note.ToString(), Leave));
             }
@@ -724,6 +746,8 @@ namespace Project.Contexts.Game
                 if (offer.Rewind && last != null)
                 {
                     _c._board.Transfer(last.To, last.From, last.Count, AddTube, silent: true);
+                    // As in Undo: the rewound balls show their restored state while they fly back.
+                    _c._board.Sync(_c._model);
                 }
                 else
                 {

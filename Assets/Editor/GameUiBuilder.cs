@@ -101,7 +101,7 @@ namespace Project.Editor
                 if (popupArea != null) SetMinimumInsets(popupArea);
                 BuildBackground(scene);
                 BuildHome(scene, message, settings);
-                BuildLiveOpsHome(scene, daily, orbitRush);
+                BuildLiveOpsHome(scene, daily, orbitRush, message);
                 BuildHud(scene, message, result);
                 BuildLevelOpen(scene);
                 EditorSceneManager.MarkSceneDirty(scene);
@@ -749,14 +749,17 @@ namespace Project.Editor
                 adIcon.raycastTarget = false;
                 ((RectTransform)doubleButton.transform.Find("Label")).anchoredPosition = new Vector2(50, 8);
 
-                // Hold-to-peek pill over the tray: fades panel and dim while held, the dim still blocks the board.
+                // Hold-to-peek caption on the fail panel: a frameless breathing line that eases the panel away while pressed.
                 var panelGroup = frame.parent.gameObject.AddComponent<CanvasGroup>();
-                // Placed under the frame's bottom edge by the popup; stays visible while the panel fades.
-                var peek = Pic("HoldToPeek", root.transform, Center, Vector2.zero, new Vector2(560, 96), S("UI_Pill_Well_96"));
-                Text("Label", peek, new Vector2(0, 2), new Vector2(480, 64), "result.peek", 38, White, "result.peek");
+                // Dark ink: white would vanish on the panel's light floor.
+                var peek = Text("HoldToPeek", frame, Vector2.zero, new Vector2(600, 64), "result.peek", 38, Ink, "result.peek");
+                peek.raycastTarget = true;
+                peek.rectTransform.pivot = new Vector2(0.5f, 0f);
+                Anchor(peek.rectTransform, Bottom, new Vector2(0, 54));
                 var hold = peek.gameObject.AddComponent<HoldToPeek>();
                 Set(hold, "_panel", panelGroup);
                 Set(hold, "_dim", root.GetComponent<Image>());
+                Set(hold, "_pulse", peek);
 
                 var popup = root.AddComponent<ResultPopup>();
                 Set(popup, "_peek", peek.gameObject);
@@ -1080,8 +1083,7 @@ namespace Project.Editor
         private static Button CloseButton(RectTransform frame) =>
             ButtonRect("CloseButton", frame, Top, F(1004, 786), new Vector2(124, 128), S("UI_Button_Close")).GetComponent<Button>();
 
-        // A wide button at y on the design screen, at the sprite's 150 height; a null key leaves the label for code.
-        // Hidden extras for code: a coin price chip (left), an owned-count badge (corner), a "-1 life" line (below).
+        // A 150-high wide button at y with hidden price chip, count badge and "-1 life" line; a null key leaves the label to code.
         private static Button WideButton(Component parent, string name, float y, Sprite sprite, string key, float labelSize = 58f)
         {
             var box = new Vector2(630, 150);

@@ -65,8 +65,9 @@ namespace Project.Contexts.Application
             Services.Register(new DailyRewardService(playerData, wallet));
             var orbitRush = new OrbitRushService(playerData, wallet);
             Services.Register(orbitRush);
-            // Every campaign win is one step on the event path.
+            // Campaign wins move the event race by the streak gear; a try without a win clears the streak.
             EventBus<LevelCompleted>.Subscribe(_ => orbitRush.RecordWin());
+            EventBus<LevelFailed>.Subscribe(_ => orbitRush.RecordLoss());
             Services.Register(_loadingOverlay);
 
             RegisterDebugActions();
