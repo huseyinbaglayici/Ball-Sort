@@ -484,6 +484,7 @@ namespace Project.Editor
         // ---------------------------------------------------------------- Level open
 
         private const string LevelOpenShaderPath = "Assets/Art/Shaders/LevelOpenMask.shader";
+        private const string LevelCloseShaderPath = "Assets/Art/Shaders/LevelCloseMask.shader";
         private const string LevelOpenSettingsPath = "Assets/Configs/LevelOpenSettings.asset";
 
         // One full-screen image over every canvas; its material cuts the feathered hole at runtime.
@@ -507,10 +508,13 @@ namespace Project.Editor
             }
             var shader = AssetDatabase.LoadAssetAtPath<Shader>(LevelOpenShaderPath);
             if (shader == null) throw new System.InvalidOperationException($"[GameUI] Shader missing at {LevelOpenShaderPath}.");
+            var closeShader = AssetDatabase.LoadAssetAtPath<Shader>(LevelCloseShaderPath);
+            if (closeShader == null) throw new System.InvalidOperationException($"[GameUI] Shader missing at {LevelCloseShaderPath}.");
 
             var view = root.gameObject.AddComponent<LevelOpenView>();
             Set(view, "_settings", settings);
             Set(view, "_shader", shader);
+            Set(view, "_closeShader", closeShader);
             root.gameObject.SetActive(false);
 
             Set(Root(scene, "MainFlow").GetComponent<MainFlow>(), "_levelOpen", view);

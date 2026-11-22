@@ -12,9 +12,11 @@ namespace Project.Contexts.Main
         public float GrowTime = 0.6f;
 
         [Header("Close")]
-        [Tooltip("The hole shrinks onto the orb, then the dark clears off Home.")]
-        public float ShrinkTime = 0.5f;
-        public float ClearTime = 0.25f;
+        [Tooltip("The won level shrinks into the orb with Home around it, then fades into the orb.")]
+        public float ShrinkTime = 0.55f;
+        public float ClearTime = 0.2f;
+        [Tooltip("Home starts this much zoomed in about the orb and settles over the whole close.")]
+        public float ClosePush = 0.15f;
 
         [Header("Edge")]
         [Tooltip("Soft edge as a share of the hole's radius, never thinner than this many units.")]

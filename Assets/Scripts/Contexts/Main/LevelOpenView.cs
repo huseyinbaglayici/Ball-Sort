@@ -5,12 +5,13 @@ using UnityEngine.UI;
 
 namespace Project.Contexts.Main
 {
-    // Home-to-level reveal: a dark cover whose feathered hole grows out of the mascot's hand orb, and shrinks back on close.
+    // Home-to-level reveal: a dark cover whose hole grows out of the mascot's hand orb; on close the level shrinks back into it.
     [RequireComponent(typeof(CanvasGroup), typeof(Image))]
     public sealed class LevelOpenView : MonoBehaviour
     {
         [SerializeField] private LevelOpenSettings _settings;
         [SerializeField] private Shader _shader;
+        [SerializeField] private Shader _closeShader;
 
         private static readonly int CenterId = Shader.PropertyToID("_Center");
         private static readonly int SizeId = Shader.PropertyToID("_Size");
@@ -22,11 +23,16 @@ namespace Project.Contexts.Main
         private static readonly int RimWidthId = Shader.PropertyToID("_RimWidth");
         private static readonly int RimAlphaId = Shader.PropertyToID("_RimAlpha");
         private static readonly int DimId = Shader.PropertyToID("_Dim");
+        private static readonly int SnapshotId = Shader.PropertyToID("_Snapshot");
+        private static readonly int ScaleId = Shader.PropertyToID("_Scale");
+        private static readonly int AnchorId = Shader.PropertyToID("_Anchor");
 
         private RectTransform _rect;
         private CanvasGroup _group;
         private Image _image;
         private Material _material;
+        private Material _closeMaterial;
+        private Texture2D _snapshot;
         private Canvas _canvas;
         private RectTransform _orb;
         private Action<float> _push;
@@ -47,6 +53,7 @@ namespace Project.Contexts.Main
             _image = GetComponent<Image>();
             _canvas = GetComponentInParent<Canvas>(true).rootCanvas;
             _material = new Material(_shader);
+            _closeMaterial = new Material(_closeShader);
             _image.material = _material;
         }
 
@@ -59,13 +66,45 @@ namespace Project.Contexts.Main
             return RunAsync(_settings.OpenTotal, EvaluateOpen, onCovered);
         }
 
-        // Shrinks the level into the orb's spot, runs onCovered, then clears off Home as it pulls back out.
-        public Awaitable CloseAsync(RectTransform orb, Action<float> push, Action onCovered)
+        // Freezes the level's last frame over the screen, runs onCovered so Home sets up under it, then shrinks that frame into the orb.
+        public async Awaitable CloseAsync(RectTransform orb, Action<float> push, Action onCovered)
         {
             Init();
             _orb = orb;
             _push = push;
-            return RunAsync(_settings.CloseTotal, EvaluateClose, onCovered);
+            IsRunning = true;
+            try
+            {
+                await Awaitable.EndOfFrameAsync();
+                _snapshot = ScreenCapture.CaptureScreenshotAsTexture();
+                _closeMaterial.SetTexture(SnapshotId, _snapshot);
+                _image.material = _closeMaterial;
+                _image.color = Color.white;
+                gameObject.SetActive(true);
+                _group.alpha = 1f;
+                _group.blocksRaycasts = true;
+                // The whole frame at full size until Home is measured, so the switch underneath never shows.
+                var middle = _rect.rect.size * 0.5f;
+                ApplyClose(float.MaxValue * 0.5f, 1f, middle, middle);
+                onCovered?.Invoke();
+                Canvas.ForceUpdateCanvases();
+                Locate();
+                var total = _settings.CloseTotal;
+                await Tween.Custom(this, 0f, total, total, (view, t) => view.EvaluateClose(t), Ease.Linear, useUnscaledTime: true);
+            }
+            finally
+            {
+                Tween.StopAll(this);
+                _push?.Invoke(1f);
+                _closeMaterial.SetTexture(SnapshotId, null);
+                if (_snapshot != null) Destroy(_snapshot);
+                _snapshot = null;
+                _image.material = _material;
+                _group.alpha = 0f;
+                _group.blocksRaycasts = false;
+                gameObject.SetActive(false);
+                IsRunning = false;
+            }
         }
 
         private async Awaitable RunAsync(float total, Action<float> evaluate, Action onCovered)
@@ -114,15 +153,35 @@ namespace Project.Contexts.Main
             Apply(Mathf.LerpUnclamped(_orbRadius, _coverRadius, grow), darken, s.Dim * darken * (1f - grow));
         }
 
+        // The level frame shrinks whole into the orb while Home settles from zoomed in, then it fades into the orb.
         private void EvaluateClose(float t)
         {
             var s = _settings;
             var shrink = Easing.Evaluate(Mathf.Clamp01(t / s.ShrinkTime), Ease.InOutSine);
-            var clear = Easing.Evaluate(Mathf.Clamp01((t - s.ShrinkTime) / s.ClearTime), Ease.OutQuad);
-            if (t >= s.ShrinkTime) Switch();
-            // Home shows pushed in and pulls back out as the dark clears.
-            if (_switched) _push?.Invoke(1f + s.PushScale * (1f - clear));
-            Apply(Mathf.LerpUnclamped(_coverRadius, _orbRadius, shrink), 1f - clear, s.Dim * shrink);
+            var fade = Easing.Evaluate(Mathf.Clamp01((t - s.ShrinkTime) / s.ClearTime), Ease.OutQuad);
+            var settle = Easing.Evaluate(Mathf.Clamp01(t / s.CloseTotal), Ease.OutCubic);
+            _push?.Invoke(1f + s.ClosePush * (1f - settle));
+            var radius = Mathf.Lerp(_coverRadius, _orbRadius, shrink);
+            // The round window first trims the level's edges, then the level shrinks with it so it always reads round.
+            var size = _rect.rect.size;
+            var scale = Mathf.Min(1f, radius / Mathf.Max(Mathf.Min(size.x, size.y) * 0.5f, 1f));
+            ApplyClose(radius, scale, _centre, Vector2.Lerp(_centre, size * 0.5f, shrink));
+            _image.color = new Color(1f, 1f, 1f, 1f - fade);
+        }
+
+        private void ApplyClose(float radius, float scale, Vector2 centre, Vector2 anchor)
+        {
+            var s = _settings;
+            _closeMaterial.SetVector(CenterId, centre);
+            _closeMaterial.SetVector(AnchorId, anchor);
+            _closeMaterial.SetVector(SizeId, _rect.rect.size);
+            _closeMaterial.SetFloat(RadiusId, radius);
+            _closeMaterial.SetFloat(FeatherId, Mathf.Max(radius * s.FeatherShare * 0.3f, 2f));
+            _closeMaterial.SetFloat(ScaleId, scale);
+            _closeMaterial.SetColor(RimInnerId, s.RimInner);
+            _closeMaterial.SetColor(RimOuterId, s.RimOuter);
+            _closeMaterial.SetFloat(RimWidthId, s.RimWidth);
+            _closeMaterial.SetFloat(RimAlphaId, s.RimAlpha);
         }
 
         private void Apply(float radius, float alpha, float dim)
