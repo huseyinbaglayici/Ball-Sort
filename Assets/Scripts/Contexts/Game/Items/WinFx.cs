@@ -8,8 +8,7 @@ using UnityEngine;
 
 namespace Project.Contexts.Game.Items
 {
-    // Level won: the caps pulse out from the solved tube, one orbit ring sweeps in and collapses into a gold burst,
-    // the mascot swings in and the ribbon drops over it; the win panel opens on top.
+    // Level won: caps pulse, an orbit ring collapses into a gold burst, the mascot swings in under the ribbon, then the win panel.
     public sealed class WinFx : Item
     {
         // Lifetime of the longest grain, so nothing is cut when the item is released.

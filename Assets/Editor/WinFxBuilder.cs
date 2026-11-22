@@ -15,8 +15,7 @@ namespace Project.Editor
         private const string MascotPath = "Assets/Art/Sprites/UI/Journey/Luno_512.png";
         private const string RibbonPath = "Assets/Art/Sprites/UI/Popup/UI_Popup_Ribbon_Win.png";
         private const string FontPath = "Assets/Art/Fonts/PeaceSans SDF.asset";
-        // The flash sits behind idle tubes, the far ring half just over them; the near half over the board, the dim over
-        // the tubes under the grains; the mascot and ribbon over everything the board draws, under the bomb blast's group.
+        // Flash behind tubes, far ring over them, near ring and dim over the board, mascot and ribbon on top under the blast.
         private const int DimOrder = 29;
         private const int BehindOrder = -2;
         private const int FrontOrder = 30;

@@ -14,8 +14,7 @@ namespace Project.Common.UI.PopUps
         Burst
     }
 
-    // The prefab root needs a CanvasGroup and a "content" child that animates in.
-    // Dim and panel appear at once and close at once; only the panel scale moves.
+    // Root needs a CanvasGroup and a "content" child; dim and panel show and hide at once, only the panel scale moves.
     [RequireComponent(typeof(CanvasGroup))]
     public abstract class Popup : MonoBehaviour
     {
