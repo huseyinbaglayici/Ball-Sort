@@ -2,18 +2,21 @@ using Project.Common.Tween;
 using Project.Contexts.Main;
 using Project.Core.Events;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 namespace Project.Contexts.Application
 {
-    // Boot scene: loads Main, waits for its first screen, then fades out and destroys itself.
-    public sealed class Splash : MonoBehaviour
+    // Boot scene: shows the opening art while Main loads, holds it a moment (a tap skips), then fades out.
+    public sealed class Splash : MonoBehaviour, IPointerDownHandler
     {
         [SerializeField] private CanvasGroup _group;
         [SerializeField] private Image _progressFill;
+        [SerializeField] private float _holdSeconds = 1.2f;
 
         private bool _mainReady;
+        private bool _skipped;
 
         private void Awake()
         {
@@ -25,6 +28,7 @@ namespace Project.Contexts.Application
 
         private async void Start()
         {
+            var shownAt = Time.realtimeSinceStartup;
             SetProgress(0f);
             var load = SceneManager.LoadSceneAsync(SceneNames.Main);
             if (load == null)
@@ -40,7 +44,7 @@ namespace Project.Contexts.Application
             }
             SetProgress(1f);
 
-            while (!_mainReady)
+            while (!_mainReady || (!_skipped && Time.realtimeSinceStartup - shownAt < _holdSeconds))
             {
                 if (this == null) return;
                 await Awaitable.NextFrameAsync();
@@ -51,6 +55,8 @@ namespace Project.Contexts.Application
         }
 
         private void OnMainReady(MainReady _) => _mainReady = true;
+
+        public void OnPointerDown(PointerEventData eventData) => _skipped = true;
 
         private void SetProgress(float value)
         {

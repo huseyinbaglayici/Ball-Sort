@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7d9d6b48c73965745b636ef320eecce3, type: 3}
+  m_Name: ChapterArt
+  m_EditorClassIdentifier: Project.Contexts::Project.Contexts.Home.ChapterArt
+  _levelsPerChapter: 20
+  _chapters:
+  - Poster: {fileID: 21300000, guid: 6e9acde8853e1974aa737b8c82f26e3b, type: 3}
+    Orb: {x: 0.824, y: 0.351}
+    OrbSize: 0.063
+  - Poster: {fileID: 21300000, guid: 0b8d14ee3a55788429fb4263b02a9550, type: 3}
+    Orb: {x: 0.707, y: 0.235}
+    OrbSize: 0.081
+  - Poster: {fileID: 21300000, guid: 0ac0b943d0bf61b49b8fa3e05e326edc, type: 3}
+    Orb: {x: 0.864, y: 0.208}
+    OrbSize: 0.135
+  - Poster: {fileID: 21300000, guid: dc228fa8b39a2784baa073b7eef0ba5a, type: 3}
+    Orb: {x: 0.761, y: 0.592}
+    OrbSize: 0.038
+  - Poster: {fileID: 21300000, guid: 7442ff4d00be1ab4d927d2c91efce22b, type: 3}
+    Orb: {x: 0.704, y: 0.488}
+    OrbSize: 0.063
