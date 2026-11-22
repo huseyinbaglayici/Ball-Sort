@@ -29,6 +29,15 @@ namespace Project.Core.Debugging
 
         public static void RemoveAction(string label) => Actions.RemoveAll(a => a.Label == label);
 
+        // Runs a registered action by its label; false when none is registered.
+        public static bool Run(string label)
+        {
+            var index = Actions.FindIndex(a => a.Label == label);
+            if (index < 0) return false;
+            Actions[index].Action();
+            return true;
+        }
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetOnPlay() => Actions.Clear();
 
