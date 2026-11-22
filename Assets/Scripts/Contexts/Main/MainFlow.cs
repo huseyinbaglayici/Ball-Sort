@@ -27,6 +27,7 @@ namespace Project.Contexts.Main
         [SerializeField] private HomeScreen _home;
         [SerializeField] private GameController _game;
         [SerializeField] private LevelOpenView _levelOpen;
+        [SerializeField] private LevelSwipeView _swipe;
 
         private readonly StateMachine<MainState> _states = new();
         private LoadingOverlay _overlay;
@@ -63,6 +64,25 @@ namespace Project.Contexts.Main
         public Awaitable GoHomeAsync() => SwitchAsync(MainState.Home);
 
         public Awaitable GoToGameAsync() => SwitchAsync(MainState.Game);
+
+        // The one Game-to-Game step: the won level gives way to the next without Home.
+        public async Awaitable NextLevelAsync()
+        {
+            if (_busy || Current != MainState.Game) return;
+
+            _busy = true;
+            try
+            {
+                _popups.CloseAll();
+                // Without the swipe the next level just appears in place.
+                if (_swipe != null && !_swipe.IsRunning) await _swipe.PlayAsync(_game.NextLevel);
+                else _game.NextLevel();
+            }
+            finally
+            {
+                _busy = false;
+            }
+        }
 
         private async Awaitable SwitchAsync(MainState next)
         {

@@ -89,7 +89,8 @@ namespace Project.Contexts.Preview
             Add("Transitions",
                 ("Home > level", () => Switch(MainState.Home, MainState.Game)),
                 ("Level > home", () => Switch(MainState.Game, MainState.Home)),
-                ("Board entrance", BoardEntrance));
+                ("Board entrance", BoardEntrance),
+                ("Level swipe", LevelSwipe));
             Add("Level",
                 ("Win", () => Game(() => DebugPanel.Run("Win level"))),
                 ("Lose + peek", () => Game(() => DebugPanel.Run("Lose level"))),
@@ -148,6 +149,16 @@ namespace Project.Contexts.Preview
         {
             yield return Ensure(MainState.Game);
             StartLevel();
+        }
+
+        // The same level slides out and back in, so the swipe replays without moving progress on.
+        private IEnumerator LevelSwipe()
+        {
+            yield return Ensure(MainState.Game);
+            var swipe = Find<LevelSwipeView>();
+            if (swipe == null) yield break;
+            var run = swipe.PlayAsync(StartLevel);
+            while (!run.IsCompleted) yield return null;
         }
 
         private static object LevelStates() => Field<object>(Find<GameController>(), "_states");

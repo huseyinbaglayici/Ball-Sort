@@ -174,6 +174,13 @@ namespace Project.Contexts.Game.Sort
             _settledAt = Time.time + (order.Count - 1) * EntranceStagger + EntranceTime;
         }
 
+        // A board that slides in seats its tubes at once; taps wait the given time for it to arrive.
+        public void SkipEntrance(float arrival)
+        {
+            foreach (var bottle in _bottles) PrimeTween.Tween.CompleteAll(bottle.transform);
+            _settledAt = Time.time + arrival;
+        }
+
         // Call only while no ball is flying.
         public void AddBottle(SortBoard board, int index, Action onPlaced)
         {
