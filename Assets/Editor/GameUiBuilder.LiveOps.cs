@@ -1,5 +1,6 @@
 using Project.Common.UI;
 using Project.Common.UI.PopUps;
+using Project.Contexts.Application.Economy;
 using Project.Contexts.LiveOps;
 using TMPro;
 using UnityEditor;
@@ -87,6 +88,8 @@ namespace Project.Editor
 
         // ---------------------------------------------------------------- Orbit Rush
 
+        private static readonly Color RushBackdrop = new(0.09f, 0.05f, 0.24f, 1f);
+
         private static OrbitRushScreen BuildOrbitRushScreen()
         {
             var layout = AssetDatabase.LoadAssetAtPath<OrbitRushMapLayout>(OrbitRushLayoutPath);
@@ -96,14 +99,14 @@ namespace Project.Editor
                 AssetDatabase.CreateAsset(layout, OrbitRushLayoutPath);
             }
 
-            var root = PopupRoot("OrbitRushScreen", new Color(0.09f, 0.05f, 0.24f, 1f));
+            // Its own coin pill sits in the header row, so the shared one is left out.
+            var root = PopupRoot("OrbitRushScreen", RushBackdrop, coins: false);
             try
             {
                 // The safe area; the map fills its width, overflowing mostly downwards so the treasure clears the header.
                 var content = Span("Content", root.transform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
                 content.offsetMin = new Vector2(0, 400);
                 content.offsetMax = new Vector2(0, -400);
-                content.SetSiblingIndex(0);
                 var map = Pic("Map", content, Center, Vector2.zero, OrbitRushMapLayout.MapSize, S("UI_LiveOps_OrbitRush_Map"),
                     new Vector2(0.5f, 0.75f));
                 map.raycastTarget = false;
@@ -114,18 +117,14 @@ namespace Project.Editor
 
                 var popup = root.AddComponent<OrbitRushScreen>();
                 var so = new SerializedObject(popup);
-                var rewards = so.FindProperty("_rewards");
-                rewards.arraySize = OrbitRushService.Milestones.Length;
-                for (var i = 0; i < OrbitRushService.Milestones.Length; i++)
+                var gifts = so.FindProperty("_gifts");
+                gifts.arraySize = OrbitRushService.Stages + 1;
+                for (var i = 0; i <= OrbitRushService.Stages; i++)
                 {
-                    var milestone = OrbitRushService.Milestones[i];
-                    var size = milestone.Kind switch
-                    {
-                        MilestoneKind.Treasure => new Vector2(420, 300),
-                        MilestoneKind.Chest => new Vector2(240, 200),
-                        _ => new Vector2(150, 190)
-                    };
-                    var rect = Rect(milestone.Kind + "Reward" + i, map, OrbitRushMapLayout.Anchor(layout.Rewards[i]), Vector2.zero, size);
+                    var grand = i == OrbitRushService.Stages;
+                    // Flags, chests, then the treasure island, as on the map art.
+                    var size = grand ? new Vector2(420, 300) : i is 1 or 2 ? new Vector2(240, 200) : new Vector2(150, 190);
+                    var rect = Rect((grand ? "GrandPrize" : "Stage" + (i + 1)) + "Gift", map, OrbitRushMapLayout.Anchor(layout.Rewards[i]), Vector2.zero, size);
                     var hit = rect.gameObject.AddComponent<Image>();
                     hit.color = new Color(1f, 1f, 1f, 0f);
                     var button = rect.gameObject.AddComponent<Button>();
@@ -133,8 +132,7 @@ namespace Project.Editor
                     button.transition = Selectable.Transition.None;
                     rect.gameObject.AddComponent<ButtonFeedback>();
 
-                    var pillY = size.y * 0.5f + 20f;
-                    var pill = Pic("Pill", rect, Center, new Vector2(0, pillY), new Vector2(190, 64), S("UI_Pill_Well_60"));
+                    var pill = Pic("Pill", rect, Center, new Vector2(0, size.y * 0.5f + 20f), new Vector2(190, 64), S("UI_Pill_Well_60"));
                     pill.raycastTarget = false;
                     Pic("Coin", pill, new Vector2(0, 0.5f), new Vector2(16, 0), new Vector2(62, 62), S("UI_Icon_Coin")).raycastTarget = false;
                     var amount = Text("Amount", pill, new Vector2(22, 2), new Vector2(110, 48), "0", 36, White);
@@ -144,13 +142,12 @@ namespace Project.Editor
                     var done = Pic("Done", rect, Center, Vector2.zero, new Vector2(110, 110), S("UI_Icon_Check"));
                     done.raycastTarget = false;
 
-                    var element = rewards.GetArrayElementAtIndex(i);
-                    element.FindPropertyRelative("Button").objectReferenceValue = button;
+                    var element = gifts.GetArrayElementAtIndex(i);
+                    element.FindPropertyRelative("Root").objectReferenceValue = rect;
                     element.FindPropertyRelative("Ready").objectReferenceValue = ready.gameObject;
                     element.FindPropertyRelative("Done").objectReferenceValue = done.gameObject;
                     element.FindPropertyRelative("Amount").objectReferenceValue = amount;
                 }
-                so.ApplyModifiedPropertiesWithoutUndo();
 
                 // The player's marker stands on its tile with the arrow's tip.
                 var marker = Rect("Marker", map, OrbitRushMapLayout.Anchor(layout.Stops[0]), Vector2.zero, new Vector2(170, 206), new Vector2(0.5f, 0f));
@@ -161,24 +158,108 @@ namespace Project.Editor
                 Pic("Avatar", mask, Center, Vector2.zero, new Vector2(132, 132), S("UI_LiveOps_ProfileAvatar_Luno")).raycastTarget = false;
                 Pic("Frame", marker, Top, new Vector2(0, -85), new Vector2(170, 170), S("UI_LiveOps_ProfileFrame")).raycastTarget = false;
 
-                // Title, countdown and close hang from the safe top; the coin counter stays above it all.
+                // Header from the safe top: info, title and close on one line; coins, time left and stage on one row of equal pills.
                 var header = Rect("Header", root.transform, Top, new Vector2(0, DesignTop - 400f), Reference, new Vector2(0.5f, 1f));
-                Text("Title", header, At(585, 236), new Vector2(440, 96), "rush.title", 72, White, "rush.title");
-                // Time left and steps won side by side under the title.
-                var timerPill = Pic("TimerPill", header, Center, At(440, 344), new Vector2(300, 84), S("UI_Pill_Well_96"));
-                var timer = Text("Timer", timerPill, new Vector2(0, 2), new Vector2(250, 60), "2d 14h", 42, White);
-                var progressPill = Pic("ProgressPill", header, Center, At(770, 344), new Vector2(240, 84), S("UI_Pill_Well_96"));
-                var progress = Text("Progress", progressPill, new Vector2(0, 2), new Vector2(200, 60), "0 / 14", 42, White);
+                var info = ButtonRect("InfoButton", header, Center, At(122, 236), new Vector2(118, 124), S("UI_InLevel_IconBase"));
+                Text("Mark", info, new Vector2(0, 4), new Vector2(80, 80), "?", 64, White);
+                Text("Title", header, At(585, 236), new Vector2(600, 96), "rush.title", 72, White, "rush.title");
                 var close = ButtonRect("CloseButton", header, Center, At(1048, 236), new Vector2(124, 128), S("UI_Button_Close"));
-                root.transform.Find("Coins").SetAsLastSibling();
+                var coinPill = Pic("CoinPill", header, Center, At(215, 352), new Vector2(300, 84), S("UI_Pill_Well_96"));
+                var coin = Pic("Coin", coinPill, new Vector2(0, 0.5f), new Vector2(30, 0), new Vector2(92, 92), S("UI_Icon_Coin"));
+                coin.raycastTarget = false;
+                var coins = Text("Amount", coinPill, new Vector2(30, 2), new Vector2(190, 60), "0", 44, White);
+                coinPill.gameObject.AddComponent<EconomyHud>();
+                Set(coinPill.GetComponent<EconomyHud>(), "_coins", coins);
+                var timerPill = Pic("TimerPill", header, Center, At(585, 352), new Vector2(300, 84), S("UI_Pill_Well_96"));
+                var timer = Text("Timer", timerPill, new Vector2(0, 2), new Vector2(250, 60), "2d 14h", 42, White);
+                var stagePill = Pic("StagePill", header, Center, At(955, 352), new Vector2(300, 84), S("UI_Pill_Well_96"));
+                var stage = Text("Stage", stagePill, new Vector2(0, 2), new Vector2(260, 60), "Stage 1/5", 40, White);
+
+                // Bottom tray on the safe bottom: the room's racers (race view), a status line and the action button.
+                var panel = Rect("Panel", root.transform, Bottom, new Vector2(0, 400f + 16f), new Vector2(1110, 880), new Vector2(0.5f, 0f));
+                Sliced(panel.gameObject.AddComponent<Image>(), S("UI_InLevel_Tray"));
+                var toggle = ButtonRect("ViewToggle", panel, Top, new Vector2(390, 44), new Vector2(250, 90), S("UI_Button_Wide_Purple"));
+                Text("Label", toggle, new Vector2(0, 5), new Vector2(210, 60), "rush.view_map", 36, White, "rush.view_map");
+                var status = Text("Status", panel, Vector2.zero, new Vector2(980, 100), "Status", 40, White);
+                status.textWrappingMode = TextWrappingModes.Normal;
+                Anchor(status.rectTransform, Bottom, new Vector2(0, 250));
+                var action = ButtonRect("ActionButton", panel, Bottom, new Vector2(0, 100), new Vector2(560, 140), S("UI_Button_Wide_Go"));
+                Text("Label", action, new Vector2(0, 8), new Vector2(460, 90), "rush.play", 56, White, "rush.play");
+
+                var race = Span("Race", panel, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+                var gear = Text("Gear", race, Vector2.zero, new Vector2(400, 56), "Speed x1", 42, new Color(1f, 0.85f, 0.35f));
+                gear.alignment = TextAlignmentOptions.MidlineLeft;
+                Anchor(gear.rectTransform, Top, new Vector2(-300, -62));
+                var rows = so.FindProperty("_rows");
+                rows.arraySize = OrbitRushService.Capacity;
+                for (var i = 0; i < OrbitRushService.Capacity; i++)
+                {
+                    var row = Pic("Row" + (i + 1), race, Top, new Vector2(0, -150 - i * 88), new Vector2(1030, 80), S("UI_Pill_Well_96"));
+                    row.raycastTarget = false;
+                    var rank = Text("Rank", row, new Vector2(-470, 2), new Vector2(60, 60), "1", 44, White);
+                    var avatar = Pic("Avatar", row, Center, new Vector2(-390, 0), new Vector2(70, 72), S("UI_InLevel_IconBase"));
+                    avatar.raycastTarget = false;
+                    var initial = Text("Initial", avatar, new Vector2(0, 3), new Vector2(60, 56), "N", 40, White);
+                    var face = Pic("Face", avatar, Center, new Vector2(0, 2), new Vector2(58, 58), S("UI_LiveOps_ProfileAvatar_Luno"));
+                    face.raycastTarget = false;
+                    var name = Text("Name", row, new Vector2(-205, 2), new Vector2(250, 56), "Name", 38, White);
+                    name.alignment = TextAlignmentOptions.MidlineLeft;
+                    var track = Pic("Track", row, Center, new Vector2(175, 0), new Vector2(420, 46), S("UI_Pill_Well_60"));
+                    track.raycastTarget = false;
+                    var fill = Pic("Fill", track, new Vector2(0, 0.5f), new Vector2(10, 0), new Vector2(400, 34), S("UI_Button_Wide_Go"), new Vector2(0, 0.5f));
+                    fill.raycastTarget = false;
+                    var score = Text("Score", row, new Vector2(455, 2), new Vector2(130, 56), "0/5", 38, White);
+
+                    var element = rows.GetArrayElementAtIndex(i);
+                    element.FindPropertyRelative("Root").objectReferenceValue = row.gameObject;
+                    element.FindPropertyRelative("Background").objectReferenceValue = row;
+                    element.FindPropertyRelative("Rank").objectReferenceValue = rank;
+                    element.FindPropertyRelative("Initial").objectReferenceValue = initial;
+                    element.FindPropertyRelative("PlayerFace").objectReferenceValue = face.gameObject;
+                    element.FindPropertyRelative("Name").objectReferenceValue = name;
+                    element.FindPropertyRelative("Fill").objectReferenceValue = fill.rectTransform;
+                    element.FindPropertyRelative("Score").objectReferenceValue = score;
+                }
+                var medals = so.FindProperty("_medals");
+                medals.arraySize = 3;
+                medals.GetArrayElementAtIndex(0).colorValue = new Color(1f, 0.82f, 0.25f);
+                medals.GetArrayElementAtIndex(1).colorValue = new Color(0.82f, 0.88f, 0.98f);
+                medals.GetArrayElementAtIndex(2).colorValue = new Color(0.95f, 0.6f, 0.35f);
+                so.ApplyModifiedPropertiesWithoutUndo();
+
+                // Rules over everything; a tap anywhere closes them.
+                var infoPanel = Span("InfoPanel", root.transform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+                var infoDim = infoPanel.gameObject.AddComponent<Image>();
+                infoDim.color = new Color(0f, 0f, 0f, 0.8f);
+                var infoClose = infoPanel.gameObject.AddComponent<Button>();
+                infoClose.targetGraphic = infoDim;
+                infoClose.transition = Selectable.Transition.None;
+                var card = Pic("Card", infoPanel, Center, Vector2.zero, new Vector2(900, 820), S("UI_Popup_Panel"));
+                card.raycastTarget = false;
+                Text("Title", card, new Vector2(0, 320), new Vector2(760, 90), "rush.info_title", 60, White, "rush.info_title");
+                var rules = Text("Body", card, new Vector2(0, -40), new Vector2(760, 560), "rush.info_body", 40, Ink, "rush.info_body");
+                rules.textWrappingMode = TextWrappingModes.Normal;
+                rules.alignment = TextAlignmentOptions.TopLeft;
+                infoPanel.gameObject.SetActive(false);
 
                 Set(popup, "_content", content);
                 Set(popup, "_layout", layout);
                 Set(popup, "_marker", marker);
                 Set(popup, "_timer", timer);
-                Set(popup, "_progress", progress);
+                Set(popup, "_stage", stage);
                 Set(popup, "_close", close.GetComponent<Button>());
-                Set(popup, "_coinTarget", root.transform.Find("Coins/Coin"));
+                Set(popup, "_info", info.GetComponent<Button>());
+                Set(popup, "_infoPanel", infoPanel.gameObject);
+                Set(popup, "_infoClose", infoClose);
+                Set(popup, "_panel", panel);
+                Set(popup, "_race", race.gameObject);
+                Set(popup, "_gear", gear);
+                Set(popup, "_status", status);
+                Set(popup, "_action", action.GetComponent<Button>());
+                Set(popup, "_actionLabel", action.Find("Label").GetComponent<LocalizedText>());
+                Set(popup, "_toggle", toggle.GetComponent<Button>());
+                Set(popup, "_toggleLabel", toggle.Find("Label").GetComponent<LocalizedText>());
+                Set(popup, "_coinTarget", coin.rectTransform);
                 Set(popup, "_coin", S("UI_Icon_Coin"));
                 PrefabUtility.SaveAsPrefabAsset(root, OrbitRushScreenPath);
             }
@@ -192,7 +273,7 @@ namespace Project.Editor
         // ---------------------------------------------------------------- Home entry points
 
         // Reuses the entry buttons BuildHome made (found by name), else adds side buttons.
-        private static void BuildLiveOpsHome(Scene scene, DailyRewardPopup daily, OrbitRushScreen orbitRush)
+        private static void BuildLiveOpsHome(Scene scene, DailyRewardPopup daily, OrbitRushScreen orbitRush, MessagePopup message)
         {
             var canvas = Root(scene, "Home Canvas").transform;
             var area = canvas.Find("Content/SafeArea") ?? canvas.Find("SafeArea");
@@ -217,6 +298,13 @@ namespace Project.Editor
                 pill.raycastTarget = false;
                 timer = Text("Timer", pill, new Vector2(0, 2), new Vector2(130, 44), "2d 14h", 30, White);
             }
+            // The race count takes the name label's place under the icon.
+            var label = eventButton.transform.Find("Label");
+            var countPill = Pic("CountPill", eventButton.transform, Center, new Vector2(0, label != null ? ((RectTransform)label).anchoredPosition.y : -100f),
+                new Vector2(150, 54), S("UI_Pill_Well_60"));
+            countPill.raycastTarget = false;
+            var count = Text("Count", countPill, new Vector2(0, 2), new Vector2(130, 44), "0/5", 32, White);
+            countPill.gameObject.SetActive(false);
 
             var go = new GameObject("LiveOpsHome", typeof(RectTransform));
             go.transform.SetParent(area, false);
@@ -226,8 +314,14 @@ namespace Project.Editor
             SetArray(home, "_event", entries.ConvertAll(b => (Object)b).ToArray());
             SetArray(home, "_eventBadges", entries.ConvertAll(b => (Object)Badge(b)).ToArray());
             Set(home, "_eventTimer", timer);
+            Set(home, "_eventLabel", label != null ? label.gameObject : null);
+            Set(home, "_eventCount", countPill.gameObject);
+            Set(home, "_eventCountText", count);
+            Set(home, "_play", Find<Button>(canvas, "PlayButton"));
             Set(home, "_dailyPopup", daily);
             Set(home, "_orbitRush", orbitRush);
+            Set(home, "_messagePopup", message);
+            Set(home, "_collectable", S("UI_Icon_OrbitRush"));
         }
 
         // The button's "Badge" child, or a new "!" badge on its top-right corner.

@@ -51,6 +51,9 @@ namespace Project.Contexts.Application.Economy
         }
     }
 
+    // A campaign try ended without a win (loss, restart or quit).
+    public readonly struct LevelFailed : IEvent { }
+
     // Raised after its reward is saved.
     public readonly struct LevelCompleted : IEvent
     {

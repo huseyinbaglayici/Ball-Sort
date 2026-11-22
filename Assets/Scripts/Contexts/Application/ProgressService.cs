@@ -71,6 +71,7 @@ namespace Project.Contexts.Application
         {
             _data.Model.RetryCount++;
             _data.Save();
+            EventBus<LevelFailed>.Raise(default);
         }
 
         // A new try starts with every PickVariant.

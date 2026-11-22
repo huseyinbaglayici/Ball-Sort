@@ -37,11 +37,28 @@ namespace Project.Contexts.Application.Economy
     [Serializable]
     public sealed class OrbitRushModel
     {
-        // Index of the event window the progress belongs to.
+        // Index of the event window the state belongs to.
         public int Window = -1;
-        public int Wins;
-        // Bit per milestone.
-        public int Claimed;
+        // OrbitRushState.
+        public int State;
+        // Stages won in this window.
+        public int Stage;
+        public int Score;
+        // Rooms opened for the current stage; seeds the bots.
+        public int Attempt;
+        // Local ticks.
+        public long StageStartTicks;
+        // Win streak index into the gear multipliers.
+        public int Gear;
+        // Finish place in the stage waiting to be claimed.
+        public int WonRank;
+        // Score the Home icon last showed.
+        public int ShownScore;
+        // Coins the event paid in this window.
+        public int Earned;
+        // Ended window to report on Home: stage reached and coins paid out; -1 when nothing to show.
+        public int FinishStage = -1;
+        public int FinishCoins;
     }
 
     // One file so a win's coins, road reward and next level are written together.

@@ -8,7 +8,7 @@ namespace Project.Contexts.LiveOps
     {
         public static readonly Vector2 MapSize = new(1170f, 2532f);
 
-        // Where the marker stands after n wins; one more than the steps.
+        // Path tiles from the start pad to the treasure; the marker walks them.
         public Vector2[] Stops =
         {
             new(895, 2041), new(648, 1924), new(456, 1918), new(300, 1848), new(228, 1640),
@@ -16,7 +16,10 @@ namespace Project.Contexts.LiveOps
             new(586, 1218), new(390, 1171), new(215, 1089), new(304, 975), new(582, 700)
         };
 
-        // The reward art of each milestone (flags, chests, treasure), in milestone order.
+        // Stop index where each stage starts, then the last stage's end and the grand prize.
+        public int[] Waypoints = { 0, 2, 4, 9, 11, 13, 14 };
+
+        // The stage gifts (flags and chests) in stage order, then the grand prize treasure.
         public Vector2[] Rewards =
         {
             new(810, 1772), new(228, 1600), new(911, 1200), new(367, 1393), new(658, 975), new(582, 660)

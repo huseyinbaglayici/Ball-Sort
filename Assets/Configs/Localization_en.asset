@@ -239,8 +239,6 @@ MonoBehaviour:
     Value: 'Claim'
   - Key: rush.button
     Value: 'Event'
-  - Key: rush.progress
-    Value: '{0} / {1}'
   - Key: liveops.time_dh
     Value: '{0}d {1}h'
   - Key: liveops.time_hm
@@ -249,3 +247,47 @@ MonoBehaviour:
     Value: '{0}m {1}s'
   - Key: home.no_ads
     Value: 'No Ads'
+  - Key: rush.stage
+    Value: 'Stage {0}/{1}'
+  - Key: rush.view_race
+    Value: 'Race'
+  - Key: rush.view_map
+    Value: 'Map'
+  - Key: rush.gear
+    Value: 'Speed x{0}'
+  - Key: rush.join
+    Value: 'Join'
+  - Key: rush.join_body
+    Value: 'Race {0} rivals along the route. The first {1} to the finish win each stage!'
+  - Key: rush.play
+    Value: 'Play'
+  - Key: rush.racing_body
+    Value: 'The first {2} to reach {1} win the stage!'
+  - Key: rush.won_body
+    Value: 'You finished {0}! Claim +{1} coins.'
+  - Key: rush.place_1
+    Value: '1st'
+  - Key: rush.place_2
+    Value: '2nd'
+  - Key: rush.place_3
+    Value: '3rd'
+  - Key: rush.lost_body
+    Value: '{0} rivals got there first. Start a new race!'
+  - Key: rush.retry
+    Value: 'Race again'
+  - Key: rush.done_body
+    Value: 'The treasure is yours! Next race in {0}.'
+  - Key: rush.you
+    Value: 'You'
+  - Key: rush.finish_title
+    Value: 'Orbit Rush is over'
+  - Key: rush.finish_body
+    Value: 'You cleared {0}/{1} stages and earned {2} coins.'
+  - Key: rush.locked_body
+    Value: 'Orbit Rush opens at level {0}.'
+  - Key: rush.lose_streak
+    Value: 'Orbit Rush: your x{0} speed resets.'
+  - Key: rush.info_title
+    Value: 'How to race'
+  - Key: rush.info_body
+    Value: "• Win levels to move along the route.\n• Wins in a row raise your speed up to x5; a failed try resets it.\n• The first 3 of 5 racers to the finish win the stage and its gift.\n• Clear all 5 stages for the treasure!"

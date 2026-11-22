@@ -36,6 +36,7 @@ namespace Project.Contexts.LiveOps
         private DailyRewardService _daily;
         private LocalizationService _localization;
         private Tween _pulse;
+        private Tween _autoClose;
 
         protected override void Awake()
         {
@@ -48,7 +49,12 @@ namespace Project.Contexts.LiveOps
 
         protected override void OnShow(object args) => Refresh();
 
-        protected override void OnHidden() => _pulse.Stop();
+        protected override void OnHidden()
+        {
+            _pulse.Stop();
+            // A delayed close left over from a claim must not close the popup when it is opened again.
+            _autoClose.Stop();
+        }
 
         private void Refresh()
         {
@@ -81,7 +87,7 @@ namespace Project.Contexts.LiveOps
             Services.Get<AudioManager>().PlayOneShotSound("coin_double");
             CoinBurst.Play(_days[index].Icon.rectTransform, _coinTarget, _coin);
             Refresh();
-            Tween.Delay(this, _closeDelay, popup => popup.Close(), useUnscaledTime: true);
+            _autoClose = Tween.Delay(this, _closeDelay, popup => popup.Close(), useUnscaledTime: true);
         }
     }
 }

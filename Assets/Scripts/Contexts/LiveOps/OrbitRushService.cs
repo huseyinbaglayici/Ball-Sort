@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Project.Contexts.Application.Economy;
 using Project.Core.Events;
 
@@ -6,37 +7,58 @@ namespace Project.Contexts.LiveOps
 {
     public readonly struct OrbitRushChanged : IEvent { }
 
-    public enum MilestoneKind { Flag, Chest, Treasure }
-
-    public readonly struct OrbitRushMilestone
+    public enum OrbitRushState
     {
-        public readonly int Step;
-        public readonly MilestoneKind Kind;
-        public readonly int Coins;
+        // Below the activation level.
+        Locked,
+        // A new window: the intro opens once.
+        Intro,
+        // Waiting for the player to join.
+        Join,
+        Racing,
+        // Reached the target among the winners; the stage gift waits to be claimed.
+        StageWon,
+        // Others filled the podium or the stage time ran out.
+        StageLost,
+        // Grand prize given; waits for the next window.
+        Completed
+    }
 
-        public OrbitRushMilestone(int step, MilestoneKind kind, int coins)
+    public readonly struct OrbitRushRacer
+    {
+        public readonly string Name;
+        public readonly int Score;
+        public readonly bool IsPlayer;
+        // Seconds into the stage when the target was reached; MaxValue while racing.
+        public readonly double FinishedAt;
+
+        public OrbitRushRacer(string name, int score, bool isPlayer, double finishedAt)
         {
-            Step = step;
-            Kind = kind;
-            Coins = coins;
+            Name = name;
+            Score = score;
+            IsPlayer = isPlayer;
+            FinishedAt = finishedAt;
         }
     }
 
-    // Back-to-back windows on the local clock; progress is levels won inside the current one.
+    // Offline staged race: rooms of five, the first three to the target win the stage; wins move by the streak gear.
     public sealed class OrbitRushService
     {
+        public const int ActivationLevel = 34;
         public const int WindowDays = 3;
+        public const int Capacity = 5;
+        public const int Winners = 3;
+        public const double StageHours = 12;
+        public const int GrandPrize = 500;
         public static readonly DateTime Anchor = new(2026, 1, 1);
-        public static readonly OrbitRushMilestone[] Milestones =
-        {
-            new(2, MilestoneKind.Flag, 25),
-            new(4, MilestoneKind.Chest, 100),
-            new(9, MilestoneKind.Chest, 200),
-            new(11, MilestoneKind.Flag, 50),
-            new(13, MilestoneKind.Flag, 75),
-            new(14, MilestoneKind.Treasure, 500)
-        };
-        public static int Steps => Milestones[^1].Step;
+        public static readonly int[] Targets = { 5, 8, 12, 16, 20 };
+        public static readonly int[] StageRewards = { 50, 100, 150, 200, 250 };
+        public static readonly int[] RankRewards = { 30, 20, 10 };
+        public static readonly int[] GearMultipliers = { 1, 2, 3, 4, 5 };
+        public static int Stages => Targets.Length;
+
+        private static readonly string[] BotNames =
+            { "Nova", "Kai", "Mira", "Orion", "Lyra", "Zed", "Vega", "Juno", "Rex", "Sky", "Pip", "Luma" };
 
         private readonly PlayerData _data;
         private readonly WalletService _wallet;
@@ -59,58 +81,290 @@ namespace Project.Contexts.LiveOps
         }
 
         public int Window => (int)Math.Floor((_localNow() - Anchor).TotalDays / WindowDays);
-
         public TimeSpan TimeLeft => Anchor.AddDays((Window + 1) * WindowDays) - _localNow();
 
-        public int Progress => Math.Min(Model.Wins, Steps);
+        public OrbitRushState State => (OrbitRushState)Model.State;
+        public bool IsVisible => State != OrbitRushState.Locked;
+        public int Stage => Math.Min(Model.Stage, Stages - 1);
+        public int StagesWon => Model.Stage;
+        public int Target => Targets[Stage];
+        public int Score => Model.Score;
+        public int Gear => Model.Gear;
+        public int Multiplier => GearMultipliers[Model.Gear];
+        public int WonRank => Model.WonRank;
 
-        public bool IsReached(int milestone) => Progress >= Milestones[milestone].Step;
-        public bool IsClaimed(int milestone) => (Model.Claimed & (1 << milestone)) != 0;
-        public bool CanClaim(int milestone) => IsReached(milestone) && !IsClaimed(milestone);
-
-        public bool HasClaimable
+        // The stage ends with the window if that comes first.
+        public TimeSpan StageTimeLeft
         {
             get
             {
-                for (var i = 0; i < Milestones.Length; i++)
-                    if (CanClaim(i)) return true;
-                return false;
+                var end = new DateTime(Model.StageStartTicks).AddHours(StageHours);
+                var left = end - _localNow();
+                return left < TimeLeft ? left : TimeLeft;
             }
         }
 
-        public void RecordWin()
+        // What the reward claim pays: the stage gift and the finish place.
+        public int StageReward => StageRewards[Stage] + (Model.WonRank > 0 ? RankRewards[Model.WonRank - 1] : 0);
+
+        // Ranked best first; finished racers by finish time.
+        public List<OrbitRushRacer> Racers()
         {
-            if (Model.Wins >= Steps) return;
-            Model.Wins++;
-            _data.Save();
-            EventBus<OrbitRushChanged>.Raise(default);
+            var model = Model;
+            var racers = new List<OrbitRushRacer>(Capacity);
+            var elapsed = Elapsed(model);
+            for (var i = 1; i < Capacity; i++) racers.Add(Bot(model, i, elapsed));
+            var playerFinished = model.Score >= Target ? (model.WonRank > 0 ? BotFinishBefore(model, model.WonRank) : elapsed) : double.MaxValue;
+            racers.Add(new OrbitRushRacer(null, model.Score, true, playerFinished));
+            racers.Sort((a, b) =>
+            {
+                if (a.FinishedAt != b.FinishedAt) return a.FinishedAt.CompareTo(b.FinishedAt);
+                if (a.Score != b.Score) return b.Score.CompareTo(a.Score);
+                return a.IsPlayer ? -1 : b.IsPlayer ? 1 : 0;
+            });
+            return racers;
         }
 
-        // Returns the coins paid; 0 when not claimable.
-        public int Claim(int milestone)
+        public int PlayerRank
         {
-            if (milestone < 0 || milestone >= Milestones.Length || !CanClaim(milestone)) return 0;
-            var coins = Milestones[milestone].Coins;
+            get
+            {
+                var racers = Racers();
+                for (var i = 0; i < racers.Count; i++)
+                    if (racers[i].IsPlayer) return i + 1;
+                return Capacity;
+            }
+        }
+
+        // Points the Home icon has not counted up yet.
+        public int PendingCollect => State is OrbitRushState.Racing or OrbitRushState.StageWon ? Math.Max(0, Model.Score - Model.ShownScore) : 0;
+
+        public bool HasClaimable => State is OrbitRushState.StageWon or OrbitRushState.Intro;
+
+        public void MarkCollected()
+        {
+            if (Model.ShownScore == Model.Score) return;
+            Model.ShownScore = Model.Score;
+            _data.Save();
+        }
+
+        public void MarkIntroShown()
+        {
+            if (State != OrbitRushState.Intro) return;
+            Set(OrbitRushState.Join);
+        }
+
+        public bool Join()
+        {
+            if (State is not (OrbitRushState.Intro or OrbitRushState.Join)) return false;
+            StartStage(_data.Model.OrbitRush, 0);
+            Changed();
+            return true;
+        }
+
+        // A campaign win: points by the gear, then the gear goes up.
+        public void RecordWin()
+        {
+            if (State != OrbitRushState.Racing) return;
+            var model = _data.Model.OrbitRush;
+            model.Score = Math.Min(Target, model.Score + GearMultipliers[model.Gear]);
+            model.Gear = Math.Min(GearMultipliers.Length - 1, model.Gear + 1);
+            if (model.Score >= Target)
+            {
+                model.WonRank = BotsFinished(model, Elapsed(model)) + 1;
+                model.State = (int)OrbitRushState.StageWon;
+            }
+            Changed();
+        }
+
+        // A try that ended without a win clears the streak.
+        public void RecordLoss()
+        {
+            var model = _data.Model.OrbitRush;
+            if (model.Gear == 0) return;
+            model.Gear = 0;
+            Changed();
+        }
+
+        // Pays the stage gift and place, then opens the next stage or gives the grand prize.
+        public int ClaimStage()
+        {
+            if (State != OrbitRushState.StageWon) return 0;
+            var model = _data.Model.OrbitRush;
+            var coins = StageReward;
             using (_data.Batch())
             {
-                Model.Claimed |= 1 << milestone;
+                model.Stage++;
+                if (model.Stage >= Stages)
+                {
+                    coins += GrandPrize;
+                    model.State = (int)OrbitRushState.Completed;
+                    model.WonRank = 0;
+                }
+                else StartStage(model, 0);
+                model.Earned += coins;
                 _wallet.Add(coins);
                 _data.Save();
             }
-            EventBus<OrbitRushChanged>.Raise(default);
+            Changed();
             return coins;
         }
 
-        // A new window starts from zero; unclaimed rewards of the old one are gone.
+        // A new room for the same stage.
+        public bool Retry()
+        {
+            if (State != OrbitRushState.StageLost) return false;
+            var model = _data.Model.OrbitRush;
+            StartStage(model, model.Attempt + 1);
+            Changed();
+            return true;
+        }
+
+        // The ended window's result (stages won, coins paid in it), once; false when there is none.
+        public bool TryTakeFinish(out int stagesWon, out int coins)
+        {
+            var model = Model;
+            stagesWon = model.FinishStage;
+            coins = model.FinishCoins;
+            if (model.FinishStage < 0) return false;
+            model.FinishStage = -1;
+            model.FinishCoins = 0;
+            _data.Save();
+            return true;
+        }
+
+        private void StartStage(OrbitRushModel model, int attempt)
+        {
+            model.State = (int)OrbitRushState.Racing;
+            model.Score = 0;
+            model.ShownScore = 0;
+            model.WonRank = 0;
+            model.Attempt = attempt;
+            model.StageStartTicks = _localNow().Ticks;
+        }
+
+        private void Set(OrbitRushState state)
+        {
+            _data.Model.OrbitRush.State = (int)state;
+            Changed();
+        }
+
+        private void Changed()
+        {
+            _data.Save();
+            EventBus<OrbitRushChanged>.Raise(default);
+        }
+
+        // Window rollover, the level gate and the stage clock.
         private void Sync()
         {
             var model = _data.Model.OrbitRush;
+            var changed = false;
             var window = Window;
-            if (model.Window == window) return;
-            model.Window = window;
-            model.Wins = 0;
-            model.Claimed = 0;
-            _data.Save();
+            // Only forward: a clock or time zone moved back keeps the event it already has.
+            if (window > model.Window)
+            {
+                // The payout and the new window are one write, so a crash between them can't pay twice.
+                using (_data.Batch())
+                {
+                    if (model.Window >= 0) EndWindow(model);
+                    var finish = (model.FinishStage, model.FinishCoins);
+                    _data.Model.OrbitRush = model = new OrbitRushModel { Window = window, FinishStage = finish.FinishStage, FinishCoins = finish.FinishCoins };
+                    _data.Save();
+                }
+            }
+
+            var unlocked = _data.Model.Level >= ActivationLevel;
+            if (!unlocked && model.State != (int)OrbitRushState.Locked)
+            {
+                model.State = (int)OrbitRushState.Locked;
+                changed = true;
+            }
+            else if (unlocked && model.State == (int)OrbitRushState.Locked)
+            {
+                model.State = (int)OrbitRushState.Intro;
+                changed = true;
+            }
+
+            if (model.State == (int)OrbitRushState.Racing)
+            {
+                var elapsed = Elapsed(model);
+                if (BotsFinished(model, elapsed) >= Winners || elapsed >= StageHours * 3600)
+                {
+                    model.State = (int)OrbitRushState.StageLost;
+                    changed = true;
+                }
+            }
+
+            if (changed) _data.Save();
+        }
+
+        // Anything already won is paid when the window closes.
+        private void EndWindow(OrbitRushModel model)
+        {
+            var state = (OrbitRushState)model.State;
+            if (state is OrbitRushState.Locked or OrbitRushState.Intro or OrbitRushState.Join) return;
+            var coins = 0;
+            if (state == OrbitRushState.StageWon)
+            {
+                var stage = Math.Min(model.Stage, Stages - 1);
+                coins = StageRewards[stage] + (model.WonRank > 0 ? RankRewards[model.WonRank - 1] : 0);
+                model.Stage++;
+                if (model.Stage >= Stages) coins += GrandPrize;
+                _wallet.Add(coins);
+            }
+            model.FinishStage = model.Stage;
+            model.FinishCoins = model.Earned + coins;
+        }
+
+        private double Elapsed(OrbitRushModel model) =>
+            Math.Max(0, (_localNow() - new DateTime(model.StageStartTicks)).TotalSeconds);
+
+        private int BotsFinished(OrbitRushModel model, double elapsed)
+        {
+            var count = 0;
+            for (var i = 1; i < Capacity; i++)
+                if (BotFinishTime(model, i) <= elapsed) count++;
+            return count;
+        }
+
+        // When the bot that took the given place crossed the line; used to rank a winner behind them.
+        private double BotFinishBefore(OrbitRushModel model, int rank)
+        {
+            var times = new List<double>();
+            for (var i = 1; i < Capacity; i++) times.Add(BotFinishTime(model, i));
+            times.Sort();
+            return rank - 1 < times.Count ? times[rank - 1] - 0.001 : double.MaxValue;
+        }
+
+        // Each bot crosses the line between a third of the stage time and past its end.
+        private double BotFinishTime(OrbitRushModel model, int bot) =>
+            (0.35 + 0.95 * Random01(model, bot, 0)) * StageHours * 3600;
+
+        private OrbitRushRacer Bot(OrbitRushModel model, int bot, double elapsed)
+        {
+            var finish = BotFinishTime(model, bot);
+            var target = Targets[Math.Min(model.Stage, Stages - 1)];
+            var score = elapsed >= finish ? target : (int)Math.Floor(target * Math.Pow(elapsed / finish, 0.85));
+            // Steps of three over twelve names keep the four bots apart.
+            var name = BotNames[((int)(Random01(model, 0, 1) * BotNames.Length) + bot * 3) % BotNames.Length];
+            return new OrbitRushRacer(name, Math.Min(score, target), false, elapsed >= finish ? finish : double.MaxValue);
+        }
+
+        // Stable per window, stage, room and bot.
+        private static double Random01(OrbitRushModel model, int bot, int salt)
+        {
+            unchecked
+            {
+                var x = (uint)(model.Window * 73856093) ^ (uint)(model.Stage * 19349663) ^ (uint)(model.Attempt * 83492791) ^
+                        (uint)(bot * 2654435761u) ^ (uint)(salt * 40503);
+                x ^= x << 13;
+                x ^= x >> 17;
+                x ^= x << 5;
+                x *= 0x9E3779B1u;
+                x ^= x >> 15;
+                return (x & 0xFFFFFF) / (double)0x1000000;
+            }
         }
     }
 }

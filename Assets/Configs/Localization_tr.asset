@@ -239,8 +239,6 @@ MonoBehaviour:
     Value: 'Topla'
   - Key: rush.button
     Value: 'Etkinlik'
-  - Key: rush.progress
-    Value: '{0} / {1}'
   - Key: liveops.time_dh
     Value: '{0}g {1}s'
   - Key: liveops.time_hm
@@ -249,3 +247,47 @@ MonoBehaviour:
     Value: '{0}d {1}sn'
   - Key: home.no_ads
     Value: 'Reklamsız'
+  - Key: rush.stage
+    Value: 'Aşama {0}/{1}'
+  - Key: rush.view_race
+    Value: 'Yarış'
+  - Key: rush.view_map
+    Value: 'Harita'
+  - Key: rush.gear
+    Value: 'Hız x{0}'
+  - Key: rush.join
+    Value: 'Katıl'
+  - Key: rush.join_body
+    Value: 'Rotada {0} rakiple yarış. Her aşamada bitişe ilk varan {1} kişi kazanır!'
+  - Key: rush.play
+    Value: 'Oyna'
+  - Key: rush.racing_body
+    Value: '{1} puana ilk varan {2} kişi aşamayı kazanır!'
+  - Key: rush.won_body
+    Value: '{0} oldun! +{1} altını topla.'
+  - Key: rush.place_1
+    Value: 'Birinci'
+  - Key: rush.place_2
+    Value: 'İkinci'
+  - Key: rush.place_3
+    Value: 'Üçüncü'
+  - Key: rush.lost_body
+    Value: '{0} rakip senden önce vardı. Yeni yarışa başla!'
+  - Key: rush.retry
+    Value: 'Yeniden yarış'
+  - Key: rush.done_body
+    Value: 'Hazine senin! Sonraki yarış {0} sonra.'
+  - Key: rush.you
+    Value: 'Sen'
+  - Key: rush.finish_title
+    Value: 'Orbit Rush bitti'
+  - Key: rush.finish_body
+    Value: '{0}/{1} aşama geçtin ve {2} altın kazandın.'
+  - Key: rush.locked_body
+    Value: 'Orbit Rush {0}. seviyede açılır.'
+  - Key: rush.lose_streak
+    Value: 'Orbit Rush: x{0} hızın sıfırlanır.'
+  - Key: rush.info_title
+    Value: 'Nasıl yarışılır'
+  - Key: rush.info_body
+    Value: "• Seviye kazandıkça rotada ilerle.\n• Art arda galibiyet hızını x5'e kadar artırır; kaybedilen deneme sıfırlar.\n• 5 yarışçıdan bitişe ilk varan 3 kişi aşamayı ve hediyesini kazanır.\n• 5 aşamanın hepsini geç, hazineyi al!"
