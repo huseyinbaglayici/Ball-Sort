@@ -18,7 +18,6 @@ namespace Project.Contexts.Application.Economy
 
     public enum Feature
     {
-        RewardedDouble,
         Challenge,
         StarterPack
     }
@@ -95,7 +94,16 @@ namespace Project.Contexts.Application.Economy
         // Levels that introduce a mechanic; no interstitial on them or right before them.
         private static readonly int[] IntroductionLevels = { 7, 20, 40, 60, 80 };
 
+        // Levels 1 to this one run back to back without Home; the win of this level opens Home first.
+        public const int ChainLevels = 10;
+
         public static bool IsCampaignLevel(int level) => level >= 1 && level <= MaxLevel;
+
+        // Inside the opening chain: the app opens straight into the level.
+        public static bool IsChainLevel(int level) => level >= 1 && level <= ChainLevels;
+
+        // A win of this level goes straight into the next one.
+        public static bool ChainsAfterWin(int level) => level >= 1 && level < ChainLevels;
 
         public static LevelDifficulty DifficultyOf(int level)
         {
@@ -170,7 +178,6 @@ namespace Project.Contexts.Application.Economy
         // First level whose win shows the feature; it stays available after that.
         public static int UnlockLevel(Feature feature) => feature switch
         {
-            Feature.RewardedDouble => 15,
             Feature.Challenge => 18,
             Feature.StarterPack => 21,
             _ => throw new ArgumentOutOfRangeException(nameof(feature))
@@ -182,11 +189,11 @@ namespace Project.Contexts.Application.Economy
 
         public static bool IsCampaignFinal(int levelsWon) => levelsWon >= MaxLevel;
 
-        // Never on peak, road, intro or final levels, after a rewarded ad or with No Ads; frequency is checked separately.
-        public static bool InterstitialEligible(int level, AdGroup group, bool rewardedWatched, bool noAds)
+        // Never on peak, road, intro or final levels or with No Ads; frequency is checked separately.
+        public static bool InterstitialEligible(int level, AdGroup group, bool noAds)
         {
             if (level < group.StartLevel || level >= MaxLevel) return false;
-            if (noAds || rewardedWatched) return false;
+            if (noAds) return false;
             if (DifficultyOf(level) != LevelDifficulty.Normal || !RoadRewardAt(level).IsEmpty) return false;
             return Array.IndexOf(IntroductionLevels, level) < 0 && Array.IndexOf(IntroductionLevels, level + 1) < 0;
         }

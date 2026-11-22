@@ -23,6 +23,8 @@ namespace Project.Contexts.Application.Economy
         private LivesService _livesService;
         private LocalizationService _loc;
         private float _nextTick;
+        // Coins already in the wallet that are still flying in; the counter leaves them out until they land.
+        private int _held;
 
         private void OnEnable()
         {
@@ -35,6 +37,7 @@ namespace Project.Contexts.Application.Economy
 
         private void OnDisable()
         {
+            _held = 0;
             EventBus<CoinsChanged>.Unsubscribe(OnCoinsChanged);
             EventBus<LivesChanged>.Unsubscribe(OnLivesChanged);
             EventBus<LanguageChanged>.Unsubscribe(OnLanguageChanged);
@@ -47,6 +50,16 @@ namespace Project.Contexts.Application.Economy
         }
 
         private void OnCoinsChanged(CoinsChanged _) => Refresh();
+
+        public void Hold(int coins)
+        {
+            _held = Mathf.Max(0, coins);
+            Refresh();
+        }
+
+        // A landed share of the held coins counts up.
+        public void Release(int coins) => Hold(_held - coins);
+
         private void OnLivesChanged(LivesChanged evt)
         {
             Refresh();
@@ -66,7 +79,7 @@ namespace Project.Contexts.Application.Economy
         {
             if (_wallet == null) return;
             _nextTick = Time.unscaledTime + 1f;
-            if (_coins != null) _coins.text = _wallet.Coins.ToString();
+            if (_coins != null) _coins.text = Mathf.Max(0, _wallet.Coins - _held).ToString();
             if (_lives != null) _lives.text = EconomyText.Lives(_livesService, _loc);
             if (_livesCount != null) _livesCount.text = EconomyText.LivesCount(_livesService);
             if (_livesTimer != null)

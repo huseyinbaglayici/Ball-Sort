@@ -69,10 +69,6 @@ MonoBehaviour:
     Value: 'Super Hard'
   - Key: result.base
     Value: 'Level reward: +{0}'
-  - Key: result.road
-    Value: 'Road reward: {0}'
-  - Key: result.double
-    Value: '2x coins (ad)'
   - Key: meta.period
     Value: 'Period {0} · next after level {1}'
   - Key: meta.period_title

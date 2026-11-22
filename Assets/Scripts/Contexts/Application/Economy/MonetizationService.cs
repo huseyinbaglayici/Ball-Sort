@@ -70,10 +70,10 @@ namespace Project.Contexts.Application.Economy
         }
 
         // Counts an eligible first win, shows an interstitial once the frequency is met, then runs done.
-        public void ShowLevelEndInterstitial(int level, bool firstWin, bool rewardedWatched, Action done)
+        public void ShowLevelEndInterstitial(int level, bool firstWin, Action done)
         {
             var model = _data.Model;
-            if (!firstWin || !CampaignRules.InterstitialEligible(level, Group, rewardedWatched, NoAds))
+            if (!firstWin || !CampaignRules.InterstitialEligible(level, Group, NoAds))
             {
                 done?.Invoke();
                 return;

@@ -41,7 +41,6 @@ namespace Project.Contexts.Application
         private readonly BoosterInventory _boosters;
         private readonly LivesService _lives;
         private readonly Func<int, int, int> _random;
-        private int _doubleLevel;
 
         // random: int in [min, max); Unity's Random.Range by default.
         public ProgressService(PlayerData data, WalletService wallet, BoosterInventory boosters, LivesService lives,
@@ -128,27 +127,14 @@ namespace Project.Contexts.Application
             var final = IsCampaignFinished;
             var result = new LevelResult(level, true, CampaignRules.FirstWinCoins(level), road, MetaPeriod,
                 MetaPeriod != periodBefore || final, final);
-            _doubleLevel = level >= CampaignRules.UnlockLevel(Feature.RewardedDouble) ? level : 0;
 
             EventBus<LevelCompleted>.Raise(new LevelCompleted(result));
             return result;
         }
 
-        // Offered once, from level 16, for base coins only.
-        public bool CanDoubleReward(in LevelResult result) => result.FirstWin && _doubleLevel == result.Level;
-
-        public bool ClaimDoubleReward(in LevelResult result)
-        {
-            if (!CanDoubleReward(result)) return false;
-            _doubleLevel = 0;
-            _wallet.Add(result.BaseCoins);
-            return true;
-        }
-
         // Debug: back to a new player's save.
         public void ResetProgress()
         {
-            _doubleLevel = 0;
             var model = _data.Model;
             using (_data.Batch())
             {

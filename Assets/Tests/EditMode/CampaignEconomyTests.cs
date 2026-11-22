@@ -162,7 +162,7 @@ namespace Project.Tests
             Assert.AreEqual(30, result.Road.UnlimitedLifeMinutes);
             Assert.IsTrue(_lives.IsUnlimited);
             Assert.AreEqual(Refill, _lives.UnlimitedLeft);
-            Assert.IsFalse(CampaignRules.InterstitialEligible(level, CampaignRules.AdGroups[0], false, false));
+            Assert.IsFalse(CampaignRules.InterstitialEligible(level, CampaignRules.AdGroups[0], false));
         }
 
         [Test]
@@ -269,14 +269,13 @@ namespace Project.Tests
             var b = CampaignRules.AdGroups[1];
             Assert.AreEqual(22, a.StartLevel);
             Assert.AreEqual(32, b.StartLevel);
-            Assert.IsTrue(CampaignRules.InterstitialEligible(22, a, false, false));
-            Assert.IsFalse(CampaignRules.InterstitialEligible(21, a, false, false));
-            Assert.IsFalse(CampaignRules.InterstitialEligible(22, b, false, false));
-            Assert.IsTrue(CampaignRules.InterstitialEligible(32, b, false, false));
+            Assert.IsTrue(CampaignRules.InterstitialEligible(22, a, false));
+            Assert.IsFalse(CampaignRules.InterstitialEligible(21, a, false));
+            Assert.IsFalse(CampaignRules.InterstitialEligible(22, b, false));
+            Assert.IsTrue(CampaignRules.InterstitialEligible(32, b, false));
             foreach (var level in new[] { 24, 25, 29, 35, 39, 40, 50, 59, 60, 75, 79, 80, 99, 100 })
-                Assert.IsFalse(CampaignRules.InterstitialEligible(level, a, false, false), level.ToString());
-            Assert.IsFalse(CampaignRules.InterstitialEligible(26, a, false, true), "No Ads");
-            Assert.IsFalse(CampaignRules.InterstitialEligible(26, a, true, false), "after a rewarded ad");
+                Assert.IsFalse(CampaignRules.InterstitialEligible(level, a, false), level.ToString());
+            Assert.IsFalse(CampaignRules.InterstitialEligible(26, a, true), "No Ads");
         }
 
         [Test]
@@ -296,26 +295,6 @@ namespace Project.Tests
             _lives.TrySpend();
             _lives.GrantUnlimited(30);
             Assert.IsFalse(ads.CanOfferRewardedLife, "not during unlimited lives");
-        }
-
-        [Test]
-        public void RewardedDoubleFromLevel15BaseCoinsOnce()
-        {
-            StartAt(14);
-            Assert.IsFalse(_progress.CanDoubleReward(_progress.CompleteLevel()));
-
-            var result = _progress.CompleteLevel(); // level 15
-            Assert.IsTrue(_progress.CanDoubleReward(result));
-            var coins = _wallet.Coins;
-            Assert.IsTrue(_progress.ClaimDoubleReward(result));
-            Assert.AreEqual(coins + 20, _wallet.Coins);
-            Assert.IsFalse(_progress.ClaimDoubleReward(result));
-
-            StartAt(99);
-            var peak = _progress.CompleteLevel();
-            coins = _wallet.Coins;
-            Assert.IsTrue(_progress.ClaimDoubleReward(peak));
-            Assert.AreEqual(coins + 100, _wallet.Coins);
         }
 
         [Test]

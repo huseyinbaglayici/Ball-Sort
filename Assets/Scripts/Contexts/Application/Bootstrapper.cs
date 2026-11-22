@@ -75,7 +75,7 @@ namespace Project.Contexts.Application
 
         private void Start()
         {
-            var first = Services.Get<ProgressService>().Level == 1 ? MainState.Game : MainState.Home;
+            var first = CampaignRules.IsChainLevel(Services.Get<ProgressService>().Level) ? MainState.Game : MainState.Home;
             Services.Get<MainFlow>().Begin(first);
         }
 

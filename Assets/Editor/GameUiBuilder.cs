@@ -592,7 +592,7 @@ namespace Project.Editor
             var top = Group("Top", topStage, new Vector2(0, 300), 0.3f);
             var coinBar = Pic("CoinBar", top, Center, At(201, 262), new Vector2(284, 100), S("UI_Pill_Well_96"));
             var coins = Text("Amount", coinBar, new Vector2(27, -2), new Vector2(162, 66), "0", 46, White);
-            Pic("Coin", top, Center, At(93, 254), new Vector2(93, 93), S("UI_Icon_Coin"));
+            var coinIcon = Pic("Coin", top, Center, At(93, 254), new Vector2(93, 93), S("UI_Icon_Coin"));
             var pill = Pic("LevelPill", top, Center, At(585, 446), new Vector2(432, 140), S("UI_InLevel_LevelPill"));
             var levelText = Text("Level", pill, new Vector2(0, 8), new Vector2(360, 80), "Level 1", 56, White);
             var difficulty = DifficultyBadge(top, At(585, 524), new Vector2(300, 66), At(585, 369));
@@ -616,6 +616,9 @@ namespace Project.Editor
             Set(game, "_resultPopup", result);
         }
 
+            Set(game, "_coinHud", hud);
+            Set(game, "_coinTarget", coinIcon.rectTransform);
+            Set(game, "_coinSprite", S("UI_Icon_Coin"));
         // Four round slots under the settings button, the tint behind them.
         private static SettingsMenu BuildSettingsMenu(RectTransform parent)
         {
@@ -725,18 +728,15 @@ namespace Project.Editor
             var root = PopupRoot("ResultPopup", new Color(0f, 0f, 0f, 0.85f));
             try
             {
-                var (frame, ribbon, title) = Panel(root, 900f, "result.win");
+                var (frame, ribbon, _) = Panel(root, 1030f, "result.failed");
+                ribbon.sprite = S("UI_Popup_Ribbon_Lose");
                 var close = CloseButton(frame);
-                // Content box: picture on top, the reward or the reason under it.
+                // Content box: picture on top, the reason under it.
                 var well = Well(frame, 1170f, new Vector2(720, 440));
-                var mascot = Pic("WinPicture", well, Center, new Vector2(0, 98), new Vector2(190, 190), S("Luno_512"));
-                var loss = Pic("LossPicture", well, Center, new Vector2(0, 56), new Vector2(210, 210), S("UI_Icon_HeartBroken"));
-                var rewards = Rect("Rewards", well, Center, new Vector2(0, -58), new Vector2(380, 120));
-                var coinIcon = Pic("CoinIcon", rewards, Center, new Vector2(-80, 0), new Vector2(116, 116), S("UI_Icon_Reward_CoinSack_CC"));
-                var amount = Text("Amount", rewards, new Vector2(75, 2), new Vector2(200, 90), "+20", 64, White);
+                Pic("LossPicture", well, Center, new Vector2(0, 56), new Vector2(210, 210), S("UI_Icon_HeartBroken"));
                 var details = Text("Details", well, Vector2.zero, new Vector2(660, 130), "", 42, White);
                 details.textWrappingMode = TextWrappingModes.Normal;
-                // Sits on the box's bottom edge so a one-line road reward stays clear of the coin row.
+                // Sits on the box's bottom edge, under the picture.
                 details.alignment = TextAlignmentOptions.Bottom;
                 details.rectTransform.pivot = new Vector2(0.5f, 0f);
                 Anchor(details.rectTransform, Bottom, new Vector2(0, 24));
@@ -744,10 +744,6 @@ namespace Project.Editor
                 var primary = WideButton(frame, "PrimaryButton", 1510f, S("UI_Button_Wide_Go"), null);
                 // Extra choices are purple buttons stacked under the main one.
                 var option = WideButton(frame, "OptionButton", 1680f, S("UI_Button_Wide_Purple"), null, 50f);
-                var doubleButton = WideButton(frame, "DoubleButton", 1680f, S("UI_Button_Wide_Purple"), "result.double", 50f);
-                var adIcon = Pic("Ad", doubleButton.transform, Center, new Vector2(-170, 8), new Vector2(80, 80), S("UI_Icon_Ad"));
-                adIcon.raycastTarget = false;
-                ((RectTransform)doubleButton.transform.Find("Label")).anchoredPosition = new Vector2(50, 8);
 
                 // Hold-to-peek caption on the fail panel: a frameless breathing line that eases the panel away while pressed.
                 var panelGroup = frame.parent.gameObject.AddComponent<CanvasGroup>();
@@ -765,19 +761,7 @@ namespace Project.Editor
                 Set(popup, "_peek", peek.gameObject);
                 Set(popup, "_content", (RectTransform)frame.parent);
                 Set(popup, "_frame", frame);
-                Set(popup, "_ribbon", ribbon);
-                Set(popup, "_winRibbon", S("UI_Popup_Ribbon_Win"));
-                Set(popup, "_lossRibbon", S("UI_Popup_Ribbon_Lose"));
-                Set(popup, "_title", title.GetComponent<LocalizedText>());
-                Set(popup, "_winPicture", mascot.gameObject);
-                Set(popup, "_lossPicture", loss.gameObject);
-                Set(popup, "_rewards", rewards.gameObject);
-                Set(popup, "_reward", amount);
-                Set(popup, "_rewardIcon", coinIcon);
-                Set(popup, "_coinSack", S("UI_Icon_Reward_CoinSack_CC"));
-                Set(popup, "_coinChest", S("UI_Icon_Reward_CoinChest_CC"));
                 Set(popup, "_details", details);
-                Set(popup, "_double", doubleButton);
                 Set(popup, "_close", close);
                 Set(popup, "_primary", primary);
                 Set(popup, "_optionTemplate", option);

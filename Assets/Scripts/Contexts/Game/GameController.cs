@@ -44,6 +44,10 @@ namespace Project.Contexts.Game
         [SerializeField] private BoosterBar _boosters;
         [SerializeField] private DifficultyTag _difficulty;
         [SerializeField] private SettingsMenu _settings;
+        // The HUD coin counter and its icon, where a win's coins land.
+        [SerializeField] private EconomyHud _coinHud;
+        [SerializeField] private RectTransform _coinTarget;
+        [SerializeField] private Sprite _coinSprite;
 
         // Empty two-slot tube, at most two per try.
         private const int ExtraTubeCapacity = 2;
@@ -72,7 +76,6 @@ namespace Project.Contexts.Game
         private int _level;
         // At least one move was made in this try (undo does not clear it); ending the try then costs a life.
         private bool _tryHasMoves;
-        private bool _rewardedWatched;
         private BoosterInventory _inventory;
         private int _extraTubes;
         // Armed Free Move: the next transfer onto a different open color uses it and pays only then.
@@ -130,6 +133,12 @@ namespace Project.Contexts.Game
         }
 
         public void Exit() => _states.ChangeState(GameState.Idle);
+
+        // From a won level straight into the next one's board, built for the saved level.
+        public void NextLevel()
+        {
+            if (_states.CurrentKey == GameState.Won) _states.ChangeState(GameState.Playing);
+        }
 
         private void OnEnable()
         {
@@ -783,26 +792,57 @@ namespace Project.Contexts.Game
             public WonState(GameController controller) => _c = controller;
 
             public override void Enter()
+        // No result panel: the win's coins fly into the HUD counter, then the next level (or Home) follows by itself.
             {
                 _c.Deselect();
+            // Coins on screen per win, and the beat after the last one lands before moving on.
+            private const int MinFlyingCoins = 4;
+            private const int MaxFlyingCoins = 10;
+            private const float CoinStagger = 0.05f;
+            private const float CoinFlight = 0.6f;
+            private const float AfterCollect = 0.35f;
+
                 _c._ads.EndActivePlay();
-                _c._rewardedWatched = false;
+            private LevelResult _result;
                 _c._board.PlayResult(true);
-                var result = _c._progress.CompleteLevel();
-                // Popup, win cue and delivery sound wait for the last tube's completion to play out.
-                PrimeTween.Tween.Delay(this, _c._board.WinPopupDelay, state => state.ShowResult(result));
+                _result = _c._progress.CompleteLevel();
+                // The counter leaves the new coins out until they land.
+                if (_c._coinHud != null) _c._coinHud.Hold(_result.TotalCoins);
+                // Win cue and coins wait for the celebration to reach its ribbon.
+                PrimeTween.Tween.Delay(this, _c._board.WinPopupDelay, state => state.Collect());
             }
 
-            public override void Exit() => PrimeTween.Tween.StopAll(this);
-
-            private void ShowResult(LevelResult result)
+            public override void Exit()
             {
-                _c._audio.PlayOneShotSound(WinSound(result.Difficulty));
+                PrimeTween.Tween.StopAll(this);
+                if (_c._coinHud != null) _c._coinHud.Hold(0);
+            }
+
+            private void Collect()
+            {
+                _c._audio.PlayOneShotSound(WinSound(_result.Difficulty));
                 _c._haptics.Haptic(HapticModule.HapticType.Heavy);
-                PlayRewardSound(result);
-                var options = new[] { new ResultOption(_c._loc.Get("common.continue"), () => ShowMetaTransition(result)) };
-                _c._popups.Show(_c._resultPopup, ResultArgs.Win(result, options,
-                    _c._progress.CanDoubleReward(result) ? (System.Action<System.Action<bool>>)(done => DoubleReward(result, done)) : null));
+                var coins = _result.TotalCoins;
+                var camera = Camera.main;
+                if (coins <= 0 || _c._coinTarget == null || _c._coinSprite == null || camera == null)
+                {
+                    PlayRewardSound(_result);
+                    if (_c._coinHud != null) _c._coinHud.Hold(0);
+                    PrimeTween.Tween.Delay(this, AfterCollect, state => state.ShowMetaTransition());
+                    return;
+                }
+
+                var count = Mathf.Clamp(coins / 10, MinFlyingCoins, MaxFlyingCoins);
+                var landed = 0;
+                // From the middle of the screen, where the ribbon sits; each landing adds its share to the counter.
+                CoinBurst.PlayFromWorld(camera.transform.position, camera, _c._coinTarget, _c._coinSprite, count, 110f, i =>
+                {
+                    if (landed++ == 0) PlayRewardSound(_result);
+                    if (_c._coinHud != null) _c._coinHud.Release(coins * (i + 1) / count - coins * i / count);
+                    _c._haptics.Haptic(HapticModule.HapticType.Light);
+                });
+                var done = (count - 1) * CoinStagger + CoinFlight + AfterCollect;
+                PrimeTween.Tween.Delay(this, done, state => state.ShowMetaTransition());
             }
 
             private static string WinSound(LevelDifficulty difficulty) => difficulty switch
@@ -829,19 +869,8 @@ namespace Project.Contexts.Game
                 _c._audio.PlayOneShotSound(sound);
             }
 
-            private void DoubleReward(LevelResult result, System.Action<bool> done)
-            {
-                _c._ads.ShowRewarded("double_reward", earned =>
-                {
-                    var doubled = earned && _c._progress.ClaimDoubleReward(result);
-                    _c._rewardedWatched |= doubled;
-                    if (doubled) _c._audio.PlayOneShotSound("coin_double");
-                    done(doubled);
-                });
-            }
-
-            // Order after a win: result and reward, then the meta transition, then the road (Home).
-            private void ShowMetaTransition(LevelResult result)
+            // Order after a win: coins, then the meta transition, then the road (Home) or the next chain level.
+            private void ShowMetaTransition()
             {
                 if (!result.MetaChanged)
                 {
@@ -849,6 +878,7 @@ namespace Project.Contexts.Game
                     return;
                 }
 
+                var result = _result;
                 var body = result.CampaignFinal
                     ? _c._loc.Get("meta.final_body")
                     : _c._loc.Format("meta.period_body", result.MetaPeriod);
@@ -860,8 +890,9 @@ namespace Project.Contexts.Game
 
             private void LeaveToRoad(LevelResult result)
             {
-                void GoHome() => _ = Services.Get<MainFlow>().GoHomeAsync();
-                _c._ads.ShowLevelEndInterstitial(result.Level, result.FirstWin, _c._rewardedWatched, GoHome);
+                var flow = Services.Get<MainFlow>();
+                void Next() => _ = CampaignRules.ChainsAfterWin(result.Level) ? flow.NextLevelAsync() : flow.GoHomeAsync();
+                _c._ads.ShowLevelEndInterstitial(result.Level, result.FirstWin, Next);
             }
         }
     }

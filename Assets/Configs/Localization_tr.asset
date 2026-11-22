@@ -69,10 +69,6 @@ MonoBehaviour:
     Value: 'Çok Zor'
   - Key: result.base
     Value: 'Bölüm ödülü: +{0}'
-  - Key: result.road
-    Value: 'Yol ödülü: {0}'
-  - Key: result.double
-    Value: '2x coin (reklam)'
   - Key: meta.period
     Value: 'Dönem {0} · sonraki {1}. bölümden sonra'
   - Key: meta.period_title
