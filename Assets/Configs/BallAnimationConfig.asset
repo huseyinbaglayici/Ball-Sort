@@ -387,7 +387,7 @@ MonoBehaviour:
   BallWaveDuration: 0.16
   BallWaveStagger: 0.04
   BallWaveLand: 0.5
-  WinPopupDelay: 2.95
+  WinPopupDelay: 3.05
   CompleteGlowColor: {r: 1, g: 0.858, b: 0.179, a: 0.85}
   CompleteGlowIn: 0.12
   CompleteGlowHold: 0.1
@@ -399,7 +399,7 @@ MonoBehaviour:
     RingDelay: 0.05
     RingFrom: 1.1
     RingTo: 0.04
-    RingTime: 0.45
+    RingTime: 0.3
     RingAspect: 0.3
     RingTurn: 40
     FlashSize: 0.9
@@ -417,7 +417,7 @@ MonoBehaviour:
     MascotRest: {x: 0, y: -0.02}
     MascotFrom: {x: 0.75, y: -0.6}
     MascotLean: 18
-    MascotSquash: {x: 1.12, y: 0.88}
+    MascotSquash: {x: 1.25, y: 0.78}
     MascotSquashTime: 0.09
     MascotRecover: 0.22
     MascotBob: 0.03
@@ -435,6 +435,12 @@ MonoBehaviour:
     LetterPeak: 1.6
     LetterTilt: 8
     LetterWave: 0.04
+    SalvoGap: 0.2
+    CometCount: 4
+    StarCount: 7
+    OrbSparkCount: 28
+    RingCount: 5
+    StardustCount: 40
     AfterPanel: 0.5
   Result:
     LoseDelay: 0.1

@@ -234,7 +234,7 @@ namespace Project.Contexts.Game.Sort
         public float BallWaveStagger = 0.04f;
         [Range(0f, 1f)] public float BallWaveLand = 0.5f;
         [Tooltip("When the last tube completes, the win popup waits this long so the win beat over the board plays out (see WinFx.PanelAt).")]
-        public float WinPopupDelay = 2.95f;
+        public float WinPopupDelay = 3.05f;
         [Tooltip("As the cap lands, an additive glow around the tube flashes up in this color and fades out.")]
         public Color CompleteGlowColor = new(1f, 0.858f, 0.179f, 0.85f);
         public float CompleteGlowIn = 0.12f;

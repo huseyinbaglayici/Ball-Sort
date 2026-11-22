@@ -31,6 +31,12 @@ namespace Project.Contexts.Game.Items
         [SerializeField] private SpriteRenderer _glowFar;
         [SerializeField] private ParticleSystem _dust;
         [SerializeField] private ParticleSystem _sparks;
+        // Salvos after the ribbon's slam.
+        [SerializeField] private ParticleSystem _comets;
+        [SerializeField] private ParticleSystem _stars;
+        [SerializeField] private ParticleSystem _orbSparks;
+        [SerializeField] private ParticleSystem _rings;
+        [SerializeField] private ParticleSystem _stardust;
         [SerializeField] private SkeletonAnimation _stage;
         [SerializeField] private MeshRenderer _stageRenderer;
         [SerializeField] private TMP_Text _ribbonText;
@@ -39,6 +45,7 @@ namespace Project.Contexts.Game.Items
         private static Sprite _dimSprite;
         private Action<WinFx> _onFinished;
         private WinFxSettings _w;
+        private readonly List<Color> _orbColors = new();
         // The screen in the board's units, so the stage reads the same on a narrow and a wide board.
         private float _view;
         private float _viewHeight;
@@ -60,7 +67,7 @@ namespace Project.Contexts.Game.Items
             var burst = ring + w.RingTime;
             var landed = burst + w.MascotDelay + w.MascotTime;
             var ribbon = landed + w.RibbonDelay;
-            return ribbon + Mathf.Max(w.RibbonTime, w.LetterDelay + w.LettersTime);
+            return ribbon + w.RibbonTime + w.LetterDelay + w.LettersTime;
         }
 
         // tubes: every tube on the board; origin: the one that completed last; width: the board's width in its own units.
@@ -90,7 +97,11 @@ namespace Project.Contexts.Game.Items
             var mascotAt = burstAt + w.MascotDelay;
             var landedAt = mascotAt + w.MascotTime;
             var ribbonAt = landedAt + w.RibbonDelay;
-            var lettersAt = ribbonAt + w.LetterDelay;
+            var slamAt = ribbonAt + w.RibbonTime;
+            var lettersAt = slamAt + w.LetterDelay;
+            _orbColors.Clear();
+            foreach (var tube in tubes)
+                if (tube.BallCount > 0 && !_orbColors.Contains(tube.Balls[0].Color)) _orbColors.Add(tube.Balls[0].Color);
 
             Sweep(w, f, ringAt);
             PrimeTween.Tween.Delay(this, burstAt, fx => fx.Burst(w, f));
@@ -98,8 +109,13 @@ namespace Project.Contexts.Game.Items
             PrepareStage(w);
             PrimeTween.Tween.Delay(this, burstAt, fx => fx.PlayStage());
             PrimeTween.Tween.Delay(this, lettersAt, fx => fx._letters.Play(0f, w));
+            for (var i = 0; i < 3; i++)
+            {
+                var salvo = i;
+                PrimeTween.Tween.Delay(this, slamAt + w.SalvoGap * i, fx => fx.Salvo(salvo, w, f));
+            }
 
-            var total = Mathf.Max(panelAt + w.AfterPanel, lettersAt + w.LettersTime + Tail);
+            var total = Mathf.Max(panelAt + w.AfterPanel, Mathf.Max(lettersAt + w.LettersTime, slamAt + w.SalvoGap * 2f + 3f) + Tail);
             PrimeTween.Tween.Delay(this, total, fx => fx.Finish());
         }
 
@@ -177,6 +193,66 @@ namespace Project.Contexts.Game.Items
             }
         }
 
+        // 0: comets and star pops from the right; 1: comets and orb-coloured sparks from the left; 2: orbit rings and stardust over the middle.
+        private void Salvo(int index, WinFxSettings w, FinishFxSettings f)
+        {
+            var scale = _view / 10f;
+            var side = index == 0 ? 1f : -1f;
+            if (index < 2)
+            {
+                for (var i = 0; i < w.CometCount; i++)
+                {
+                    var from = new Vector3(side * _view * UnityEngine.Random.Range(0.38f, 0.5f), -_viewHeight * UnityEngine.Random.Range(0.3f, 0.42f), 0f);
+                    var velocity = new Vector3(-side * UnityEngine.Random.Range(3f, 5f), UnityEngine.Random.Range(14f, 18f), 0f) * scale;
+                    Emit(_comets, from, velocity, i % 2 == 0 ? f.Gold : f.Core, UnityEngine.Random.Range(0.28f, 0.4f), UnityEngine.Random.Range(1.1f, 1.5f));
+                }
+            }
+            if (index == 0)
+            {
+                for (var i = 0; i < w.StarCount; i++)
+                    Emit(_stars, Spot(0.1f, 0.48f, 0.08f, 0.42f), Vector3.zero, i % 3 == 0 ? f.Gold : Color.white, UnityEngine.Random.Range(0.6f, 1f), UnityEngine.Random.Range(0.5f, 0.7f));
+            }
+            else if (index == 1)
+            {
+                for (var i = 0; i < w.OrbSparkCount; i++)
+                {
+                    var from = new Vector3(side * _view * 0.45f, _viewHeight * UnityEngine.Random.Range(0.05f, 0.15f), 0f);
+                    var velocity = new Vector3(-side * UnityEngine.Random.Range(3f, 8f), UnityEngine.Random.Range(4f, 9f), 0f) * scale;
+                    var color = _orbColors.Count > 0 ? _orbColors[i % _orbColors.Count] : f.Violet;
+                    Emit(_orbSparks, from, velocity, Color.Lerp(color, Color.white, 0.1f), UnityEngine.Random.Range(0.2f, 0.34f), UnityEngine.Random.Range(1f, 1.5f));
+                }
+                for (var i = 0; i < w.StarCount; i++)
+                    Emit(_stars, Spot(-0.48f, -0.1f, 0.08f, 0.42f), Vector3.zero, i % 3 == 0 ? f.Gold : Color.white, UnityEngine.Random.Range(0.6f, 1f), UnityEngine.Random.Range(0.5f, 0.7f));
+            }
+            else
+            {
+                for (var i = 0; i < w.RingCount; i++)
+                    Emit(_rings, Spot(-0.4f, 0.4f, 0.3f, 0.46f), Vector3.zero, i % 2 == 0 ? f.Violet : f.Core, UnityEngine.Random.Range(0.8f, 1.2f), UnityEngine.Random.Range(0.7f, 0.9f));
+                for (var i = 0; i < w.StardustCount; i++)
+                {
+                    var from = new Vector3(UnityEngine.Random.Range(-0.5f, 0.5f) * _view, _viewHeight * UnityEngine.Random.Range(0.45f, 0.6f), 0f);
+                    var velocity = new Vector3(UnityEngine.Random.Range(-0.4f, 0.4f), -UnityEngine.Random.Range(1f, 2.2f), 0f) * scale;
+                    var pick = UnityEngine.Random.value;
+                    Emit(_stardust, from, velocity, pick < 0.5f ? f.Core : pick < 0.8f ? f.Violet : f.Gold, UnityEngine.Random.Range(0.08f, 0.16f), UnityEngine.Random.Range(2f, 3f));
+                }
+            }
+        }
+
+        // A random spot in a band of the screen, in shares of its width and height.
+        private Vector3 Spot(float x0, float x1, float y0, float y1) =>
+            new(_view * UnityEngine.Random.Range(x0, x1), _viewHeight * UnityEngine.Random.Range(y0, y1), 0f);
+
+        private static void Emit(ParticleSystem system, Vector3 at, Vector3 velocity, Color color, float size, float life) =>
+            system.Emit(new ParticleSystem.EmitParams
+            {
+                position = at,
+                velocity = velocity,
+                startColor = color,
+                startSize = size,
+                startLifetime = life,
+                applyShapeToPosition = false,
+            }, 1);
+
         // Deep indigo over the whole screen behind the tubes, from the burst on.
         private void Dim(WinFxSettings w, FinishFxSettings f, float at)
         {
@@ -202,7 +278,7 @@ namespace Project.Contexts.Game.Items
             stage.localRotation = Quaternion.identity;
             stage.localScale = Vector3.one * scale;
             _ribbonText.text = Services.TryGet<LocalizationService>(out var loc) ? loc.Get("result.win") : "Great!";
-            _ribbonText.fontSizeMax = w.RibbonFontSize;
+            _ribbonText.fontSize = w.RibbonFontSize;
             _ribbonText.alpha = 1f;
         }
 
@@ -253,6 +329,11 @@ namespace Project.Contexts.Game.Items
             HideRing();
             _dust.Clear();
             _sparks.Clear();
+            _comets.Clear();
+            _stars.Clear();
+            _orbSparks.Clear();
+            _rings.Clear();
+            _stardust.Clear();
         }
 
         public override void OnDespawn()

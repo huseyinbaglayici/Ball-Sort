@@ -19,7 +19,7 @@ namespace Project.Contexts.Game.Sort
         public float RingDelay = 0.05f;
         public float RingFrom = 1.1f;
         public float RingTo = 0.04f;
-        public float RingTime = 0.45f;
+        public float RingTime = 0.3f;
         [Range(0.1f, 1f)] public float RingAspect = 0.3f;
         [Tooltip("The ring turns this many degrees while it closes.")]
         public float RingTurn = 40f;
@@ -47,7 +47,7 @@ namespace Project.Contexts.Game.Sort
         public Vector2 MascotFrom = new(0.75f, -0.6f);
         public float MascotLean = 18f;
         [Tooltip("Landing squash, then a slow bob while it waits for the panel.")]
-        public Vector2 MascotSquash = new(1.12f, 0.88f);
+        public Vector2 MascotSquash = new(1.25f, 0.78f);
         public float MascotSquashTime = 0.09f;
         public float MascotRecover = 0.22f;
         public float MascotBob = 0.03f;
@@ -60,11 +60,11 @@ namespace Project.Contexts.Game.Sort
         public float RibbonWidth = 0.85f;
         public float RibbonGap = 0.02f;
         public float RibbonDrop = 0.1f;
-        [Tooltip("The title's largest size; it shrinks to fit the ribbon's face.")]
+        [Tooltip("The title's layout size; the letters are then scaled onto the ribbon's face, so it only sets the glyph detail.")]
         public float RibbonFontSize = 14f;
 
         [Header("Title letters")]
-        [Tooltip("From the ribbon's start: the letters pop in one after another, all within this time, each pop this long.")]
+        [Tooltip("From the ribbon's settle: the letters pop in one after another, all within this time, each pop this long.")]
         public float LetterDelay = 0.08f;
         public float LettersTime = 0.5f;
         public float LetterPopTime = 0.2f;
@@ -73,6 +73,15 @@ namespace Project.Contexts.Game.Sort
         public float LetterPeak = 1.6f;
         public float LetterTilt = 8f;
         [Range(0f, 0.2f)] public float LetterWave = 0.04f;
+
+        [Header("Salvos")]
+        [Tooltip("From the ribbon's slam, three salvos this far apart: comets and stars from the right, comets and orb sparks from the left, rings and stardust over the middle.")]
+        public float SalvoGap = 0.2f;
+        public int CometCount = 4;
+        public int StarCount = 7;
+        public int OrbSparkCount = 28;
+        public int RingCount = 5;
+        public int StardustCount = 40;
 
         [Header("Hand-off")]
         [Tooltip("The effect ends this long after the panel opens; the panel's dim already covers it.")]

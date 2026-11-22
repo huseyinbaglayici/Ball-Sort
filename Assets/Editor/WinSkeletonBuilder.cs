@@ -33,7 +33,7 @@ namespace Project.Editor
         private static readonly Vector2 ArmRPivot = new(355f, 268f);
         private static readonly Vector2 OrbPivot = new(447f, 180f);
         private const float HeadTopPx = 80f;
-        private const float RibbonBandLift = 0.07f;
+        private const float RibbonBandLift = 0.153f;
         private static readonly string[] MascotSlots = { "body", "armL", "head", "antenna", "armR", "orb" };
 
         private sealed class Part
@@ -178,7 +178,7 @@ namespace Project.Editor
             var attachments = new Dictionary<string, object>
             {
                 ["flash"] = Region("halo", Vector2.zero, regions["halo"]),
-                // The ribbon hangs a little under its bone, so the title that follows the bone sits on the banner's flat band.
+                // The ribbon hangs under its bone so the bone sits on the middle of its face, measured on the art; the title follows the bone.
                 ["ribbon"] = Region("ribbon", new Vector2(0f, -ribbonSize.y * RibbonBandLift), ribbonSize),
             };
             for (var i = 0; i < SparkCount; i++)
@@ -272,9 +272,11 @@ namespace Project.Editor
             var landAt = inAt + w.MascotTime;
             var ribbonAt = landAt + w.RibbonDelay;
             var ribbonEnd = ribbonAt + w.RibbonTime;
-            var end = ribbonEnd + Mathf.Max(0.1f, w.LetterDelay + w.LettersTime - w.RibbonTime + 0.1f);
+            // The letters land on the settled ribbon, after its slam.
+            var end = ribbonEnd + w.LetterDelay + w.LettersTime + 0.1f;
             var flashTime = Mathf.Max(w.FlashTime, 0.1f);
             var squashEnd = landAt + w.MascotSquashTime + w.MascotRecover;
+            var sq = w.MascotSquash;
 
             // Flight share and the lean into the heading, upright at the landing.
             float Flight(float t) => Mathf.Clamp01((t - inAt) / Mathf.Max(w.MascotTime, 0.0001f));
@@ -282,7 +284,12 @@ namespace Project.Editor
             {
                 var k = OutCubic(Flight(t));
                 var u = 1f - k;
-                return u * u * s.From + 2f * u * k * s.Control + k * k * s.Rest;
+                var at = u * u * s.From + 2f * u * k * s.Control + k * k * s.Rest;
+                // Two decaying hops after the landing.
+                var d = t - landAt;
+                if (d > 0.12f && d < 0.32f) at.y += 28f * Mathf.Sin(Mathf.PI * (d - 0.12f) / 0.2f);
+                else if (d >= 0.34f && d < 0.48f) at.y += 10f * Mathf.Sin(Mathf.PI * (d - 0.34f) / 0.14f);
+                return at;
             }
             float Lean(float t)
             {
@@ -299,18 +306,33 @@ namespace Project.Editor
                 if (d <= 0f) return 0f;
                 return amplitude * Mathf.Exp(-d * damping) * Mathf.Sin(d * Mathf.PI * 2f / period);
             }
+            // Impact squash, a stretch back up, then two smaller bounces on the hops.
             Vector2 MascotScale(float t)
             {
                 if (t < landAt) return Vector2.one * Mathf.Lerp(0.8f, 1f, OutCubic(Flight(t)));
                 var d = t - landAt;
-                if (d < w.MascotSquashTime) return Vector2.Lerp(Vector2.one, w.MascotSquash, OutQuad(d / Mathf.Max(w.MascotSquashTime, 0.0001f)));
-                var k = Mathf.Clamp01((d - w.MascotSquashTime) / Mathf.Max(w.MascotRecover, 0.0001f));
-                return Vector2.LerpUnclamped(w.MascotSquash, Vector2.one, OutBack(k));
+                var hit = Mathf.Max(w.MascotSquashTime, 0.02f);
+                return new Vector2(
+                    Env(d, (0f, 1f), (hit, sq.x), (0.16f, 2f - sq.x * 0.85f), (0.26f, 1.1f), (0.34f, 0.96f), (0.42f, 1.04f), (0.5f, 1f)),
+                    Env(d, (0f, 1f), (hit, sq.y), (0.16f, 2f - sq.y * 0.9f), (0.26f, 0.92f), (0.34f, 1.05f), (0.42f, 0.97f), (0.5f, 1f)));
             }
-            float RibbonK(float t) => OutBack(Mathf.Clamp01((t - ribbonAt) / Mathf.Max(w.RibbonTime, 0.0001f)));
+            // The ribbon slams in: far past full size, squashed flat on impact, stretched back and settled sharp.
+            float RibbonK(float t) => Mathf.Clamp01((t - ribbonAt) / Mathf.Max(w.RibbonTime, 0.0001f));
+            Vector2 RibbonScale(float t)
+            {
+                var k = RibbonK(t);
+                return new Vector2(
+                    Env(k, (0f, 0.37f), (0.45f, 1.25f), (0.6f, 1.12f), (0.78f, 0.95f), (0.9f, 1.03f), (1f, 1f)),
+                    Env(k, (0f, 0.37f), (0.45f, 1.25f), (0.6f, 0.86f), (0.78f, 1.06f), (0.9f, 0.98f), (1f, 1f)));
+            }
+            float RibbonDropK(float t)
+            {
+                var k = RibbonK(t);
+                return Env(k, (0f, 1f), (0.45f, -0.04f), (0.6f, 0.02f), (0.78f, -0.015f), (1f, 0f));
+            }
 
             var flightTimes = Times(inAt, landAt, Samples);
-            var landTimes = Times(landAt, squashEnd, 8);
+            var landTimes = Times(landAt, Mathf.Max(squashEnd, landAt + 0.5f), 14);
             var bounceTimes = Times(landAt, landAt + 0.6f, 10);
             var mascotTimes = Join(new[] { 0f }, flightTimes, landTimes, new[] { end });
             var bones = new Dictionary<string, object>
@@ -333,8 +355,8 @@ namespace Project.Editor
                     Vector2.one * (s.FlashScale * (t < 0.12f ? OutCubic(t / 0.12f) : 1f + 0.25f * Mathf.Clamp01((t - 0.12f) / flashTime))),
                     Join(Times(0f, flashTime, 6), new[] { end }), 1f))),
                 ["ribbon"] = Dict(
-                    ("translate", Keys2(t => new Vector2(0f, s.RibbonY + s.RibbonDrop * (1f - RibbonK(t))), Join(new[] { 0f }, Times(ribbonAt, ribbonEnd, 8), new[] { end }))),
-                    ("scale", Keys2(t => Vector2.one * (s.RibbonScale * Mathf.LerpUnclamped(0.7f, 1f, RibbonK(t))), Join(new[] { 0f }, Times(ribbonAt, ribbonEnd, 8), new[] { end }), 1f)),
+                    ("translate", Keys2(t => new Vector2(0f, s.RibbonY + s.RibbonDrop * RibbonDropK(t)), Join(new[] { 0f }, Times(ribbonAt, ribbonEnd, 12), new[] { end }))),
+                    ("scale", Keys2(t => RibbonScale(t) * s.RibbonScale, Join(new[] { 0f }, Times(ribbonAt, ribbonEnd, 12), new[] { end }), 1f)),
                     // A small damped wobble while the letters land on it.
                     ("rotate", Keys1(t => t <= ribbonEnd ? 0f : 3f * Mathf.Exp(-(t - ribbonEnd) * 5f) * Mathf.Sin((t - ribbonEnd) * Mathf.PI * 2f / 0.36f),
                         Join(new[] { 0f, ribbonEnd }, Times(ribbonEnd, end, 10))))),
@@ -355,8 +377,8 @@ namespace Project.Editor
             {
                 ["flash"] = Dict(("alpha", Keys1(t => t < 0.08f ? t / 0.08f : Mathf.Clamp01(1f - (t - 0.08f) / (flashTime - 0.08f)) * 0.75f,
                     Join(new[] { 0f, 0.08f }, Times(0.08f, flashTime, 4), new[] { end })))),
-                ["ribbon"] = Dict(("alpha", Keys1(t => Mathf.Clamp01((t - ribbonAt) / Mathf.Max(w.RibbonTime * 0.3f, 0.0001f)),
-                    new[] { 0f, ribbonAt, ribbonAt + w.RibbonTime * 0.3f, end }))),
+                ["ribbon"] = Dict(("alpha", Keys1(t => Mathf.Clamp01((t - ribbonAt) / Mathf.Max(w.RibbonTime * 0.2f, 0.0001f)),
+                    new[] { 0f, ribbonAt, ribbonAt + w.RibbonTime * 0.2f, end }))),
             };
             foreach (var part in MascotSlots)
                 slots[part] = Dict(("alpha", Keys1(t => Mathf.Clamp01((t - inAt) / 0.06f), new[] { 0f, inAt, inAt + 0.06f, end })));
@@ -473,6 +495,19 @@ namespace Project.Editor
             var dict = new Dictionary<string, object>();
             foreach (var (key, value) in entries) dict[key] = value;
             return dict;
+        }
+
+        // A value through keyed points, eased between neighbours; held outside.
+        private static float Env(float at, params (float time, float value)[] keys)
+        {
+            if (at <= keys[0].time) return keys[0].value;
+            for (var i = 1; i < keys.Length; i++)
+            {
+                if (at > keys[i].time) continue;
+                var k = (at - keys[i - 1].time) / Mathf.Max(keys[i].time - keys[i - 1].time, 0.0001f);
+                return Mathf.Lerp(keys[i - 1].value, keys[i].value, 0.5f - 0.5f * Mathf.Cos(Mathf.PI * k));
+            }
+            return keys[keys.Length - 1].value;
         }
 
         private static float OutCubic(float t) => 1f - Mathf.Pow(1f - Mathf.Clamp01(t), 3f);
