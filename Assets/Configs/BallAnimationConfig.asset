@@ -442,8 +442,8 @@ MonoBehaviour:
   Boosters:
     UncapTime: 0.16
     UncapLift: 0.5
-    AppearTime: 1.6
-    DescentHeight: 3.2
+    AppearTime: 0.75
+    DescentHeight: 2.6
     DescentSide: 0.5
     DescentScaleFrom: 0.82
     DescentFadeShare: 0.45

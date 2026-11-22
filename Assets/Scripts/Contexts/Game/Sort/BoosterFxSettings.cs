@@ -22,9 +22,9 @@ namespace Project.Contexts.Game.Sort
 
         [Header("Extra tube")]
         [Tooltip("From the booster press to the settled tube; the descent takes what the touchdown squash and settle leave.")]
-        public float AppearTime = 1.6f;
+        public float AppearTime = 0.75f;
         [Tooltip("The new tube starts this far above its place and this far to the side, then glides down on a soft arc.")]
-        public float DescentHeight = 3.2f;
+        public float DescentHeight = 2.6f;
         public float DescentSide = 0.5f;
         [Tooltip("It grows from this share of its size and fades in over this share of the descent.")]
         [Range(0f, 1f)] public float DescentScaleFrom = 0.82f;
