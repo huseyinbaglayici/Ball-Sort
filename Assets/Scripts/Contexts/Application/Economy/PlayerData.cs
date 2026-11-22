@@ -24,6 +24,26 @@ namespace Project.Contexts.Application.Economy
         public long UtcTicks;
     }
 
+    // Day numbers are local calendar days (DateTime.Date ticks / ticks per day); 0 = never.
+    [Serializable]
+    public sealed class DailyRewardModel
+    {
+        // Days claimed in the current 7-day run.
+        public int Streak;
+        public int LastClaimDay;
+        public int LastAutoShownDay;
+    }
+
+    [Serializable]
+    public sealed class OrbitRushModel
+    {
+        // Index of the event window the progress belongs to.
+        public int Window = -1;
+        public int Wins;
+        // Bit per milestone.
+        public int Claimed;
+    }
+
     // One file so a win's coins, road reward and next level are written together.
     [Serializable]
     public sealed class ProgressModel
@@ -53,6 +73,8 @@ namespace Project.Contexts.Application.Economy
         public int TryId;
         // A try with a receipt can never buy or apply another continue.
         public ContinueReceipt LastContinue = new();
+        public DailyRewardModel Daily = new();
+        public OrbitRushModel OrbitRush = new();
     }
 
     // Batch() defers writes so one logical change is one file write.
@@ -136,6 +158,18 @@ namespace Project.Contexts.Application.Economy
             if (model.LastContinue == null)
             {
                 model.LastContinue = new ContinueReceipt();
+                changed = true;
+            }
+
+            if (model.Daily == null)
+            {
+                model.Daily = new DailyRewardModel();
+                changed = true;
+            }
+
+            if (model.OrbitRush == null)
+            {
+                model.OrbitRush = new OrbitRushModel();
                 changed = true;
             }
 

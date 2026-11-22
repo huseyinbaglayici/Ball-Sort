@@ -159,6 +159,8 @@ namespace Project.Contexts.Application
                 model.Lives = new LivesModel();
                 model.NoAds = false;
                 model.FirstInterstitialSeen = false;
+                model.Daily = new DailyRewardModel();
+                model.OrbitRush = new OrbitRushModel();
                 _wallet.TrySpend(_wallet.Coins);
                 _wallet.Add(CampaignRules.StartingCoins);
                 _lives.Refresh();
