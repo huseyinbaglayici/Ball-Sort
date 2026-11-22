@@ -41,7 +41,6 @@ namespace Project.Contexts.Game.Items
         // One renderer per chunk, each under a pivot at its seed so it turns about its own middle.
         [SerializeField] private SpriteRenderer[] _pieces;
 
-        private static MaterialPropertyBlock _block;
         private PrimeTween.Sequence _play;
         private float _haloAlpha;
         private float _badgeScale = 1f;
@@ -81,7 +80,7 @@ namespace Project.Contexts.Game.Items
                 piece.transform.localPosition = -seed;
                 piece.transform.localScale = stretch;
                 Shade(piece, origin);
-                SetVector(piece, PieceId, new Vector4(i, 0f, 0f, 1f));
+                RendererBlocks.SetVector(piece, PieceId, new Vector4(i, 0f, 0f, 1f));
                 // Away from the badge; its own chunk drops a little.
                 var away = (Vector2)(seed - badge);
                 _away[i] = away.sqrMagnitude < 0.01f ? new Vector2(0.15f, -0.35f) : away.normalized;
@@ -100,10 +99,8 @@ namespace Project.Contexts.Game.Items
 
         private static void Shade(Renderer renderer, Vector4 origin)
         {
-            renderer.GetPropertyBlock(_block ??= new MaterialPropertyBlock());
-            _block.SetVectorArray(ChunksId, Chunks);
-            _block.SetVector(CrackOriginId, origin);
-            renderer.SetPropertyBlock(_block);
+            RendererBlocks.SetVectorArray(renderer, ChunksId, Chunks);
+            RendererBlocks.SetVector(renderer, CrackOriginId, origin);
         }
 
         // A short tremble, the ice cracks out from the badge in beats, then breaks into chunks that tumble away.
@@ -144,9 +141,9 @@ namespace Project.Contexts.Game.Items
                 punch = config.FrozenPunch * Mathf.Max(0f, 1f - since / 0.15f);
             }
             transform.localScale = new Vector3(1f + w + punch, 1f - w + punch, 1f);
-            SetFloat(_frozen, CrackId, crack);
+            RendererBlocks.SetFloat(_frozen, CrackId, crack);
             var charge = Mathf.Clamp01((time - wobble) / Mathf.Max(config.MeltDuration - wobble, 0.0001f));
-            SetFloat(_frozen, ChargeId, charge * charge);
+            RendererBlocks.SetFloat(_frozen, ChargeId, charge * charge);
         }
 
         // The whole block gives way to its chunks.
@@ -179,11 +176,11 @@ namespace Project.Contexts.Game.Items
                 pivot.localRotation = rotation;
                 pivot.localScale = Vector3.one * Mathf.Lerp(1f, config.FrozenChunkShrink, k);
                 var facing = rotation * Vector3.back;
-                SetVector(piece, TiltId, new Vector4(facing.x, facing.y, -facing.z, 0f));
+                RendererBlocks.SetVector(piece, TiltId, new Vector4(facing.x, facing.y, -facing.z, 0f));
                 var dissolve = Mathf.SmoothStep(0f, 1f, (k - config.FrozenChunkDissolveAt) / Mathf.Max(1f - config.FrozenChunkDissolveAt, 0.0001f));
                 piece.enabled = dissolve < 1f;
-                SetVector(piece, ClipId, clip);
-                SetFloat(piece, DissolveId, dissolve);
+                RendererBlocks.SetVector(piece, ClipId, clip);
+                RendererBlocks.SetFloat(piece, DissolveId, dissolve);
             }
 
             var holder = _pieces[0].transform.parent;
@@ -202,21 +199,6 @@ namespace Project.Contexts.Game.Items
                 layer.color = new Color(1f, 1f, 1f, layer == _badgeOuterGlow ? alpha * _haloAlpha : alpha);
         }
 
-        // Read first: the renderer keeps its sprite texture in this block.
-        private static void SetFloat(Renderer renderer, int id, float value)
-        {
-            renderer.GetPropertyBlock(_block ??= new MaterialPropertyBlock());
-            _block.SetFloat(id, value);
-            renderer.SetPropertyBlock(_block);
-        }
-
-        private static void SetVector(Renderer renderer, int id, Vector4 value)
-        {
-            renderer.GetPropertyBlock(_block ??= new MaterialPropertyBlock());
-            _block.SetVector(id, value);
-            renderer.SetPropertyBlock(_block);
-        }
-
         // Back to the ice at rest without running callbacks.
         public void Stop()
         {
@@ -224,13 +206,13 @@ namespace Project.Contexts.Game.Items
             transform.localScale = Vector3.one;
             _frozen.enabled = true;
             _frozen.color = Color.white;
-            SetFloat(_frozen, CrackId, 0f);
-            SetFloat(_frozen, ChargeId, 0f);
+            RendererBlocks.SetFloat(_frozen, CrackId, 0f);
+            RendererBlocks.SetFloat(_frozen, ChargeId, 0f);
             for (var i = 0; i < _pieces.Length; i++)
             {
                 var piece = _pieces[i];
                 piece.enabled = false;
-                SetFloat(piece, DissolveId, 0f);
+                RendererBlocks.SetFloat(piece, DissolveId, 0f);
                 var pivot = piece.transform.parent;
                 pivot.localPosition = _rest[i];
                 pivot.localRotation = Quaternion.identity;

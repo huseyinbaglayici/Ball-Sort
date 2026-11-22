@@ -22,8 +22,6 @@ namespace Project.Contexts.Game.Items
         // The shell's two halves, above and below the crack.
         [SerializeField] private SpriteRenderer[] _halves;
 
-        private static MaterialPropertyBlock _block;
-
         // Every renderer, so the ball can sort them with its overlays.
         public Renderer[] Renderers
         {
@@ -49,8 +47,8 @@ namespace Project.Contexts.Game.Items
         // Crack light on the shell: reach along the line from the centre.
         public static void Crack(SpriteRenderer shell, float reach)
         {
-            SetFloat(shell, CrackId, reach);
-            SetFloat(shell, CrackLightId, 1f);
+            RendererBlocks.SetFloat(shell, CrackId, reach);
+            RendererBlocks.SetFloat(shell, CrackLightId, 1f);
         }
 
         // The shell is gone: its halves take over, crack fully lit along their edges.
@@ -58,8 +56,8 @@ namespace Project.Contexts.Game.Items
         {
             for (var i = 0; i < _halves.Length; i++)
             {
-                SetVector(_halves[i], HalfId, new Vector4(i == 0 ? 1f : -1f, 1f, 0f, 0f));
-                SetFloat(_halves[i], CrackId, 1f);
+                RendererBlocks.SetVector(_halves[i], HalfId, new Vector4(i == 0 ? 1f : -1f, 1f, 0f, 0f));
+                RendererBlocks.SetFloat(_halves[i], CrackId, 1f);
             }
         }
 
@@ -90,7 +88,7 @@ namespace Project.Contexts.Game.Items
                 t.localScale = Vector3.one * Mathf.Lerp(1f, config.HiddenBreakScale, out3);
                 t.localRotation = Quaternion.Euler(0f, 0f, config.HiddenShardSpin * out3 * (i == 0 ? -1f : 1f));
                 half.color = new Color(1f, 1f, 1f, alpha);
-                SetFloat(half, CrackLightId, 1f - out3);
+                RendererBlocks.SetFloat(half, CrackLightId, 1f - out3);
             }
             if (k >= 1f) HideHalves();
         }
@@ -99,7 +97,7 @@ namespace Project.Contexts.Game.Items
         public static void Flare(SpriteRenderer core, float amount)
         {
             var rest = core.sharedMaterial != null ? core.sharedMaterial.GetFloat(RimLightId) : 0.3f;
-            SetFloat(core, RimLightId, Mathf.Lerp(rest, 1f, amount));
+            RendererBlocks.SetFloat(core, RimLightId, Mathf.Lerp(rest, 1f, amount));
         }
 
         // A small gold glint on the orb's shoulder as it settles.
@@ -146,21 +144,6 @@ namespace Project.Contexts.Game.Items
             t.localPosition = new Vector3(position.x, position.y, t.localPosition.z);
             t.localScale = new Vector3(width / native.x, height / native.y, 1f);
             renderer.color = new Color(color.r, color.g, color.b, color.a * alpha);
-        }
-
-        // Read first: the renderer keeps its sprite texture, tone and portal cut in this block.
-        private static void SetFloat(Renderer renderer, int id, float value)
-        {
-            renderer.GetPropertyBlock(_block ??= new MaterialPropertyBlock());
-            _block.SetFloat(id, value);
-            renderer.SetPropertyBlock(_block);
-        }
-
-        private static void SetVector(Renderer renderer, int id, Vector4 value)
-        {
-            renderer.GetPropertyBlock(_block ??= new MaterialPropertyBlock());
-            _block.SetVector(id, value);
-            renderer.SetPropertyBlock(_block);
         }
     }
 }
