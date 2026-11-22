@@ -57,6 +57,7 @@ namespace Project.Contexts.Game
         private int _left = -1;
         private int _right = -1;
         private Coroutine _start;
+        private PrimeTween.Tween _spawn;
         private PrimeTween.Sequence _tap;
 
         private void Awake()
@@ -75,6 +76,7 @@ namespace Project.Contexts.Game
             EventBus<BottleDeselected>.Subscribe(OnDeselected);
             EventBus<MoveMade>.Subscribe(OnMoveMade);
             EventBus<LevelLeft>.Subscribe(OnLevelLeft);
+            EventBus<LevelCompleted>.Subscribe(OnLevelCompleted);
         }
 
         private void OnDisable()
@@ -84,6 +86,7 @@ namespace Project.Contexts.Game
             EventBus<BottleDeselected>.Unsubscribe(OnDeselected);
             EventBus<MoveMade>.Unsubscribe(OnMoveMade);
             EventBus<LevelLeft>.Unsubscribe(OnLevelLeft);
+            EventBus<LevelCompleted>.Unsubscribe(OnLevelCompleted);
             Stop();
         }
 
@@ -187,6 +190,9 @@ namespace Project.Contexts.Game
 
         private void OnLevelLeft(LevelLeft _) => Stop();
 
+        // A win by any path (debug included) ends the lesson.
+        private void OnLevelCompleted(LevelCompleted _) => Stop();
+
         // A tick over every tube the lifted balls can go to, a cross over the rest.
         private void ShowMarks(int from)
         {
@@ -219,15 +225,22 @@ namespace Project.Contexts.Game
             _fingerOn = bottle;
             _finger.anchoredPosition = OnCanvas(_board.TubePoint(bottle, FingerOnTube.x, FingerOnTube.y));
             _finger.gameObject.SetActive(true);
-            _tap.Stop();
-            PrimeTween.Tween.StopAll(_finger);
+            StopHand();
             _finger.localScale = Vector3.one * SpawnFrom;
-            _tap = PrimeTween.Sequence.Create()
-                .Chain(PrimeTween.Tween.Scale(_finger, 1f, SpawnDuration, PrimeTween.Ease.OutBack))
-                .Chain(PrimeTween.Sequence.Create(cycles: -1)
-                    .ChainDelay(TapRest)
-                    .Chain(PrimeTween.Tween.Scale(_finger, PressScale, PressDuration, PrimeTween.Ease.OutQuad))
-                    .Chain(PrimeTween.Tween.Scale(_finger, 1f, ReleaseDuration, PrimeTween.Ease.OutQuad)));
+            _spawn = PrimeTween.Tween.Scale(_finger, 1f, SpawnDuration, PrimeTween.Ease.OutBack)
+                .OnComplete(this, tutorial => tutorial.StartTapLoop());
+        }
+
+        private void StartTapLoop() =>
+            _tap = PrimeTween.Sequence.Create(cycles: -1)
+                .ChainDelay(TapRest)
+                .Chain(PrimeTween.Tween.Scale(_finger, PressScale, PressDuration, PrimeTween.Ease.OutQuad))
+                .Chain(PrimeTween.Tween.Scale(_finger, 1f, ReleaseDuration, PrimeTween.Ease.OutQuad));
+
+        private void StopHand()
+        {
+            _spawn.Stop();
+            _tap.Stop();
         }
 
         private void ShowLine(string key)
@@ -248,8 +261,7 @@ namespace Project.Contexts.Game
 
         private void HideAll()
         {
-            _tap.Stop();
-            PrimeTween.Tween.StopAll(_finger);
+            StopHand();
             _fingerOn = -1;
             _finger.gameObject.SetActive(false);
             _line.gameObject.SetActive(false);
