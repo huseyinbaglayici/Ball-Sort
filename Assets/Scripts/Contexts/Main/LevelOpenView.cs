@@ -44,6 +44,9 @@ namespace Project.Contexts.Main
 
         public bool IsRunning { get; private set; }
 
+        // Both masks are set up; without them the flow uses the plain loading overlay.
+        public bool IsReady => _shader != null && _closeShader != null && _settings != null;
+
         // The view starts inactive, so it sets itself up on first use rather than in Awake.
         private void Init()
         {

@@ -35,6 +35,8 @@ namespace Project.Contexts.Main
         private PoolService _pools;
         private AudioManager _audio;
         private bool _busy;
+        // A switch asked for while another runs; it starts as soon as that one ends.
+        private MainState _pending = MainState.None;
 
         public MainState Current => _states.CurrentKey ?? MainState.None;
 
@@ -81,19 +83,25 @@ namespace Project.Contexts.Main
             finally
             {
                 _busy = false;
+                RunPending();
             }
         }
 
         private async Awaitable SwitchAsync(MainState next)
         {
-            if (_busy || Current == next) return;
+            if (_busy)
+            {
+                _pending = next;
+                return;
+            }
+            if (Current == next) return;
 
             _busy = true;
             try
             {
                 _popups.CloseAll();
                 // Without the portal (or an orb to grow from) the overlay still covers the switch.
-                if (_levelOpen == null || _levelOpen.IsRunning || _home.Orb == null)
+                if (_levelOpen == null || !_levelOpen.IsReady || _levelOpen.IsRunning || _home.Orb == null)
                 {
                     await _overlay.ShowAsync();
                     _states.ChangeState(next);
@@ -109,7 +117,15 @@ namespace Project.Contexts.Main
             finally
             {
                 _busy = false;
+                RunPending();
             }
+        }
+
+        private void RunPending()
+        {
+            var next = _pending;
+            _pending = MainState.None;
+            if (next != MainState.None && next != Current) _ = SwitchAsync(next);
         }
 
         private sealed class HomeState : State

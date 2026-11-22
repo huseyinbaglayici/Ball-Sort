@@ -90,6 +90,11 @@ namespace Project.Contexts.Game
                 {
                     return;
                 }
+                catch (System.Exception e)
+                {
+                    Debug.LogException(e);
+                    report = null;
+                }
                 if (search.IsCancellationRequested || _c._states.CurrentKey != GameState.Lost || window != _window) return;
                 _searchMs = (Time.realtimeSinceStartup - started) * 1000f;
                 _report = report;
@@ -197,7 +202,7 @@ namespace Project.Contexts.Game
             }
 
             // Once only: a second tap while Home opens must not take another life.
-            private void Leave()
+            public void Leave()
             {
                 if (_c._leaving) return;
                 _c._leaving = true;

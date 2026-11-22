@@ -6,6 +6,7 @@ using Project.Contexts.Application.Economy;
 using Project.Contexts.Game.Items;
 using Project.Contexts.Game.Levels;
 using Project.Contexts.Game.Sort;
+using Project.Contexts.Main;
 using Project.Core.Audio;
 using Project.Core.Debugging;
 using Project.Core.Events;
@@ -44,6 +45,7 @@ namespace Project.Contexts.Game
         [SerializeField] private Sprite _coinSprite;
 
         private readonly StateMachine<GameState> _states = new();
+        private LostState _lost;
         // Mechanic outcome sounds of the move that just landed (filled by MechanicSounds, played in order).
         private readonly System.Collections.Generic.List<string> _soundEvents = new();
         private ItemFactory _factory;
@@ -100,7 +102,7 @@ namespace Project.Contexts.Game
             _states.Add(GameState.Idle, new IdleState(this))
                    .Add(GameState.Playing, new PlayingState(this))
                    .Add(GameState.Won, new WonState(this))
-                   .Add(GameState.Lost, new LostState(this));
+                   .Add(GameState.Lost, _lost = new LostState(this));
             _states.ChangeState(GameState.Idle);
         }
 
@@ -158,6 +160,9 @@ namespace Project.Contexts.Game
         private void OnApplicationPause(bool paused)
         {
             if (!paused) _resumed = true;
+            if (_states.CurrentKey != GameState.Playing) return;
+            if (paused) _ads.EndActivePlay();
+            else _ads.BeginActivePlay();
         }
 
         private void BeginLevel()
@@ -168,6 +173,7 @@ namespace Project.Contexts.Game
             if (data == null)
             {
                 Debug.LogError("[Game] No level found. Import levels, then run Tools > Project > Rebuild Level Catalog.");
+                _ = Services.Get<MainFlow>().GoHomeAsync();
                 return;
             }
 

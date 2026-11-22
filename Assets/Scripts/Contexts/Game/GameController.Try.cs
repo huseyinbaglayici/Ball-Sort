@@ -31,8 +31,8 @@ namespace Project.Contexts.Game
         {
             // The winning move is already made; its result comes next.
             if (_states.CurrentKey == GameState.Playing && _winPending) return;
-            var costsLife = _states.CurrentKey == GameState.Playing && _tryHasMoves && !_lives.IsUnlimited &&
-                            _lives.Count > 0;
+            var inTry = _states.CurrentKey is GameState.Playing or GameState.Lost;
+            var costsLife = inTry && _tryHasMoves && !_lives.IsUnlimited && _lives.Count > 0;
             if (!costsLife)
             {
                 Quit();
@@ -48,6 +48,11 @@ namespace Project.Contexts.Game
         // A try with a move costs a life if one is left.
         private void Quit()
         {
+            if (_states.CurrentKey == GameState.Lost)
+            {
+                _lost.Leave();
+                return;
+            }
             if (_states.CurrentKey == GameState.Playing)
             {
                 if (_winPending || _leaving) return;

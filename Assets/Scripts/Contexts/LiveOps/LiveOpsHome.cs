@@ -106,7 +106,15 @@ namespace Project.Contexts.LiveOps
         {
             await Awaitable.WaitForSecondsAsync(_autoShowDelay);
             if (this == null || !isActiveAndEnabled) return;
-            if (Services.TryGet<MainFlow>(out var flow) && (flow.Current != MainState.Home || flow.IsSwitching)) return;
+            if (Services.TryGet<MainFlow>(out var flow))
+            {
+                while (flow.IsSwitching)
+                {
+                    await Awaitable.NextFrameAsync();
+                    if (this == null || !isActiveAndEnabled) return;
+                }
+                if (flow.Current != MainState.Home) return;
+            }
 
             if (_rush.TryTakeFinish(out var stages, out var coins))
                 _popups.Show(_messagePopup, new MessageArgs("rush.finish_title",

@@ -39,7 +39,8 @@ namespace Project.Editor
         // Open records Home to board from a Play press; close records board to Home; restart records the board rebuilding.
         private static void Record(int width, int height, bool open, bool restart = false)
         {
-            var flow = EditorApplication.isPlaying ? Services.Get<MainFlow>() : null;
+            MainFlow flow = null;
+            if (EditorApplication.isPlaying) Services.TryGet(out flow);
             if (flow == null || flow.Current != (open ? MainState.Home : MainState.Game))
             {
                 Debug.LogError($"[LevelOpen] Play the game and stay on {(open ? "Home" : "the board")} first.");

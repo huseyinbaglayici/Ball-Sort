@@ -42,11 +42,17 @@ namespace Project.Core.StateMachine
             }
 
             _transitioning = true;
-            _current?.Exit();
-            _current = next;
-            CurrentKey = key;
-            _current.Enter();
-            _transitioning = false;
+            try
+            {
+                Run(_current, s => s.Exit());
+                _current = next;
+                CurrentKey = key;
+                Run(_current, s => s.Enter());
+            }
+            finally
+            {
+                _transitioning = false;
+            }
 
             if (_pending is { } queued)
             {
@@ -56,5 +62,18 @@ namespace Project.Core.StateMachine
         }
 
         public void Tick(float deltaTime) => _current?.Tick(deltaTime);
+
+        private static void Run(State state, Action<State> step)
+        {
+            if (state == null) return;
+            try
+            {
+                step(state);
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+            }
+        }
     }
 }
