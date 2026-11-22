@@ -79,9 +79,9 @@ namespace Project.Contexts.Main
                 else if (next == MainState.Game)
                 {
                     _home.Leave();
-                    await _levelOpen.OpenAsync(_home.Orb, () => _states.ChangeState(next));
+                    await _levelOpen.OpenAsync(_home.Orb, _home.Push, () => _states.ChangeState(next));
                 }
-                else await _levelOpen.CloseAsync(_home.Orb, () => _states.ChangeState(next));
+                else await _levelOpen.CloseAsync(_home.Orb, _home.Push, () => _states.ChangeState(next));
             }
             finally
             {

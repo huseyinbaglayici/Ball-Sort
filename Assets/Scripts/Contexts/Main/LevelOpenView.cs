@@ -18,6 +18,11 @@ namespace Project.Contexts.Main
         private static readonly int RadiusId = Shader.PropertyToID("_Radius");
         private static readonly int FeatherId = Shader.PropertyToID("_Feather");
         private static readonly int ColorId = Shader.PropertyToID("_Color");
+        private static readonly int RimInnerId = Shader.PropertyToID("_RimInner");
+        private static readonly int RimOuterId = Shader.PropertyToID("_RimOuter");
+        private static readonly int RimWidthId = Shader.PropertyToID("_RimWidth");
+        private static readonly int RimAlphaId = Shader.PropertyToID("_RimAlpha");
+        private static readonly int DimId = Shader.PropertyToID("_Dim");
 
         private RectTransform _rect;
         private CanvasGroup _group;
@@ -25,6 +30,7 @@ namespace Project.Contexts.Main
         private Material _material;
         private Canvas _canvas;
         private RectTransform _orb;
+        private Action<float> _push;
         private Vector2 _centre;
         private float _orbRadius;
         private float _coverRadius;
@@ -46,18 +52,21 @@ namespace Project.Contexts.Main
         }
 
         // Darkens around the orb, runs onCovered (the level is built unseen), then reveals it out of the orb.
-        public Awaitable OpenAsync(RectTransform orb, Action onCovered)
+        // push gets the Home content's scale as the view moves into the orb.
+        public Awaitable OpenAsync(RectTransform orb, Action<float> push, Action onCovered)
         {
             Init();
             _orb = orb;
+            _push = push;
             return RunAsync(_settings.OpenTotal, EvaluateOpen, onCovered);
         }
 
-        // Shrinks the level into the orb's spot, runs onCovered, then clears off Home.
-        public Awaitable CloseAsync(RectTransform orb, Action onCovered)
+        // Shrinks the level into the orb's spot, runs onCovered, then clears off Home as it pulls back out.
+        public Awaitable CloseAsync(RectTransform orb, Action<float> push, Action onCovered)
         {
             Init();
             _orb = orb;
+            _push = push;
             return RunAsync(_settings.CloseTotal, EvaluateClose, onCovered);
         }
 
@@ -101,8 +110,10 @@ namespace Project.Contexts.Main
             var s = _settings;
             var darken = Easing.Evaluate(Mathf.Clamp01(t / s.DarkenTime), Ease.OutQuad);
             var grow = Easing.Evaluate(Mathf.Clamp01((t - s.DarkenTime) / s.GrowTime), Ease.InOutSine);
+            // Home moves into the orb over the whole open; the inside is dimmest as the hole starts to grow.
+            _push?.Invoke(1f + s.PushScale * Easing.Evaluate(Mathf.Clamp01(t / s.OpenTotal), Ease.InOutSine));
             if (t >= s.DarkenTime) Switch();
-            Apply(Mathf.LerpUnclamped(_orbRadius, _coverRadius, grow), darken);
+            Apply(Mathf.LerpUnclamped(_orbRadius, _coverRadius, grow), darken, s.Dim * darken * (1f - grow));
         }
 
         private void EvaluateClose(float t)
@@ -111,15 +122,23 @@ namespace Project.Contexts.Main
             var shrink = Easing.Evaluate(Mathf.Clamp01(t / s.ShrinkTime), Ease.InOutSine);
             var clear = Easing.Evaluate(Mathf.Clamp01((t - s.ShrinkTime) / s.ClearTime), Ease.OutQuad);
             if (t >= s.ShrinkTime) Switch();
-            Apply(Mathf.LerpUnclamped(_coverRadius, _orbRadius, shrink), 1f - clear);
+            // Home shows pushed in and pulls back out as the dark clears.
+            if (_switched) _push?.Invoke(1f + s.PushScale * (1f - clear));
+            Apply(Mathf.LerpUnclamped(_coverRadius, _orbRadius, shrink), 1f - clear, s.Dim * shrink);
         }
 
-        private void Apply(float radius, float alpha)
+        private void Apply(float radius, float alpha, float dim)
         {
-            var feather = Mathf.Max(radius * _settings.FeatherShare, _settings.FeatherMin);
+            var s = _settings;
+            var feather = Mathf.Max(radius * s.FeatherShare, s.FeatherMin);
             _material.SetFloat(RadiusId, radius + feather);
             _material.SetFloat(FeatherId, feather);
-            _material.SetColor(ColorId, _settings.Dark);
+            _material.SetColor(ColorId, s.Dark);
+            _material.SetColor(RimInnerId, s.RimInner);
+            _material.SetColor(RimOuterId, s.RimOuter);
+            _material.SetFloat(RimWidthId, s.RimWidth);
+            _material.SetFloat(RimAlphaId, s.RimAlpha);
+            _material.SetFloat(DimId, dim);
             _image.color = new Color(1f, 1f, 1f, alpha);
         }
 

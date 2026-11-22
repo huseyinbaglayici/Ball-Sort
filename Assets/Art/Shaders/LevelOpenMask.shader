@@ -11,6 +11,12 @@ Shader "UI/LevelOpenMask"
         _Size ("Size", Vector) = (1, 1, 0, 0)
         _Radius ("Radius", Float) = 0
         _Feather ("Feather", Float) = 1
+        // Thin rim where the feather starts, violet inside to white-cyan outside; dim tints the clear inside.
+        _RimInner ("Rim Inner", Color) = (0.55, 0.35, 1, 1)
+        _RimOuter ("Rim Outer", Color) = (0.75, 0.97, 1, 1)
+        _RimWidth ("Rim Width", Float) = 3
+        _RimAlpha ("Rim Alpha", Float) = 0.35
+        _Dim ("Dim", Float) = 0
     }
     SubShader
     {
@@ -45,6 +51,11 @@ Shader "UI/LevelOpenMask"
             float4 _Size;
             float _Radius;
             float _Feather;
+            fixed4 _RimInner;
+            fixed4 _RimOuter;
+            float _RimWidth;
+            float _RimAlpha;
+            float _Dim;
 
             v2f vert(appdata v)
             {
@@ -58,10 +69,15 @@ Shader "UI/LevelOpenMask"
             fixed4 frag(v2f i) : SV_Target
             {
                 float d = distance(i.uv * _Size.xy, _Center.xy);
-                float cover = smoothstep(_Radius - _Feather, _Radius, d);
-                fixed4 c = _Color * i.color;
-                c.a *= cover;
-                return c;
+                float edge = _Radius - _Feather;
+                float cover = max(smoothstep(edge, _Radius, d), _Dim);
+                float across = saturate((d - edge) / (2.0 * _RimWidth) + 0.5);
+                float band = (1.0 - saturate(abs(d - edge) / _RimWidth)) * _RimAlpha;
+                fixed3 rim = lerp(_RimInner.rgb, _RimOuter.rgb, across);
+                // Dark cover first, the rim laid over it.
+                float a = cover + band - cover * band;
+                fixed3 rgb = a > 0.0001 ? (_Color.rgb * cover * (1.0 - band) + rim * band) / a : _Color.rgb;
+                return fixed4(rgb, a) * i.color;
             }
             ENDCG
         }

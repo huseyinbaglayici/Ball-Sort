@@ -21,6 +21,17 @@ namespace Project.Contexts.Main
         public float FeatherShare = 0.35f;
         public float FeatherMin = 80f;
         public Color Dark = new(0.03f, 0.02f, 0.09f, 1f);
+        [Tooltip("Thin rim where the soft edge starts: violet inside to white-cyan outside, in units, low alpha.")]
+        public Color RimInner = new(0.55f, 0.35f, 1f, 1f);
+        public Color RimOuter = new(0.75f, 0.97f, 1f, 1f);
+        public float RimWidth = 3f;
+        public float RimAlpha = 0.35f;
+
+        [Header("Feel")]
+        [Tooltip("Home content pushes in by this share as the hole grows, and pulls back as the dark clears.")]
+        public float PushScale = 0.04f;
+        [Tooltip("The clear inside is dimmed this much when the hole starts to move, recovering as it settles.")]
+        public float Dim = 0.12f;
 
         public float OpenTotal => DarkenTime + GrowTime;
         public float CloseTotal => ShrinkTime + ClearTime;

@@ -12,7 +12,7 @@ namespace Project.Editor
     // In Play on Home: presses Play and saves one game-view frame every 50 ms of the level-open to Recordings/LevelOpen.
     public static class LevelOpenRecorder
     {
-        private const string Folder = "Recordings/LevelOpen/v2";
+        private const string Folder = "Recordings/LevelOpen/v3";
         private const float Step = 0.05f;
         private const int Frames = 32;
 
