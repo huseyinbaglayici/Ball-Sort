@@ -86,7 +86,7 @@ MonoBehaviour:
       Key: 
       Fuse: 0
       FuseLit: 0
-    - Color: 9
+    - Color: -1
       Kind: 0
       Hidden: 0
       Key: 
@@ -164,7 +164,7 @@ MonoBehaviour:
       Key: 
       Fuse: 0
       FuseLit: 0
-    - Color: 9
+    - Color: 1
       Kind: 0
       Hidden: 0
       Key: 
@@ -178,13 +178,13 @@ MonoBehaviour:
       Key: 
       Fuse: 0
       FuseLit: 0
-    - Color: 1
+    - Color: 9
       Kind: 0
       Hidden: 0
       Key: 
       Fuse: 0
       FuseLit: 0
-    - Color: 2
+    - Color: -1
       Kind: 0
       Hidden: 0
       Key: 
@@ -292,13 +292,13 @@ MonoBehaviour:
       Key: 
       Fuse: 0
       FuseLit: 0
-    - Color: -1
+    - Color: 2
       Kind: 0
       Hidden: 0
       Key: 
       Fuse: 0
       FuseLit: 0
-    - Color: -1
+    - Color: 9
       Kind: 0
       Hidden: 0
       Key: 

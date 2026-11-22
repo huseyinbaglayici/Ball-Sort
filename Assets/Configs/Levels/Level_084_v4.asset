@@ -216,7 +216,7 @@ MonoBehaviour:
       Key: 
       Fuse: 0
       FuseLit: 0
-    - Color: 10
+    - Color: -1
       Kind: 0
       Hidden: 0
       Key: 
@@ -382,7 +382,7 @@ MonoBehaviour:
       Key: 
       Fuse: 0
       FuseLit: 0
-    - Color: -1
+    - Color: 10
       Kind: 0
       Hidden: 0
       Key: 

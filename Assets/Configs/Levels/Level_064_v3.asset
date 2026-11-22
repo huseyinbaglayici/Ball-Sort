@@ -80,13 +80,13 @@ MonoBehaviour:
       Key: 
       Fuse: 0
       FuseLit: 0
-    - Color: 6
+    - Color: 4
       Kind: 0
       Hidden: 0
       Key: 
       Fuse: 0
       FuseLit: 0
-    - Color: 0
+    - Color: -1
       Kind: 0
       Hidden: 0
       Key: 
@@ -132,7 +132,7 @@ MonoBehaviour:
       Key: 
       Fuse: 0
       FuseLit: 0
-    - Color: 4
+    - Color: -1
       Kind: 0
       Hidden: 0
       Key: 
@@ -224,7 +224,7 @@ MonoBehaviour:
       FuseLit: 0
   - Position: {x: 4.7, y: 6.8}
     Slots:
-    - Color: 4
+    - Color: 6
       Kind: 0
       Hidden: 0
       Key: 
@@ -356,13 +356,13 @@ MonoBehaviour:
       Key: 
       Fuse: 0
       FuseLit: 0
-    - Color: -1
+    - Color: 0
       Kind: 0
       Hidden: 0
       Key: 
       Fuse: 0
       FuseLit: 0
-    - Color: -1
+    - Color: 4
       Kind: 0
       Hidden: 0
       Key: 
