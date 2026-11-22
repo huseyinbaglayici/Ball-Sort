@@ -42,19 +42,52 @@ namespace Project.Contexts.Game.Levels
                 if (unit > 0 && pair.Value % unit != 0)
                     errors.Add($"Color {pair.Key} has {pair.Value} items, must be a multiple of {unit}.");
 
-            foreach (var curtain in level.Curtains)
-                if (curtain.Bottle < 0 || curtain.Bottle >= bottles.Count) errors.Add($"A curtain is on missing bottle {curtain.Bottle + 1}.");
+            for (var b = 0; b < bottles.Count; b++)
+                if (!LevelRules.IsTubeCapacity(bottles[b].Capacity))
+                    errors.Add($"Bottle {b + 1} holds {bottles[b].Capacity}; tubes come in {string.Join("/", LevelRules.TubeCapacities)}.");
 
-            var keys = new HashSet<string>();
+            var rows = new Dictionary<int, int>();
             foreach (var bottle in bottles)
-            foreach (var slot in bottle.Slots)
-                if (!slot.IsEmpty && slot.IsKey) keys.Add(slot.Key);
+            {
+                var row = (int)System.Math.Round(bottle.Position.y * 100f);
+                rows.TryGetValue(row, out var inRow);
+                rows[row] = inRow + 1;
+            }
+            foreach (var row in rows.Values)
+                if (row > LevelRules.MaxPerRow) errors.Add($"A row has {row} bottles; at most {LevelRules.MaxPerRow} fit.");
+
+            var frozen = new HashSet<int>();
+            foreach (var curtain in level.Curtains)
+            {
+                if (curtain.Bottle < 0 || curtain.Bottle >= bottles.Count)
+                {
+                    errors.Add($"A frozen tube is on missing bottle {curtain.Bottle + 1}.");
+                    continue;
+                }
+                if (!frozen.Add(curtain.Bottle)) errors.Add($"Bottle {curtain.Bottle + 1} is frozen twice.");
+                colorCounts.TryGetValue(curtain.Color, out var have);
+                if (curtain.Need <= 0 || curtain.Need > have)
+                    errors.Add($"Frozen bottle {curtain.Bottle + 1} waits for {curtain.Need} of color {curtain.Color}, the level has {have}.");
+            }
+
+            // Key id -> bottle it starts in.
+            var keys = new Dictionary<string, int>();
+            for (var b = 0; b < bottles.Count; b++)
+                foreach (var slot in bottles[b].Slots)
+                    if (!slot.IsEmpty && slot.IsKey && !keys.TryAdd(slot.Key, b)) errors.Add($"Key {slot.Key} appears twice.");
+            var boxes = new HashSet<string>();
             foreach (var box in level.Lockboxes)
             {
-                if (!keys.Contains(box.Id)) errors.Add($"Lockbox {box.Id} has no key ball.");
+                if (string.IsNullOrEmpty(box.Id)) errors.Add("A lockbox has no id.");
+                else if (!boxes.Add(box.Id)) errors.Add($"Lockbox {box.Id} is defined twice.");
+                if (box.Bottles.Count == 0) errors.Add($"Lockbox {box.Id} closes no bottle.");
+                if (!keys.TryGetValue(box.Id ?? string.Empty, out var keyBottle)) errors.Add($"Lockbox {box.Id} has no key ball.");
+                else if (box.Bottles.Contains(keyBottle)) errors.Add($"Key {box.Id} starts inside a bottle its own box closes.");
                 foreach (var b in box.Bottles)
                     if (b < 0 || b >= bottles.Count) errors.Add($"Lockbox {box.Id} closes missing bottle {b + 1}.");
             }
+            foreach (var key in keys.Keys)
+                if (!boxes.Contains(key)) errors.Add($"Key {key} opens no lockbox.");
 
             if (!hasFreeSpace) errors.Add("Every bottle is full, no move is possible.");
         }

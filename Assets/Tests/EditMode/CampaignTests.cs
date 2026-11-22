@@ -15,7 +15,6 @@ namespace Project.Tests
     {
         private const string CatalogPath = "Assets/Configs/LevelCatalog.asset";
         private const string SolutionsPath = "Assets/Tests/EditMode/CampaignSolutions.json";
-        private static readonly int[] Capacities = { 4, 8, 12, 16 };
 
         [Serializable]
         private sealed class Solution
@@ -137,9 +136,9 @@ namespace Project.Tests
             var failures = new List<string>();
             foreach (var (_, _, level) in Boards())
             {
-                if (level.Bottles.Any(b => Array.IndexOf(Capacities, b.Capacity) < 0)) failures.Add($"{level.name}: capacity");
+                if (level.Bottles.Any(b => !LevelRules.IsTubeCapacity(b.Capacity))) failures.Add($"{level.name}: capacity");
                 var widest = level.Bottles.GroupBy(b => Mathf.Round(b.Position.y * 100f)).Max(row => row.Count());
-                if (widest > 6) failures.Add($"{level.name}: {widest} bottles in a row");
+                if (widest > LevelRules.MaxPerRow) failures.Add($"{level.name}: {widest} bottles in a row");
             }
             CollectionAssert.IsEmpty(failures);
         }

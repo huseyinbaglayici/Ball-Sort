@@ -28,14 +28,14 @@ namespace Project.Contexts.Game.Sort
             }
         }
 
-        // Cancelling counts as hitting the limit.
+        // Cancelling counts as hitting the limit; Unsolvable is only claimed once every reachable state was tried.
         public static Outcome Solve(SortBoard board, List<(int From, int To)> route, int nodeLimit = 200000,
             int timeoutMs = 0, int maxDepth = 400, CancellationToken cancel = default)
         {
             route.Clear();
             var search = new Search(board, route, nodeLimit, timeoutMs, maxDepth, cancel);
             if (search.Run()) return Outcome.Solved;
-            return search.LimitHit ? Outcome.LimitReached : Outcome.Unsolvable;
+            return search.LimitHit || search.DepthCut ? Outcome.LimitReached : Outcome.Unsolvable;
         }
 
         private sealed class Search
@@ -50,6 +50,8 @@ namespace Project.Contexts.Game.Sort
             private int _budget;
 
             public bool LimitHit { get; private set; }
+            // A line was cut at the depth cap, so the search did not see everything.
+            public bool DepthCut { get; private set; }
 
             public Search(SortBoard board, List<(int, int)> route, int nodeLimit, int timeoutMs, int maxDepth,
                 CancellationToken cancel)
@@ -65,7 +67,12 @@ namespace Project.Contexts.Game.Sort
             public bool Run()
             {
                 if (_board.IsSolved()) return true;
-                if (_board.IsFailed || _route.Count >= _maxDepth) return false;
+                if (_board.IsFailed) return false;
+                if (_route.Count >= _maxDepth)
+                {
+                    DepthCut = true;
+                    return false;
+                }
                 if (_budget-- <= 0 || _cancel.IsCancellationRequested ||
                     (_timeoutMs > 0 && _clock.ElapsedMilliseconds > _timeoutMs))
                 {
