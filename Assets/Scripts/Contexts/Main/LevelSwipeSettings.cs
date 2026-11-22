@@ -17,7 +17,5 @@ namespace Project.Contexts.Main
 
         [Tooltip("Travel as a share of the screen width, so the board leaves the screen whole.")]
         public float Distance = 1.1f;
-
-        public float Total => OutTime + InTime;
     }
 }

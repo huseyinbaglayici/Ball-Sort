@@ -15,10 +15,6 @@ MonoBehaviour:
   _languageCode: en
   _nativeName: English
   _entries:
-  - Key: home.title
-    Value: Orbit Sort
-  - Key: home.play
-    Value: Play
   - Key: home.level
     Value: Level {0}
   - Key: home.music
@@ -27,12 +23,8 @@ MonoBehaviour:
     Value: Sound
   - Key: home.haptics
     Value: Vibration
-  - Key: game.progress
-    Value: '{0} / {1}'
   - Key: result.win
     Value: 'Great!'
-  - Key: result.lose
-    Value: No moves left
   - Key: common.continue
     Value: Continue
   - Key: common.retry
@@ -67,8 +59,6 @@ MonoBehaviour:
     Value: 'Hard'
   - Key: level.super_hard
     Value: 'Super Hard'
-  - Key: result.base
-    Value: 'Level reward: +{0}'
   - Key: meta.period
     Value: 'Period {0} · next after level {1}'
   - Key: meta.period_title
@@ -79,10 +69,6 @@ MonoBehaviour:
     Value: 'Campaign complete'
   - Key: meta.final_body
     Value: 'All 100 levels won.'
-  - Key: home.starter_pack
-    Value: 'Starter pack'
-  - Key: home.challenge
-    Value: 'Challenge'
   - Key: offer.starter_title
     Value: 'Starter pack'
   - Key: offer.preview_body
@@ -97,22 +83,8 @@ MonoBehaviour:
     Value: 'A bomb exploded'
   - Key: fail.no_move
     Value: 'No moves left'
-  - Key: fail.checking
-    Value: 'Looking for a rescue…'
-  - Key: fail.no_offer
-    Value: 'No verified rescue for this board.'
-  - Key: undo.offer_stock
-    Value: 'Undo · {0} left'
-  - Key: undo.offer_coins
-    Value: 'Undo · {0} gold'
-  - Key: continue.offer
-    Value: '{0} gold · 4-slot tube{1}'
   - Key: continue.bomb
     Value: ' + {0} bomb +{1}'
-  - Key: continue.not_enough
-    Value: 'Continue needs {0} gold'
-  - Key: game.restart_life
-    Value: 'Restart · 1 life'
   - Key: color.0
     Value: 'red'
   - Key: color.1
@@ -155,18 +127,6 @@ MonoBehaviour:
     Value: 'Exit'
   - Key: result.failed
     Value: 'Level Failed!'
-  - Key: result.complete
-    Value: 'Level Complete!'
-  - Key: result.rewards
-    Value: 'Rewards:'
-  - Key: lives.full_short
-    Value: 'Full'
-  - Key: road.title
-    Value: 'Road reward'
-  - Key: road.body
-    Value: 'Win level {0} to get: {1}'
-  - Key: home.period
-    Value: 'Period {0}'
   - Key: settings.title
     Value: 'Settings'
   - Key: settings.language

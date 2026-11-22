@@ -78,7 +78,6 @@ namespace Project.Contexts.Game.Items
         // Ice over every tube layer, its badge orb and break FX above it.
         public const int FrozenOrder = 80;
         public const int FrozenBadgeOrder = 81;
-        public const int MeltOrder = 87;
         // Ball overlays share the rim's order; their depth keeps them in a fixed order on top of the body.
         public const int BallOverlayOrder = 6;
         public const float BallOverlayDepth = 0.001f;

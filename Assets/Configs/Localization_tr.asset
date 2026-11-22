@@ -15,10 +15,6 @@ MonoBehaviour:
   _languageCode: tr
   _nativeName: Türkçe
   _entries:
-  - Key: home.title
-    Value: Orbit Sort
-  - Key: home.play
-    Value: Oyna
   - Key: home.level
     Value: Seviye {0}
   - Key: home.music
@@ -27,12 +23,8 @@ MonoBehaviour:
     Value: Ses
   - Key: home.haptics
     Value: "Titre\u015Fim"
-  - Key: game.progress
-    Value: '{0} / {1}'
   - Key: result.win
     Value: 'Harika!'
-  - Key: result.lose
-    Value: "Hamle kalmadı"
   - Key: common.continue
     Value: Devam
   - Key: common.retry
@@ -67,8 +59,6 @@ MonoBehaviour:
     Value: 'Zor'
   - Key: level.super_hard
     Value: 'Çok Zor'
-  - Key: result.base
-    Value: 'Bölüm ödülü: +{0}'
   - Key: meta.period
     Value: 'Dönem {0} · sonraki {1}. bölümden sonra'
   - Key: meta.period_title
@@ -79,10 +69,6 @@ MonoBehaviour:
     Value: 'Kampanya tamamlandı'
   - Key: meta.final_body
     Value: '100 bölümün hepsi kazanıldı.'
-  - Key: home.starter_pack
-    Value: 'Başlangıç paketi'
-  - Key: home.challenge
-    Value: 'Challenge'
   - Key: offer.starter_title
     Value: 'Başlangıç paketi'
   - Key: offer.preview_body
@@ -97,22 +83,8 @@ MonoBehaviour:
     Value: 'Bomba patladı'
   - Key: fail.no_move
     Value: 'Hamle kalmadı'
-  - Key: fail.checking
-    Value: 'Kurtarma aranıyor…'
-  - Key: fail.no_offer
-    Value: 'Bu tahta için doğrulanmış kurtarma yok.'
-  - Key: undo.offer_stock
-    Value: 'Geri Al · {0} hak'
-  - Key: undo.offer_coins
-    Value: 'Geri Al · {0} gold'
-  - Key: continue.offer
-    Value: '{0} gold · 4''lü tüp{1}'
   - Key: continue.bomb
     Value: ' + {0} bombaya +{1}'
-  - Key: continue.not_enough
-    Value: 'Devam için {0} gold gerekir'
-  - Key: game.restart_life
-    Value: 'Yeniden · 1 can'
   - Key: color.0
     Value: 'kırmızı'
   - Key: color.1
@@ -155,18 +127,6 @@ MonoBehaviour:
     Value: 'Çıkış Yap'
   - Key: result.failed
     Value: 'Seviye Başarısız Oldu!'
-  - Key: result.complete
-    Value: 'Seviye Tamamlandı!'
-  - Key: result.rewards
-    Value: 'Ödüller:'
-  - Key: lives.full_short
-    Value: 'Dolu'
-  - Key: road.title
-    Value: 'Yol ödülü'
-  - Key: road.body
-    Value: '{0}. seviyeyi geç, kazan: {1}'
-  - Key: home.period
-    Value: 'Dönem {0}'
   - Key: settings.title
     Value: 'Ayarlar'
   - Key: settings.language

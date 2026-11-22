@@ -58,12 +58,5 @@ namespace Project.Contexts.Application.Economy
         };
 
         public static string LivesCount(LivesService lives) => lives.IsUnlimited ? "∞" : lives.Count.ToString();
-
-        // Lives pill's second line: unlimited time left, "Full", or time to the next life.
-        public static string LivesTimer(LivesService lives, LocalizationService loc)
-        {
-            if (lives.IsUnlimited) return Timer(lives.UnlimitedLeft);
-            return lives.Count >= CampaignRules.MaxLives ? loc.Get("lives.full_short") : Timer(lives.NextLifeIn);
-        }
     }
 }

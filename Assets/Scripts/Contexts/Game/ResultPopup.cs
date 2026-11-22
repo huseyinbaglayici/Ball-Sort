@@ -34,7 +34,6 @@ namespace Project.Contexts.Game
 
     public readonly struct ResultArgs
     {
-        public readonly int Level;
         // The first one is the big main button, the others smaller ones under it, in order.
         public readonly IReadOnlyList<ResultOption> Options;
         // Line under the status (why, lives, why an offer is missing).
@@ -42,16 +41,12 @@ namespace Project.Contexts.Game
         // The popup closes first. Null hides the X.
         public readonly Action Close;
 
-        private ResultArgs(int level, IReadOnlyList<ResultOption> options, string note, Action close)
+        public ResultArgs(IReadOnlyList<ResultOption> options, string note, Action close)
         {
-            Level = level;
             Options = options;
             Note = note;
             Close = close;
         }
-
-        public static ResultArgs Loss(int level, IReadOnlyList<ResultOption> options, string note, Action close) =>
-            new(level, options, note, close);
     }
 
     // The fail panel: ribbon, a picture in the well, the reason, then a main button and smaller ones under it.

@@ -81,7 +81,7 @@ namespace Project.Contexts.Preview
                 ("How to play", () => SettingsPage("_helpRow")),
                 ("Version toast", () => SettingsPage("_footer")),
                 ("Daily reward", DailyReward),
-                ("Info popup", () => Home(() => Click(Find<HomeScreen>(), "_challengeButton"))));
+                ("Info popup", () => Home(() => Click(Find<HomeScreen>(), "_starterPackButton"))));
             Add("Orbit Rush",
                 ("Race screen", () => Home(() => Call(Find<LiveOpsHome>(), "ShowOrbitRush"))),
                 ("Points fly in", RushCollect),

@@ -73,7 +73,6 @@ namespace Project.Contexts.Game.Sort
         public float WispLag = 0.12f;
         public float WispWidth = 0.08f;
         public float WispSide = 0.55f;
-        [Range(0f, 1f)] public float WispLift = 0.15f;
         [Tooltip("The last wisp leaves by this time, so tall tubes stagger faster; the glow dims to this share and comes back over this long as the cap seats.")]
         public float DrainEnd = 0.65f;
         [Range(0f, 1f)] public float DrainShare = 0.4f;
