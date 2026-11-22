@@ -189,10 +189,12 @@ namespace Project.Contexts.Game.Items
                 .Chain(PrimeTween.Tween.Custom(this, chargeAt, shake, Mathf.Max(shake - chargeAt, 0.0001f),
                     (ball, t) => ball.ChargeShell(t - chargeAt, t - crackAt, config)))
                 .ChainCallback(this, ball => ball.BreakShell(color, config))
-                .Insert(shake, PrimeTween.Tween.Custom(this, 0f, 1f, config.HiddenBreakDuration, (ball, k) => ball._revealFx.Shards(config, k)))
+                .Insert(shake, PrimeTween.Tween.Custom(this, 0f, 1f, config.HiddenBreakDuration, (ball, k) => ball._revealFx.Halves(config, k)))
                 .Insert(shake, PrimeTween.Tween.Custom(this, 0f, 1f, config.HiddenHorizonTime, (ball, k) => ball._revealFx.Hit(config, k)))
                 .Insert(orbAt, PrimeTween.Tween.Custom(this, 0f, 1f, config.HiddenOrbDuration,
                     (ball, k) => ball.SetPartsScale(Mathf.LerpUnclamped(config.HiddenOrbFrom, 1f, BackOut(k, config.HiddenOrbOvershoot)))))
+                .Insert(orbAt, PrimeTween.Tween.Custom(this, 0f, 1f, config.HiddenFlareTime,
+                    (ball, k) => ShellBreakFx.Flare(ball._core, k < 0.2f ? k / 0.2f : 1f - Mathf.SmoothStep(0f, 1f, (k - 0.2f) / 0.8f))))
                 .Insert(orbAt + config.HiddenOrbDuration * config.HiddenSparkAt, PrimeTween.Tween.Custom(this, 0f, 1f, config.HiddenSparkTime,
                     (ball, k) => ball._revealFx.Spark(config, k)))
                 .ChainCallback(this, ball => ball.EndReveal());
@@ -249,6 +251,7 @@ namespace Project.Contexts.Game.Items
         private void EndReveal()
         {
             if (_revealFx != null) _revealFx.Hide();
+            ShellBreakFx.Flare(_core, 0f);
             SetPartsScale(1f);
         }
 
@@ -259,6 +262,7 @@ namespace Project.Contexts.Game.Items
             {
                 _reveal.Stop();
                 SetPartsScale(1f);
+                ShellBreakFx.Flare(_core, 0f);
             }
             transform.localRotation = Quaternion.identity;
             if (_shell == null) return;

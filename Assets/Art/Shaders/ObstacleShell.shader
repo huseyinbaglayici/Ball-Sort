@@ -1,4 +1,4 @@
-// Hidden orb shell: dark violet energy, a slow meridian light band, a crack light; a wedge mask cuts shards from it.
+// Hidden orb shell: dark violet energy and a slow meridian light band; one bold crack lights up from the centre and splits it in halves.
 Shader "Project/Obstacle Shell"
 {
     Properties
@@ -16,12 +16,14 @@ Shader "Project/Obstacle Shell"
         _BandPeriod ("Light band period", Range(1, 10)) = 3.6
         _BandTravel ("Share of the period the band moves", Range(0.1, 1)) = 0.55
         _BandWave ("Band delay per world unit", Range(0, 1)) = 0.18
-        [PerRendererData] _Crack ("Crack reach (0 none, 1 whole shell)", Range(0, 1)) = 0
-        _CrackColor ("Crack light", Color) = (0.8, 0.97, 1, 1)
-        _CrackScale ("Crack cells across the shell", Range(1, 8)) = 2.4
-        _CrackWidth ("Crack line width", Range(0.01, 0.2)) = 0.035
-        // x start angle, y span (radians), z edge jag (radians), w on.
-        [PerRendererData] _Wedge ("Shard wedge", Vector) = (0, 0, 0, 0)
+        [PerRendererData] _Crack ("Crack reach (0 none, 1 whole line)", Range(0, 1)) = 0
+        [PerRendererData] _CrackLight ("Crack strength", Range(0, 1)) = 1
+        _CrackColor ("Crack light", Color) = (0.72, 0.96, 1, 1)
+        _CrackInk ("Crack ink", Color) = (0.1, 0.04, 0.26, 1)
+        _CrackWidth ("Crack line half width (sphere radii)", Range(0.01, 0.2)) = 0.06
+        _CrackInkWidth ("Crack ink width", Range(0, 0.1)) = 0.035
+        // x: +1 keeps the half above the crack, -1 the half below; y: on.
+        [PerRendererData] _Half ("Shell half", Vector) = (0, 0, 0, 0)
     }
 
     SubShader
@@ -45,10 +47,33 @@ Shader "Project/Obstacle Shell"
             #include "OrbCommon.cginc"
             #include "ObstacleCommon.cginc"
 
-            float4 _Sphere, _Wedge;
-            fixed4 _EnergyColor, _BandColor, _CrackColor;
+            float4 _Sphere, _Half;
+            fixed4 _EnergyColor, _BandColor, _CrackColor, _CrackInk;
             float _EnergyGain, _SwirlSpeed, _BandGain, _BandWidth, _BandPeriod, _BandTravel, _BandWave;
-            float _Crack, _CrackScale, _CrackWidth;
+            float _Crack, _CrackLight, _CrackWidth, _CrackInkWidth;
+
+            // The crack's zigzag across the sphere, left to right, in sphere radii; the halves part along it.
+            static const float2 Zig[6] =
+            {
+                float2(-1.2, 0.14), float2(-0.52, -0.12), float2(-0.16, 0.17),
+                float2(0.2, -0.13), float2(0.54, 0.11), float2(1.2, -0.06)
+            };
+            // Short side cracks from the zigzag's corners.
+            static const float4 Twig[3] =
+            {
+                float4(-0.16, 0.17, -0.32, 0.52), float4(0.2, -0.13, 0.36, -0.5), float4(-0.52, -0.12, -0.7, -0.4)
+            };
+
+            float ZigY(float x)
+            {
+                float y = Zig[0].y;
+                for (int k = 0; k < 5; k++)
+                {
+                    float t = saturate((x - Zig[k].x) / (Zig[k + 1].x - Zig[k].x));
+                    y = x >= Zig[k].x ? lerp(Zig[k].y, Zig[k + 1].y, t) : y;
+                }
+                return y;
+            }
 
             fixed4 frag(OrbV2f i) : SV_Target
             {
@@ -71,17 +96,23 @@ Shader "Project/Obstacle Shell"
                 float band = exp(-d * d) * step(t, 1) * inside * smoothstep(0, 0.35, nz);
                 rgb += _BandColor.rgb * band * _BandGain;
 
-                // The crack light grows from the centre: denser and brighter there, its lines thin.
-                float reach = _Crack * 1.3;
-                float front = smoothstep(reach, reach - 0.3, r) * step(1e-3, _Crack);
-                float lines = CrackLine(p * _CrackScale / (0.55 + r * 0.6), _CrackWidth);
-                rgb += _CrackColor.rgb * front * (lines * (1.3 - r * 0.6) + 0.06 * _Crack) * inside;
+                // The crack runs out from the centre both ways; its newest stretch burns white.
+                float crackDist = 1e3;
+                for (int k = 0; k < 5; k++) crackDist = min(crackDist, SegmentDistance(p, Zig[k], Zig[k + 1]));
+                for (int b = 0; b < 3; b++) crackDist = min(crackDist, SegmentDistance(p, Twig[b].xy, Twig[b].zw) + 0.012);
+                float taper = lerp(1, 0.55, saturate(r));
+                float3 stroke = CrackStroke(crackDist, _CrackWidth * taper, _CrackInkWidth);
+                float reach = _Crack * 1.15;
+                float aa = max(fwidth(r), 1e-4);
+                float shown = (1 - smoothstep(reach - aa, reach + aa, r)) * step(1e-3, _Crack);
+                float tip = 1 - saturate((reach - r) / 0.25);
+                rgb = ApplyCrack(rgb, stroke, shown * inside, tip, _CrackInk.rgb, _CrackColor.rgb, _CrackLight);
 
-                // Shards: one wedge of the art; its sides wander the same way for every wedge, so they fit.
-                float bend = _Wedge.z * (sin(r * 17) + 0.5 * sin(r * 31 + 1.7));
-                float a = frac((angle + bend - _Wedge.x) / 6.2832) * 6.2832;
-                float wedge = lerp(1, step(a, _Wedge.y), _Wedge.w);
-                return OrbPortal(rgb, tex.a * wedge, i.world);
+                // A half keeps its side of the zigzag.
+                float side = (p.y - ZigY(p.x)) * _Half.x;
+                float sa = max(fwidth(side), 1e-4);
+                float keep = lerp(1, smoothstep(-sa, sa, side), _Half.y);
+                return OrbPortal(rgb, tex.a * keep, i.world);
             }
             ENDCG
         }

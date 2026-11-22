@@ -1,4 +1,4 @@
-// Ice over a tube: frost on its sides, a slow diagonal light, a crack light from an origin; a band mask cuts it into pieces.
+// Ice over a tube: frost on its sides, a slow diagonal light; bold crack strokes run from the badge and become the cuts it splits along.
 Shader "Project/Obstacle Ice"
 {
     Properties
@@ -16,13 +16,17 @@ Shader "Project/Obstacle Ice"
         _ShineSlope ("Light drift slope", Range(0, 2)) = 0.8
         _CoolColor ("Cold tint", Color) = (0.62, 0.78, 1, 1)
         _CoolGain ("Cold tint strength", Range(0, 1)) = 0.12
-        [PerRendererData] _Crack ("Crack reach (0 none, 1 whole ice)", Range(0, 1)) = 0
-        [PerRendererData] _CrackGlow ("Crack light strength", Range(0, 2)) = 1
-        [PerRendererData] _CrackOrigin ("Crack origin uv", Vector) = (0.5, 0.5, 0, 0)
-        _CrackColor ("Crack light", Color) = (0.78, 0.97, 1, 1)
-        _CrackScale ("Crack cells across the ice", Range(1, 10)) = 2.2
-        _CrackWidth ("Crack line width", Range(0.01, 0.2)) = 0.035
-        // x lower cut v, y upper cut v, z jag, w on.
+        [PerRendererData] _Charge ("Charge (frost brightens before the hit)", Range(0, 1)) = 0
+        [PerRendererData] _Crack ("Crack reach (0 none, 1 every stroke)", Range(0, 1)) = 0
+        [PerRendererData] _CrackLight ("Crack strength", Range(0, 1)) = 1
+        [PerRendererData] _CrackOrigin ("Crack origin uv (the badge)", Vector) = (0.5, 0.5, 0, 0)
+        // x lower cut v, y upper cut v, z jag.
+        [PerRendererData] _Cuts ("Cut lines", Vector) = (0.34, 0.66, 0.025, 0)
+        _CrackColor ("Crack light", Color) = (0.42, 0.86, 1, 1)
+        _CrackInk ("Crack ink", Color) = (0.12, 0.2, 0.5, 1)
+        _CrackWidth ("Crack line half width in u", Range(0.002, 0.05)) = 0.02
+        _CrackInkWidth ("Crack ink width in u", Range(0, 0.05)) = 0.009
+        // x lower cut v, y upper cut v, w on.
         [PerRendererData] _Piece ("Piece band", Vector) = (0, 1, 0, 0)
     }
 
@@ -64,9 +68,18 @@ Shader "Project/Obstacle Ice"
 
             sampler2D _MainTex;
             float _HalfWidth, _Aspect, _FrostGain, _FrostPower, _ShineGain, _ShineWidth, _ShinePeriod, _ShineSlope, _CoolGain;
-            float _Crack, _CrackGlow, _CrackScale, _CrackWidth;
-            float4 _CrackOrigin, _Piece;
-            fixed4 _FrostColor, _ShineColor, _CoolColor, _CrackColor;
+            float _Charge, _Crack, _CrackLight, _CrackWidth, _CrackInkWidth;
+            float4 _CrackOrigin, _Cuts, _Piece;
+            fixed4 _FrostColor, _ShineColor, _CoolColor, _CrackColor, _CrackInk;
+
+            // Strokes from the badge's ring to the cuts, and short twigs off the cuts; x across, y up from the badge, in u.
+            static const float4 Strokes[8] =
+            {
+                float4(0.035, 0.27, -0.04, 0.34), float4(-0.04, 0.34, 0.02, 0.45),
+                float4(-0.03, -0.27, 0.045, -0.35), float4(0.045, -0.35, -0.02, -0.45),
+                float4(0.22, 0.44, 0.3, 0.66), float4(-0.25, 0.43, -0.31, 0.6),
+                float4(-0.2, -0.44, -0.28, -0.68), float4(0.26, -0.45, 0.33, -0.6)
+            };
 
             v2f vert(appdata v)
             {
@@ -78,10 +91,10 @@ Shader "Project/Obstacle Ice"
                 return o;
             }
 
-            // The jagged line between two pieces, the same for both.
+            // The jagged line between two pieces, the same for both and for its crack stroke.
             float Cut(float u, float v0, float jag)
             {
-                return v0 + jag * (sin(u * 23 + v0 * 40) * 0.6 + sin(u * 9 + v0 * 17) * 0.4);
+                return v0 + jag * (Zigzag(u * 2.6 + v0 * 7) * 0.7 + Zigzag(u * 6.1 + v0 * 13) * 0.3);
             }
 
             fixed4 frag(v2f i) : SV_Target
@@ -90,8 +103,9 @@ Shader "Project/Obstacle Ice"
                 float x = (i.uv.x - 0.5) / _HalfWidth;
                 fixed3 rgb = lerp(tex.rgb, tex.rgb * _CoolColor.rgb, _CoolGain);
 
-                // Frost brightens toward the sides like a rounded block.
-                rgb += _FrostColor.rgb * pow(saturate(abs(x)), _FrostPower) * _FrostGain;
+                // Frost brightens toward the sides like a rounded block, more while it charges.
+                rgb += _FrostColor.rgb * pow(saturate(abs(x)), _FrostPower) * _FrostGain * (1 + _Charge * 2);
+                rgb += _FrostColor.rgb * _Charge * 0.12;
 
                 // A faint diagonal light drifts up the ice now and then; tubes along a row follow a little later.
                 float s = i.uv.y * _Aspect * 0.5 + x * _ShineSlope;
@@ -99,19 +113,27 @@ Shader "Project/Obstacle Ice"
                 float d = (s - pos) / _ShineWidth;
                 rgb += _ShineColor.rgb * exp(-d * d) * _ShineGain;
 
-                // Crack light from the origin outward: small cells near it, wide ones far off, fading with distance.
-                float2 q = (i.uv - _CrackOrigin.xy) * float2(1, _Aspect);
-                float r = length(q) / (_Aspect * 0.55);
-                float reach = _Crack * 1.2;
-                float front = smoothstep(reach, reach - 0.25, r) * step(1e-3, _Crack);
-                float lines = CrackLine(q * _CrackScale / (0.25 + r * 0.9), _CrackWidth);
-                rgb += _CrackColor.rgb * front * (lines * 1.4 * (1 - 0.7 * saturate(r)) + 0.08) * _CrackGlow;
+                // Crack strokes in u units from the badge; the light runs along them out to the ends.
+                float2 q = float2(i.uv.x - _CrackOrigin.x, (i.uv.y - _CrackOrigin.y) * _Aspect);
+                float lo = Cut(i.uv.x, _Cuts.x, _Cuts.z);
+                float hi = Cut(i.uv.x, _Cuts.y, _Cuts.z);
+                float crackDist = min(abs(i.uv.y - lo), abs(i.uv.y - hi)) * _Aspect;
+                crackDist = lerp(1e3, crackDist, step(abs(q.x), _HalfWidth * 0.98));
+                for (int k = 0; k < 8; k++) crackDist = min(crackDist, SegmentDistance(q, Strokes[k].xy, Strokes[k].zw) + (k >= 4 ? 0.003 : 0));
+                float3 stroke = CrackStroke(crackDist, _CrackWidth, _CrackInkWidth);
+                float ay = abs(q.y);
+                float path = min(max(ay - 0.27, 0), 0.17) + abs(q.x) + max(ay - 0.44, 0);
+                float reach = _Crack * 0.95;
+                float aa = max(fwidth(path), 1e-4);
+                float shown = (1 - smoothstep(reach - aa, reach + aa, path)) * step(1e-3, _Crack) * step(0.25, length(q));
+                float tip = 1 - saturate((reach - path) / 0.12);
+                rgb = ApplyCrack(rgb, stroke, shown, tip, _CrackInk.rgb, _CrackColor.rgb, _CrackLight);
 
                 // Pieces: one band between two jagged cuts.
-                float lo = Cut(i.uv.x, _Piece.x, _Piece.z);
-                float hi = Cut(i.uv.x, _Piece.y, _Piece.z);
-                float aa = max(fwidth(i.uv.y), 1e-4);
-                float band = smoothstep(lo - aa, lo + aa, i.uv.y) * (1 - smoothstep(hi - aa, hi + aa, i.uv.y));
+                float pa = max(fwidth(i.uv.y), 1e-4);
+                float pieceLo = Cut(i.uv.x, _Piece.x, _Cuts.z);
+                float pieceHi = Cut(i.uv.x, _Piece.y, _Cuts.z);
+                float band = smoothstep(pieceLo - pa, pieceLo + pa, i.uv.y) * (1 - smoothstep(pieceHi - pa, pieceHi + pa, i.uv.y));
                 float alpha = tex.a * i.color.a * lerp(1, band, _Piece.w);
                 return fixed4(rgb * i.color.rgb * alpha, alpha);
             }

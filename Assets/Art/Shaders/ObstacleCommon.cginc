@@ -1,37 +1,39 @@
-// Shared by the obstacle shaders: a cheap cell pattern whose borders read as cracks.
+// Shared by the obstacle shaders: crack strokes drawn as bold cartoon lines, a dark ink edge round a lit core with a white heart.
 #ifndef OBSTACLE_COMMON_INCLUDED
 #define OBSTACLE_COMMON_INCLUDED
 
-float2 ObstacleHash2(float2 p)
+// Distance from p to segment ab.
+float SegmentDistance(float2 p, float2 a, float2 b)
 {
-    p = float2(dot(p, float2(127.1, 311.7)), dot(p, float2(269.5, 183.3)));
-    return frac(sin(p) * 43758.5453);
+    float2 pa = p - a;
+    float2 ba = b - a;
+    float h = saturate(dot(pa, ba) / dot(ba, ba));
+    return length(pa - ba * h);
 }
 
-// Distance to the nearest cell border (second minus first nearest feature).
-float CrackEdge(float2 p)
+// x: lit core, y: ink edge around it, z: white heart in the core; all crisp, antialiased.
+float3 CrackStroke(float d, float width, float ink)
 {
-    float2 n = floor(p);
-    float2 f = frac(p);
-    float f1 = 8, f2 = 8;
-    for (int j = -1; j <= 1; j++)
-    for (int i = -1; i <= 1; i++)
-    {
-        float2 g = float2(i, j);
-        float2 d = g + ObstacleHash2(n + g) * 0.8 + 0.1 - f;
-        float dd = dot(d, d);
-        if (dd < f1) { f2 = f1; f1 = dd; }
-        else if (dd < f2) f2 = dd;
-    }
-    return sqrt(f2) - sqrt(f1);
+    float aa = max(fwidth(d), 1e-4);
+    float core = 1 - smoothstep(width - aa, width + aa, d);
+    float edge = 1 - smoothstep(width + ink - aa, width + ink + aa, d);
+    float heart = 1 - smoothstep(width * 0.4 - aa, width * 0.4 + aa, d);
+    return float3(core, edge - core, heart);
 }
 
-// 1 on a crack line of the given width, antialiased.
-float CrackLine(float2 p, float width)
+// Shades a texel with a revealed stroke; the newest part of the line burns white, strength fades it.
+fixed3 ApplyCrack(fixed3 rgb, float3 stroke, float shown, float tip, fixed3 ink, fixed3 light, float strength)
 {
-    float e = CrackEdge(p);
-    float aa = max(fwidth(e), 1e-4);
-    return 1 - smoothstep(width - aa, width + aa, e);
+    float k = shown * strength;
+    rgb = lerp(rgb, ink, stroke.y * k);
+    rgb = lerp(rgb, lerp(light, fixed3(1, 1, 1), tip), stroke.x * k);
+    return lerp(rgb, fixed3(1, 1, 1), stroke.z * k);
+}
+
+// A sharp-cornered wave in -1..1.
+float Zigzag(float x)
+{
+    return abs(frac(x) - 0.5) * 4 - 1;
 }
 
 #endif

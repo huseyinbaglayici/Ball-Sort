@@ -3,104 +3,103 @@ using UnityEngine;
 
 namespace Project.Contexts.Game.Items
 {
-    // A hidden ball's reveal: orbit ring and crack light on the shell, then shards, a horizon ring and a gold glint.
+    // A hidden ball's reveal: a ring snaps in, one crack lights up across the shell, its halves part, the orb's rim flares, a gold glint.
     public sealed class ShellBreakFx : MonoBehaviour
     {
         private static readonly int CrackId = Shader.PropertyToID("_Crack");
-        private static readonly int WedgeId = Shader.PropertyToID("_Wedge");
+        private static readonly int CrackLightId = Shader.PropertyToID("_CrackLight");
+        private static readonly int HalfId = Shader.PropertyToID("_Half");
+        private static readonly int RimLightId = Shader.PropertyToID("_RimLight");
         // Ring flattening, as round the shutter's lock.
         private const float RingAspect = 0.32f;
-        // How far the shards' sides wander, in radians.
-        private const float ShardJag = 0.22f;
+        // Upper half rises a little to the right, lower half drops to the left.
+        private static readonly Vector3[] HalfPaths = { new(0.35f, 1f, 0f), new(-0.4f, -0.45f, 0f) };
 
         [SerializeField] private SpriteRenderer _ringNear;
         [SerializeField] private SpriteRenderer _ringFar;
-        [SerializeField] private SpriteRenderer _glow;
         [SerializeField] private SpriteRenderer _hot;
         [SerializeField] private SpriteRenderer _spark;
-        // Wedges of the shell.
-        [SerializeField] private SpriteRenderer[] _shards;
+        // The shell's two halves, above and below the crack.
+        [SerializeField] private SpriteRenderer[] _halves;
 
         private static MaterialPropertyBlock _block;
-        private readonly Vector3[] _shardDirections = new Vector3[3];
-        private float _shardSpin;
 
         // Every renderer, so the ball can sort them with its overlays.
         public Renderer[] Renderers
         {
             get
             {
-                var all = new Renderer[5 + _shards.Length];
+                var all = new Renderer[4 + _halves.Length];
                 all[0] = _ringNear;
                 all[1] = _ringFar;
-                all[2] = _glow;
-                all[3] = _hot;
-                all[4] = _spark;
-                for (var i = 0; i < _shards.Length; i++) all[5 + i] = _shards[i];
+                all[2] = _hot;
+                all[3] = _spark;
+                for (var i = 0; i < _halves.Length; i++) all[4 + i] = _halves[i];
                 return all;
             }
         }
 
-        // The ring snaps in round the shell while the core warms.
+        // The ring snaps in round the shell.
         public void Charge(BallAnimationConfig config, float k)
         {
-            var f = config.Finish;
-            var d = TubeArt.BallDiameter;
-            var size = d * Mathf.Lerp(config.HiddenRingFrom, config.HiddenRingTo, 1f - (1f - k) * (1f - k));
-            Ring(f.Core, Mathf.Clamp01(k * 3f) * 0.8f, size);
-            Stretch(_glow, Vector3.zero, d * 1.3f, d * 1.3f, Color.Lerp(f.Violet, f.Core, k), 0.3f * k);
+            var size = TubeArt.BallDiameter * Mathf.Lerp(config.HiddenRingFrom, config.HiddenRingTo, 1f - (1f - k) * (1f - k));
+            Ring(config.Finish.Core, Mathf.Clamp01(k * 3f), size);
         }
 
-        // Crack light on the shell; the ring holds.
-        public static void Crack(SpriteRenderer shell, float reach) => SetFloat(shell, CrackId, reach);
+        // Crack light on the shell: reach along the line from the centre.
+        public static void Crack(SpriteRenderer shell, float reach)
+        {
+            SetFloat(shell, CrackId, reach);
+            SetFloat(shell, CrackLightId, 1f);
+        }
 
-        // The shell is gone: shards take their wedges in a fresh turn.
+        // The shell is gone: its halves take over, crack fully lit along their edges.
         public void Break()
         {
-            _shardSpin = Random.Range(0f, Mathf.PI * 2f);
-            var span = Mathf.PI * 2f / _shards.Length;
-            for (var i = 0; i < _shards.Length; i++)
+            for (var i = 0; i < _halves.Length; i++)
             {
-                var start = _shardSpin + span * i;
-                var mid = start + span * 0.5f;
-                _shardDirections[i] = new Vector3(Mathf.Cos(mid), Mathf.Sin(mid), 0f);
-                SetVector(_shards[i], WedgeId, new Vector4(start, span, ShardJag, 1f));
+                SetVector(_halves[i], HalfId, new Vector4(i == 0 ? 1f : -1f, 1f, 0f, 0f));
+                SetFloat(_halves[i], CrackId, 1f);
             }
         }
 
-        // The horizon ring widens and fades, the hot core flashes out.
+        // The horizon ring widens and fades; a small hot core flashes out.
         public void Hit(BallAnimationConfig config, float k)
         {
-            var f = config.Finish;
             var d = TubeArt.BallDiameter;
             var grow = 1f - (1f - k) * (1f - k) * (1f - k);
-            var fade = 1f - k * k;
-            Ring(Color.Lerp(Color.white, f.Core, k), fade * 0.8f, d * Mathf.Lerp(config.HiddenRingTo, config.HiddenHorizonTo, grow));
-            var flash = d * Mathf.Lerp(0.7f, 1.1f, grow);
-            Stretch(_hot, Vector3.zero, flash, flash, Color.white, (1f - grow) * 0.55f);
-            Stretch(_glow, Vector3.zero, flash * 1.5f, flash * 1.5f, f.Core, (1f - grow) * 0.35f);
+            Ring(Color.Lerp(Color.white, config.Finish.Core, k), (1f - k * k), d * Mathf.Lerp(config.HiddenRingTo, config.HiddenHorizonTo, grow));
+            var flash = d * Mathf.Lerp(0.5f, 0.8f, grow);
+            Stretch(_hot, Vector3.zero, flash, flash, Color.white, (1f - grow) * 0.6f);
+            if (k >= 1f) _ringNear.enabled = _ringFar.enabled = _hot.enabled = false;
         }
 
-        // Shards fly out on short arcs, turn a little and fade, their crack light dying.
-        public void Shards(BallAnimationConfig config, float k)
+        // The halves part on short arcs with a slight turn; their lit edges cool, then they fade.
+        public void Halves(BallAnimationConfig config, float k)
         {
             var out3 = 1f - (1f - k) * (1f - k) * (1f - k);
-            var alpha = 1f - Mathf.SmoothStep(0f, 1f, (k - 0.3f) / 0.7f);
-            for (var i = 0; i < _shards.Length; i++)
+            var alpha = 1f - Mathf.SmoothStep(0f, 1f, (k - 0.35f) / 0.65f);
+            for (var i = 0; i < _halves.Length; i++)
             {
-                var shard = _shards[i];
-                var dir = _shardDirections[i];
-                var position = dir * (config.HiddenShardDistance * out3) + Vector3.down * (config.HiddenShardDrop * k * k);
-                var scale = Mathf.Lerp(1f, config.HiddenBreakScale, out3);
-                shard.enabled = alpha > 0.001f;
-                var t = shard.transform;
+                var half = _halves[i];
+                var path = HalfPaths[i];
+                var position = path * (config.HiddenShardDistance * out3) + Vector3.down * (config.HiddenShardDrop * k * k);
+                half.enabled = alpha > 0.001f;
+                var t = half.transform;
                 t.localPosition = new Vector3(position.x, position.y, t.localPosition.z);
-                t.localScale = Vector3.one * scale;
-                t.localRotation = Quaternion.Euler(0f, 0f, config.HiddenShardSpin * out3 * (dir.x >= 0f ? -1f : 1f));
-                shard.color = new Color(1f, 1f, 1f, alpha);
-                SetFloat(shard, CrackId, 1f - out3);
+                t.localScale = Vector3.one * Mathf.Lerp(1f, config.HiddenBreakScale, out3);
+                t.localRotation = Quaternion.Euler(0f, 0f, config.HiddenShardSpin * out3 * (i == 0 ? -1f : 1f));
+                half.color = new Color(1f, 1f, 1f, alpha);
+                SetFloat(half, CrackLightId, 1f - out3);
             }
-            if (k >= 1f) HideShards();
+            if (k >= 1f) HideHalves();
+        }
+
+        // The orb's rim light flares and settles back to its material value.
+        public static void Flare(SpriteRenderer core, float amount)
+        {
+            var rest = core.sharedMaterial != null ? core.sharedMaterial.GetFloat(RimLightId) : 0.3f;
+            SetFloat(core, RimLightId, Mathf.Lerp(rest, 1f, amount));
         }
 
         // A small gold glint on the orb's shoulder as it settles.
@@ -115,16 +114,16 @@ namespace Project.Contexts.Game.Items
 
         public void Hide()
         {
-            _ringNear.enabled = _ringFar.enabled = _glow.enabled = _hot.enabled = _spark.enabled = false;
-            HideShards();
+            _ringNear.enabled = _ringFar.enabled = _hot.enabled = _spark.enabled = false;
+            HideHalves();
         }
 
-        private void HideShards()
+        private void HideHalves()
         {
-            foreach (var shard in _shards)
+            foreach (var half in _halves)
             {
-                shard.enabled = false;
-                var t = shard.transform;
+                half.enabled = false;
+                var t = half.transform;
                 t.localPosition = new Vector3(0f, 0f, t.localPosition.z);
                 t.localRotation = Quaternion.identity;
                 t.localScale = Vector3.one;
@@ -149,7 +148,7 @@ namespace Project.Contexts.Game.Items
             renderer.color = new Color(color.r, color.g, color.b, color.a * alpha);
         }
 
-        // Read first: the renderer keeps its sprite texture and portal cut in this block.
+        // Read first: the renderer keeps its sprite texture, tone and portal cut in this block.
         private static void SetFloat(Renderer renderer, int id, float value)
         {
             renderer.GetPropertyBlock(_block ??= new MaterialPropertyBlock());

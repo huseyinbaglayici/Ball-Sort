@@ -10,7 +10,9 @@ namespace Project.Contexts.Game.Items
         // Badge center in the art, from its top.
         private const float BadgeYPx = 515f;
         private static readonly int CrackId = Shader.PropertyToID("_Crack");
-        private static readonly int CrackGlowId = Shader.PropertyToID("_CrackGlow");
+        private static readonly int CrackLightId = Shader.PropertyToID("_CrackLight");
+        private static readonly int ChargeId = Shader.PropertyToID("_Charge");
+        private static readonly int CutsId = Shader.PropertyToID("_Cuts");
         private static readonly int CrackOriginId = Shader.PropertyToID("_CrackOrigin");
         private static readonly int PieceId = Shader.PropertyToID("_Piece");
         // Cuts between the pieces in sprite v, bottom to top; the badge sits in the middle piece.
@@ -26,11 +28,10 @@ namespace Project.Contexts.Game.Items
         [SerializeField] private SpriteRenderer _badgeCore;
         [SerializeField] private SpriteRenderer _badgeInnerGlow;
         [SerializeField] private SpriteRenderer[] _badgeLayers;
-        // Break FX: the ice cut into pieces, orbit ring halves and core glows at the badge, vapour and the rim flash.
+        // Break FX: the ice cut into pieces, orbit ring halves and a hot core at the badge, vapour and the rim flash.
         [SerializeField] private SpriteRenderer[] _pieces;
         [SerializeField] private SpriteRenderer _ringNear;
         [SerializeField] private SpriteRenderer _ringFar;
-        [SerializeField] private SpriteRenderer _glow;
         [SerializeField] private SpriteRenderer _hot;
         [SerializeField] private SpriteRenderer[] _vapour;
         [SerializeField] private SpriteRenderer _rimGlow;
@@ -63,11 +64,15 @@ namespace Project.Contexts.Game.Items
             _haloAlpha = config.OrbHaloAlpha;
             // The crack starts at the badge, in the ice's own uv.
             var origin = new Vector4(0.5f, 1f - BadgeYPx / TubeArt.ArtHeightPx, 0f, 0f);
+            // The crack strokes end in the cuts the pieces split along.
+            var cuts = new Vector4(Cuts[1], Cuts[2], config.FrozenPieceJag, 0f);
             SetVector(_frozen, CrackOriginId, origin);
+            SetVector(_frozen, CutsId, cuts);
             for (var i = 0; i < _pieces.Length; i++)
             {
                 SetVector(_pieces[i], CrackOriginId, origin);
-                SetVector(_pieces[i], PieceId, new Vector4(Cuts[i], Cuts[i + 1], config.FrozenPieceJag, 1f));
+                SetVector(_pieces[i], CutsId, cuts);
+                SetVector(_pieces[i], PieceId, new Vector4(Cuts[i], Cuts[i + 1], 0f, 1f));
             }
             SetIceAlpha(1f);
         }
@@ -98,15 +103,13 @@ namespace Project.Contexts.Game.Items
                 .ChainCallback(() => onDone?.Invoke());
         }
 
-        // The ring snaps in round the badge and its core warms.
+        // The ring snaps in round the badge while the frost brightens.
         private void Charge(BallAnimationConfig config, float k)
         {
-            var f = config.Finish;
-            var center = _badge.localPosition;
             var badge = config.FrozenBadgeOrbDiameter;
             var size = badge * Mathf.Lerp(config.FrozenRingFrom, config.FrozenRingTo, 1f - (1f - k) * (1f - k));
-            Ring(f.Core, Mathf.Clamp01(k * 3f) * 0.8f, size, center);
-            Stretch(_glow, center, badge * 1.6f, badge * 1.6f, Color.Lerp(f.Violet, f.Core, k), 0.35f * k * k);
+            Ring(config.Finish.Core, Mathf.Clamp01(k * 3f), size, _badge.localPosition);
+            SetFloat(_frozen, ChargeId, k * k);
         }
 
         // Horizon ring out to the tube's width, hot flash at the badge.
@@ -119,20 +122,20 @@ namespace Project.Contexts.Game.Items
             var fade = 1f - k * k;
             var reach = TubeArt.ArtWidthPx / TubeArt.PixelsPerUnit * config.FrozenHorizonTo;
             Ring(Color.Lerp(Color.white, f.Core, k), fade * 0.8f, Mathf.Lerp(badge * config.FrozenRingTo, reach, grow), center);
-            var flash = badge * Mathf.Lerp(1f, 1.8f, grow);
-            Stretch(_hot, center, flash, flash, Color.white, (1f - grow) * 0.55f);
-            Stretch(_glow, center, flash * 1.5f, flash * 1.5f, f.Core, (1f - grow) * 0.4f);
-            if (k >= 1f) _ringNear.enabled = _ringFar.enabled = _hot.enabled = _glow.enabled = false;
+            var flash = badge * Mathf.Lerp(0.9f, 1.4f, grow);
+            Stretch(_hot, center, flash, flash, Color.white, (1f - grow) * 0.6f);
+            SetFloat(_frozen, ChargeId, 1f - grow);
+            var punch = 1f + config.FrozenPunch * (1f - grow);
+            transform.localScale = new Vector3(punch, punch, 1f);
+            if (k >= 1f) _ringNear.enabled = _ringFar.enabled = _hot.enabled = false;
         }
 
-        // Crack light runs out from the badge, eases, then strains brighter as the ice thins.
+        // Crack light sweeps from the badge out along every stroke, then holds while the ice thins.
         private void Thaw(BallAnimationConfig config, float k)
         {
-            var time = k * config.MeltDuration;
-            var crack = Mathf.Clamp01(time / Mathf.Max(config.FrozenCrackTime, 0.0001f));
-            SetFloat(_frozen, CrackId, 1f - (1f - crack) * (1f - crack) * (1f - crack));
-            var settle = Mathf.SmoothStep(config.FrozenCrackGlow.x, config.FrozenCrackGlow.y, crack);
-            SetFloat(_frozen, CrackGlowId, Mathf.Lerp(settle, config.FrozenCrackGlow.z, k * k * k));
+            var crack = Mathf.Clamp01(k * config.MeltDuration / Mathf.Max(config.FrozenCrackTime, 0.0001f));
+            SetFloat(_frozen, CrackId, 1f - (1f - crack) * (1f - crack));
+            SetFloat(_frozen, CrackLightId, 1f);
             SetIceAlpha(Mathf.Lerp(1f, config.MeltHalfAlpha, k));
         }
 
@@ -151,6 +154,7 @@ namespace Project.Contexts.Game.Items
         private void Shatter(BallAnimationConfig config, float time)
         {
             var f = config.Finish;
+            transform.localScale = Vector3.one;
             var k = Mathf.Clamp01(time / Mathf.Max(config.FrozenPieceTime, 0.0001f));
             var out3 = 1f - (1f - k) * (1f - k) * (1f - k);
             for (var i = 0; i < _pieces.Length; i++)
@@ -165,7 +169,7 @@ namespace Project.Contexts.Game.Items
                 piece.enabled = alpha > 0.001f;
                 piece.color = new Color(1f, 1f, 1f, alpha);
                 SetFloat(piece, CrackId, 1f);
-                SetFloat(piece, CrackGlowId, config.FrozenCrackGlow.z * (1f - out3));
+                SetFloat(piece, CrackLightId, 1f - out3);
             }
 
             var pop = Mathf.Clamp01(time / Mathf.Max(config.FrozenBadgePopTime, 0.0001f));
@@ -244,13 +248,14 @@ namespace Project.Contexts.Game.Items
             transform.localScale = Vector3.one;
             _frozen.enabled = true;
             SetFloat(_frozen, CrackId, 0f);
+            SetFloat(_frozen, ChargeId, 0f);
             foreach (var piece in _pieces)
             {
                 piece.enabled = false;
                 piece.transform.localPosition = Vector3.zero;
                 piece.transform.localRotation = Quaternion.identity;
             }
-            _ringNear.enabled = _ringFar.enabled = _glow.enabled = _hot.enabled = _rimGlow.enabled = false;
+            _ringNear.enabled = _ringFar.enabled = _hot.enabled = _rimGlow.enabled = false;
             foreach (var mist in _vapour) mist.enabled = false;
             _badge.localScale = Vector3.one * _badgeScale;
             SetIceAlpha(1f);

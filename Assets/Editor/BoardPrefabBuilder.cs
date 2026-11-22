@@ -441,31 +441,29 @@ namespace Project.Editor
             return root;
         }
 
-        // Ring halves, core glows and a glint round the ball, and three wedges of the shell; far ring and shards sit behind the orb.
+        // Ring halves, a hot core and a glint round the ball, and the shell's two halves; far ring and halves sit behind the orb.
         private static ShellBreakFx CreateRevealFx(Transform root, Sprite shellArt, Material shellMaterial)
         {
             var fx = new GameObject("RevealFx").transform;
             fx.SetParent(root, false);
             var item = fx.gameObject.AddComponent<ShellBreakFx>();
             var additive = CompleteFxBuilder.AdditiveMaterial("FxFinishSprite", null);
-            var halo = CompleteFxBuilder.ImportSprite("Halo", 128f);
             var bead = CompleteFxBuilder.ImportSprite("Bead", 64f);
             var ringFar = AddOverlay(fx, "RingFar", CompleteFxBuilder.ImportSprite("TouchLineFar", 128f), 0, additive);
             ringFar.sortingOrder = 1;
-            var shards = new List<SpriteRenderer>();
-            for (var i = 0; i < 3; i++)
+            var halves = new List<SpriteRenderer>();
+            for (var i = 0; i < 2; i++)
             {
-                var shard = AddOverlay(fx, $"Shard{i}", shellArt, 0, shellMaterial);
-                shard.sortingOrder = 1;
-                shards.Add(shard);
+                var half = AddOverlay(fx, $"Half{i}", shellArt, 0, shellMaterial);
+                half.sortingOrder = 1;
+                halves.Add(half);
             }
             var so = new SerializedObject(item);
             so.FindProperty("_ringFar").objectReferenceValue = ringFar;
-            so.FindProperty("_glow").objectReferenceValue = AddOverlay(fx, "Glow", halo, 10, additive);
             so.FindProperty("_hot").objectReferenceValue = AddOverlay(fx, "Hot", bead, 11, additive);
             so.FindProperty("_ringNear").objectReferenceValue = AddOverlay(fx, "RingNear", CompleteFxBuilder.ImportSprite("TouchLineNear", 128f), 12, additive);
             so.FindProperty("_spark").objectReferenceValue = AddOverlay(fx, "Spark", bead, 13, additive);
-            SetArray(so.FindProperty("_shards"), shards);
+            SetArray(so.FindProperty("_halves"), halves);
             so.ApplyModifiedPropertiesWithoutUndo();
             return item;
         }
@@ -553,7 +551,6 @@ namespace Project.Editor
             var so = new SerializedObject(item);
             so.FindProperty("_ringFar").objectReferenceValue =
                 CompleteFxBuilder.AddSprite(fx, "RingFar", CompleteFxBuilder.ImportSprite("TouchLineFar", 128f), order, fxMaterial);
-            so.FindProperty("_glow").objectReferenceValue = CompleteFxBuilder.AddSprite(fx, "Glow", halo, order + 5, fxMaterial);
             so.FindProperty("_hot").objectReferenceValue = CompleteFxBuilder.AddSprite(fx, "Hot", bead, order + 5, fxMaterial);
             so.FindProperty("_ringNear").objectReferenceValue =
                 CompleteFxBuilder.AddSprite(fx, "RingNear", CompleteFxBuilder.ImportSprite("TouchLineNear", 128f), order + 5, fxMaterial);
