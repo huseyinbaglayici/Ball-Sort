@@ -514,7 +514,7 @@ namespace Project.Editor
             return material;
         }
 
-        // Ice over the tube art with the needed color's orb (all its layers) on the badge; its pieces and break FX over both.
+        // Ice over the tube art with the needed color's orb (all its layers) on the badge; its chunks, each under its own pivot.
         private static GameObject CreateFrozenTube(ObstacleSprites art, Sprite back, Sprite front, OrbSkin sample)
         {
             var root = new GameObject("FrozenTube");
@@ -522,9 +522,11 @@ namespace Project.Editor
             var iceMaterial = EnsureOrbMaterial(ObstacleIcePath, BlendMode.OneMinusSrcAlpha, ObstacleIceShaderName);
             var ice = AddSprite(root.transform, "Ice", art.Frozen, TubeArt.FrozenOrder, iceMaterial);
             var pieces = new List<SpriteRenderer>();
-            for (var i = 0; i < 3; i++)
+            for (var i = 0; i < FrozenTubeItem.ChunkCount; i++)
             {
-                var piece = AddSprite(root.transform, $"IcePiece{i}", art.Frozen, TubeArt.FrozenOrder, iceMaterial);
+                var pivot = new GameObject($"IceChunk{i}").transform;
+                pivot.SetParent(root.transform, false);
+                var piece = AddSprite(pivot, "Face", art.Frozen, TubeArt.FrozenOrder, iceMaterial);
                 piece.enabled = false;
                 pieces.Add(piece);
             }
@@ -542,24 +544,7 @@ namespace Project.Editor
             frontRenderer.color = new Color(1f, 1f, 1f, OrbGlassAlpha);
             var innerGlow = AddSprite(badge, "InnerGlow", sample.InnerGlow, order + 4, normal);
 
-            var fx = new GameObject("BreakFx").transform;
-            fx.SetParent(root.transform, false);
-            var fxMaterial = CompleteFxBuilder.AdditiveMaterial("FxFinishSprite", null);
-            var halo = CompleteFxBuilder.ImportSprite("Halo", 128f);
-            var bead = CompleteFxBuilder.ImportSprite("Bead", 64f);
-            var top = TubeArt.MeltOrder;
             var so = new SerializedObject(item);
-            so.FindProperty("_ringFar").objectReferenceValue =
-                CompleteFxBuilder.AddSprite(fx, "RingFar", CompleteFxBuilder.ImportSprite("TouchLineFar", 128f), order, fxMaterial);
-            so.FindProperty("_hot").objectReferenceValue = CompleteFxBuilder.AddSprite(fx, "Hot", bead, order + 5, fxMaterial);
-            so.FindProperty("_ringNear").objectReferenceValue =
-                CompleteFxBuilder.AddSprite(fx, "RingNear", CompleteFxBuilder.ImportSprite("TouchLineNear", 128f), order + 5, fxMaterial);
-            SetArray(so.FindProperty("_vapour"), new List<SpriteRenderer>
-            {
-                CompleteFxBuilder.AddSprite(fx, "Vapour0", halo, top, fxMaterial),
-                CompleteFxBuilder.AddSprite(fx, "Vapour1", halo, top, fxMaterial)
-            });
-            so.FindProperty("_rimGlow").objectReferenceValue = CompleteFxBuilder.AddSprite(fx, "RimGlow", halo, top, fxMaterial);
             SetArray(so.FindProperty("_pieces"), pieces);
             so.FindProperty("_frozen").objectReferenceValue = ice;
             so.FindProperty("_badge").objectReferenceValue = badge;

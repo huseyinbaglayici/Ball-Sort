@@ -30,6 +30,9 @@ Material:
     m_Ints: []
     m_Floats:
     - _Aspect: 2.667
+    - _Bevel: 0.05
+    - _BevelTilt: 1.8
+    - _Bump: 1.2
     - _Charge: 0
     - _CoolGain: 0.12
     - _Crack: 0
@@ -37,22 +40,41 @@ Material:
     - _CrackInkWidth: 0.009
     - _CrackLight: 1
     - _CrackScale: 2.2
-    - _CrackWidth: 0.02
+    - _CrackWidth: 0.01
+    - _Depth: 0.035
+    - _DepthGain: 0.35
+    - _Dissolve: 0
+    - _DustSize: 0.045
+    - _Facet: 1.3
     - _FrostGain: 0.35
     - _FrostPower: 4
     - _HalfWidth: 0.44
+    - _Lit: 1.1
+    - _RimGain: 0.32
+    - _Round: 0.85
+    - _Shade: 0.7
     - _ShineGain: 0.1
     - _ShinePeriod: 8
     - _ShineSlope: 0.8
     - _ShineWidth: 0.12
+    - _SpecCut: 0.935
+    - _SpecGain: 0.55
+    - _Thickness: 0.09
     m_Colors:
+    - _Clip: {r: -100000, g: -100000, b: 100000, a: 100000}
     - _CoolColor: {r: 0.62, g: 0.78, b: 1, a: 1}
-    - _CrackColor: {r: 0.42, g: 0.86, b: 1, a: 1}
-    - _CrackInk: {r: 0.12, g: 0.2, b: 0.5, a: 1}
+    - _CrackColor: {r: 0.55, g: 0.9, b: 1, a: 1}
+    - _CrackInk: {r: 0.1, g: 0.2, b: 0.45, a: 1}
     - _CrackOrigin: {r: 0.5, g: 0.5, b: 0, a: 0}
     - _Cuts: {r: 0.34, g: 0.66, b: 0.025, a: 0}
+    - _DeepColor: {r: 0.36, g: 0.6, b: 0.95, a: 1}
+    - _DustColor: {r: 0.8, g: 0.95, b: 1, a: 1}
     - _FrostColor: {r: 0.9, g: 0.98, b: 1, a: 1}
+    - _LightDir: {r: -0.45, g: 0.65, b: 0.62, a: 0}
     - _Piece: {r: 0, g: 1, b: 0, a: 0}
+    - _RimColor: {r: 0.86, g: 0.98, b: 1, a: 1}
     - _ShineColor: {r: 0.92, g: 1, b: 1, a: 1}
+    - _SideColor: {r: 0.42, g: 0.68, b: 0.95, a: 1}
+    - _Tilt: {r: 0, g: 0, b: 1, a: 0}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

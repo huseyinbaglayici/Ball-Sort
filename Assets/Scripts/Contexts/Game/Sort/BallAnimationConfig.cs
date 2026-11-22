@@ -287,41 +287,29 @@ namespace Project.Contexts.Game.Sort
         [Header("Frozen tube")]
         [Tooltip("On-screen width of the needed color's orb on the ice badge, in tube units (the tube is about 1.8 wide).")]
         public float FrozenBadgeOrbDiameter = 0.36f;
-        [Tooltip("When it melts, the ice first wobbles like jelly: time and scale amount, fading out.")]
-        public float MeltWobbleDuration = 0.8f;
+        [Tooltip("When it breaks, the ice first trembles: time and scale amount, fading out.")]
+        public float MeltWobbleDuration = 0.3f;
         public float MeltWobble = 0.012f;
-        public float MeltWobbleCycles = 4f;
-        [Tooltip("The ice cracks and thins to MeltHalfAlpha over MeltDuration, then splits; the tube is usable MeltOutDuration later.")]
-        public float MeltDuration = 1.5f;
-        [Range(0f, 1f)] public float MeltHalfAlpha = 0.5f;
-        public float MeltOutDuration = 0.25f;
-        [Tooltip("The wobble ends in a charge: a ring closes on the badge from and to these badge widths.")]
-        public float FrozenChargeTime = 0.3f;
-        public float FrozenRingFrom = 2.6f;
-        public float FrozenRingTo = 1.3f;
-        [Tooltip("The hit: the ring widens to this share of the tube's width and fades.")]
-        public float FrozenHorizonTime = 0.25f;
-        public float FrozenHorizonTo = 1.1f;
-        [Tooltip("The crack light runs from the badge out along every stroke in this time; the hit punches the ice by this scale.")]
-        public float FrozenCrackTime = 0.3f;
-        [Range(0f, 0.1f)] public float FrozenPunch = 0.03f;
-        [Tooltip("At the split three pieces slide this far, drop, turn and fade; their cut lines are this jagged.")]
-        public float FrozenPieceTime = 0.45f;
-        public float FrozenPieceSlide = 0.42f;
-        public float FrozenPieceDrop = 0.3f;
-        public float FrozenPieceSpin = 8f;
-        [Range(0f, 0.1f)] public float FrozenPieceJag = 0.025f;
-        [Tooltip("The badge orb swells to this scale and fades.")]
-        public float FrozenBadgePopTime = 0.3f;
-        public float FrozenBadgePop = 1.35f;
-        [Tooltip("Soft vapour rises from the badge: time, rise and peak alpha.")]
-        public float FrozenVapourTime = 0.7f;
-        public float FrozenVapourRise = 0.8f;
-        [Range(0f, 1f)] public float FrozenVapourAlpha = 0.3f;
-        [Tooltip("The rim flashes in the completion gold: time, height and peak alpha.")]
-        public float FrozenRimTime = 0.4f;
-        public float FrozenRimHeight = 0.8f;
-        [Range(0f, 1f)] public float FrozenRimAlpha = 0.45f;
+        public float MeltWobbleCycles = 3f;
+        [Tooltip("The ice cracks out from the badge in beats and breaks this long after the start; the tube is usable MeltOutDuration after the break.")]
+        public float MeltDuration = 1.03f;
+        public float MeltOutDuration = 0.17f;
+        [Tooltip("Crack beats after the tremble, each jumping the cracks in this time and knocking the ice by this scale.")]
+        public int FrozenCrackBeats = 3;
+        public float FrozenBeatTime = 0.07f;
+        [Range(0f, 0.1f)] public float FrozenPunch = 0.025f;
+        [Tooltip("Chunks leave this far apart in order from the badge and drift this long; they turn to dust from this share of it.")]
+        public float FrozenChunkStagger = 0.063f;
+        public float FrozenChunkTime = 1.1f;
+        [Range(0f, 1f)] public float FrozenChunkDissolveAt = 0.45f;
+        [Tooltip("Chunk drift in low gravity: outward speed, upward kick and gravity, in tube units per second.")]
+        public float FrozenChunkSpeed = 0.3f;
+        public float FrozenChunkLift = 0.15f;
+        public float FrozenChunkGravity = 1.6f;
+        [Tooltip("Chunk turn in degrees: in depth (so its sides show) and in the screen; it shrinks to this scale.")]
+        public float FrozenChunkTilt = 35f;
+        public float FrozenChunkSpin = 22f;
+        public float FrozenChunkShrink = 0.9f;
         [Tooltip("Once the ice is gone the balls hop bottom to top: time per ball and delay to the next.")]
         public float MeltHopDuration = 0.64f;
         public float MeltHopStagger = 0.36f;

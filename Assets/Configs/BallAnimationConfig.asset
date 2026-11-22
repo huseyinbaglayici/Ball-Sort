@@ -493,12 +493,11 @@ MonoBehaviour:
   HiddenOrbDuration: 0.48
   HiddenOrbFrom: 0.55
   FrozenBadgeOrbDiameter: 0.36
-  MeltWobbleDuration: 0.8
+  MeltWobbleDuration: 0.3
   MeltWobble: 0.012
-  MeltWobbleCycles: 4
-  MeltDuration: 1.5
-  MeltHalfAlpha: 0.5
-  MeltOutDuration: 0.25
+  MeltWobbleCycles: 3
+  MeltDuration: 1.03
+  MeltOutDuration: 0.17
   MeltHopDuration: 0.64
   MeltHopStagger: 0.36
   ObstacleHopHeight: 0.11578947

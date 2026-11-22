@@ -203,7 +203,7 @@ namespace Project.Contexts.Game.Preview
             {
                 var play = _obstacle == Obstacle.Hidden
                     ? _config.HiddenShakeDuration + _config.HiddenOrbDelay + _config.HiddenOrbDuration + _config.HiddenSparkTime
-                    : _config.MeltWobbleDuration + _config.MeltDuration + _config.FrozenVapourTime;
+                    : _config.MeltDuration + _config.FrozenChunkStagger * (FrozenTubeItem.ChunkCount - 1) + _config.FrozenChunkTime;
                 if (_obstacleAt >= 0f && Time.time - _obstacleAt < MoveTime + play + LoopRest) return;
                 PlayObstacle();
                 return;
@@ -308,7 +308,7 @@ namespace Project.Contexts.Game.Preview
             var y = GuiHeight - 200f;
             var third = (width - 40f) / 3f;
             var since = _obstacleAt < 0f ? "-" : $"{Time.time - _obstacleAt:0.00}s";
-            var what = _obstacle == Obstacle.Hidden ? "Hidden: charge, crack light, shards, orb pop" : "Frozen: charge, crack light, thaw, split, vapour";
+            var what = _obstacle == Obstacle.Hidden ? "Hidden: charge, crack light, shards, orb pop" : "Frozen: tremble, crack beats, chunks break off";
             GUI.Label(new Rect(20f, y - 76f, width - 40f, 36f), what, _label);
             GUI.Label(new Rect(20f, y - 40f, width - 40f, 36f), $"speed {Time.timeScale:0.##}x   t {since}", _label);
             if (GUI.Button(new Rect(20f, y, third - 8f, 56f), "Replay", _button)) PlayObstacle();

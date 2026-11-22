@@ -7,19 +7,29 @@ namespace Project.Contexts.Game.Items
     // Ice over a whole tube with the needed color's orb on its badge; parented to the tube's art.
     public sealed class FrozenTubeItem : Item
     {
+        // Must match CHUNKS in the ice shader.
+        public const int ChunkCount = 7;
         // Badge center in the art, from its top.
         private const float BadgeYPx = 515f;
+        // Badge ring radius over the art width; cracks start at it.
+        private const float BadgeRingRadius = 0.28f;
         private static readonly int CrackId = Shader.PropertyToID("_Crack");
-        private static readonly int CrackLightId = Shader.PropertyToID("_CrackLight");
         private static readonly int ChargeId = Shader.PropertyToID("_Charge");
-        private static readonly int CutsId = Shader.PropertyToID("_Cuts");
         private static readonly int CrackOriginId = Shader.PropertyToID("_CrackOrigin");
+        private static readonly int ChunksId = Shader.PropertyToID("_Chunks");
         private static readonly int PieceId = Shader.PropertyToID("_Piece");
-        // Cuts between the pieces in sprite v, bottom to top; the badge sits in the middle piece.
-        private static readonly float[] Cuts = { -1f, 0.34f, 0.66f, 2f };
-        // Each piece's slide direction: sideways in turn, the top one rising a little.
-        private static readonly Vector2[] Slides = { new(-1f, -0.4f), new(1f, -0.1f), new(-0.8f, 0.35f) };
-        private const float RingAspect = 0.32f;
+        private static readonly int TiltId = Shader.PropertyToID("_Tilt");
+        private static readonly int DissolveId = Shader.PropertyToID("_Dissolve");
+        private static readonly int ClipId = Shader.PropertyToID("_Clip");
+        // Chunk seeds in ice units (u across, v times the art's aspect up) with their facet tilt; the badge's chunk first.
+        private static readonly Vector4[] Chunks =
+        {
+            new(0.48f, 1.34f, 0f, 0f), new(0.2f, 2.06f, -0.18f, 0.1f), new(0.83f, 1.86f, 0.15f, 0.14f),
+            new(0.6f, 2.44f, 0.05f, 0.2f), new(0.17f, 0.78f, -0.16f, -0.1f), new(0.84f, 0.64f, 0.2f, -0.08f),
+            new(0.4f, 0.2f, -0.05f, -0.18f)
+        };
+        private static readonly float Aspect = TubeArt.ArtHeightPx / TubeArt.ArtWidthPx;
+        private static readonly Vector2 Origin = new(0.5f, (1f - BadgeYPx / TubeArt.ArtHeightPx) * Aspect);
 
         [SerializeField] private SpriteRenderer _frozen;
         [SerializeField] private Transform _badge;
@@ -28,19 +38,16 @@ namespace Project.Contexts.Game.Items
         [SerializeField] private SpriteRenderer _badgeCore;
         [SerializeField] private SpriteRenderer _badgeInnerGlow;
         [SerializeField] private SpriteRenderer[] _badgeLayers;
-        // Break FX: the ice cut into pieces, orbit ring halves and a hot core at the badge, vapour and the rim flash.
+        // One renderer per chunk, each under a pivot at its seed so it turns about its own middle.
         [SerializeField] private SpriteRenderer[] _pieces;
-        [SerializeField] private SpriteRenderer _ringNear;
-        [SerializeField] private SpriteRenderer _ringFar;
-        [SerializeField] private SpriteRenderer _hot;
-        [SerializeField] private SpriteRenderer[] _vapour;
-        [SerializeField] private SpriteRenderer _rimGlow;
 
         private static MaterialPropertyBlock _block;
         private PrimeTween.Sequence _play;
         private float _haloAlpha;
-        private float _iceAlpha = 1f;
         private float _badgeScale = 1f;
+        private readonly Vector3[] _rest = new Vector3[ChunkCount];
+        private readonly Vector2[] _away = new Vector2[ChunkCount];
+        private readonly float[] _delay = new float[ChunkCount];
 
         public bool IsPlaying => _play.isAlive;
 
@@ -49,11 +56,9 @@ namespace Project.Contexts.Game.Items
         {
             Stop();
             transform.localPosition = new Vector3(0f, rise * 0.5f, 0f);
-            transform.localScale = Vector3.one;
             var stretch = new Vector3(1f, 1f + rise * TubeArt.PixelsPerUnit / TubeArt.ArtHeightPx, 1f);
             _frozen.transform.localScale = stretch;
-            foreach (var piece in _pieces) piece.transform.localScale = stretch;
-            _badge.localPosition = new Vector3(0f, TubeArt.ArtY(BadgeYPx), 0f);
+            _badge.localPosition = BadgeRest;
             // The orb art's sphere is TubeArt.BallDiameter wide at scale 1.
             _badgeScale = config.FrozenBadgeOrbDiameter / TubeArt.BallDiameter;
             _badge.localScale = Vector3.one * _badgeScale;
@@ -62,168 +67,139 @@ namespace Project.Contexts.Game.Items
             _badgeInnerGlow.sprite = orb.InnerGlow;
             OrbTone.Apply(_badgeCore, orb);
             _haloAlpha = config.OrbHaloAlpha;
-            // The crack starts at the badge, in the ice's own uv.
-            var origin = new Vector4(0.5f, 1f - BadgeYPx / TubeArt.ArtHeightPx, 0f, 0f);
-            // The crack strokes end in the cuts the pieces split along.
-            var cuts = new Vector4(Cuts[1], Cuts[2], config.FrozenPieceJag, 0f);
-            SetVector(_frozen, CrackOriginId, origin);
-            SetVector(_frozen, CutsId, cuts);
-            for (var i = 0; i < _pieces.Length; i++)
+
+            var origin = new Vector4(Origin.x, Origin.y, BadgeRingRadius, 0f);
+            Shade(_frozen, origin);
+            var bounds = _frozen.sprite.bounds;
+            var badge = Local(bounds, stretch, Origin);
+            for (var i = 0; i < ChunkCount; i++)
             {
-                SetVector(_pieces[i], CrackOriginId, origin);
-                SetVector(_pieces[i], CutsId, cuts);
-                SetVector(_pieces[i], PieceId, new Vector4(Cuts[i], Cuts[i + 1], 0f, 1f));
+                var piece = _pieces[i];
+                var seed = Local(bounds, stretch, Chunks[i]);
+                _rest[i] = seed;
+                piece.transform.parent.localPosition = seed;
+                piece.transform.localPosition = -seed;
+                piece.transform.localScale = stretch;
+                Shade(piece, origin);
+                SetVector(piece, PieceId, new Vector4(i, 0f, 0f, 1f));
+                // Away from the badge; its own chunk drops a little.
+                var away = (Vector2)(seed - badge);
+                _away[i] = away.sqrMagnitude < 0.01f ? new Vector2(0.15f, -0.35f) : away.normalized;
+                _delay[i] = ((Vector2)Chunks[i] - Origin).magnitude;
             }
-            SetIceAlpha(1f);
+            // Chunks leave in order of their distance from the badge, a beat apart.
+            var order = (float[])_delay.Clone();
+            Array.Sort(order);
+            for (var i = 0; i < ChunkCount; i++) _delay[i] = Array.IndexOf(order, _delay[i]) * config.FrozenChunkStagger;
+            Stop();
         }
 
-        // Wobble while a ring closes on the badge; the hit cracks the ice with light, it thaws, splits and steams away.
+        private static Vector3 Local(Bounds bounds, Vector3 stretch, Vector2 ice) => new(
+            (bounds.min.x + ice.x * bounds.size.x) * stretch.x,
+            (bounds.min.y + ice.y / Aspect * bounds.size.y) * stretch.y, 0f);
+
+        private static void Shade(Renderer renderer, Vector4 origin)
+        {
+            renderer.GetPropertyBlock(_block ??= new MaterialPropertyBlock());
+            _block.SetVectorArray(ChunksId, Chunks);
+            _block.SetVector(CrackOriginId, origin);
+            renderer.SetPropertyBlock(_block);
+        }
+
+        // A short tremble, the ice cracks out from the badge in beats, then breaks into chunks that tumble away.
         public void PlayMelt(BallAnimationConfig config, Action onClear, Action onDone)
         {
             Stop();
             var wobble = config.MeltWobbleDuration;
-            var chargeAt = Mathf.Max(wobble - config.FrozenChargeTime, 0f);
-            var splitAt = wobble + config.MeltDuration;
-            var clearAt = splitAt + config.MeltOutDuration;
-            var fxEnd = Mathf.Max(config.FrozenPieceTime, config.FrozenVapourTime, config.FrozenRimTime);
+            var breakAt = Mathf.Max(config.MeltDuration, wobble);
+            var flight = config.FrozenChunkStagger * (ChunkCount - 1) + config.FrozenChunkTime;
             _play = PrimeTween.Sequence.Create()
-                .Chain(PrimeTween.Tween.Custom(this, 0f, 1f, wobble, (ice, k) =>
-                {
-                    var w = config.MeltWobble * (1f - k) * Mathf.Sin(k * config.MeltWobbleCycles * Mathf.PI * 2f);
-                    ice.transform.localScale = new Vector3(1f + w, 1f - w, 1f);
-                }))
-                .ChainCallback(this, ice => ice.transform.localScale = Vector3.one)
-                .Insert(chargeAt, PrimeTween.Tween.Custom(this, 0f, 1f, Mathf.Max(wobble - chargeAt, 0.0001f),
-                    (ice, k) => ice.Charge(config, k)))
-                .Insert(wobble, PrimeTween.Tween.Custom(this, 0f, 1f, config.FrozenHorizonTime, (ice, k) => ice.Hit(config, k)))
-                .Insert(wobble, PrimeTween.Tween.Custom(this, 0f, 1f, config.MeltDuration, (ice, k) => ice.Thaw(config, k)))
-                .InsertCallback(splitAt, this, ice => ice.Split())
-                .Insert(splitAt, PrimeTween.Tween.Custom(this, 0f, 1f, fxEnd, (ice, t) => ice.Shatter(config, t * fxEnd)))
-                .InsertCallback(clearAt, () => onClear?.Invoke())
+                .Insert(0f, PrimeTween.Tween.Custom(this, 0f, 1f, breakAt, (ice, k) => ice.Strain(config, k * breakAt)))
+                .InsertCallback(breakAt, this, ice => ice.Break())
+                .Insert(breakAt, PrimeTween.Tween.Custom(this, 0f, 1f, flight, (ice, k) => ice.Tumble(config, k * flight)))
+                .InsertCallback(breakAt + config.MeltOutDuration, () => onClear?.Invoke())
                 .ChainCallback(() => onDone?.Invoke());
         }
 
-        // The ring snaps in round the badge while the frost brightens.
-        private void Charge(BallAnimationConfig config, float k)
+        // Tremble, then each beat runs the cracks further with a small knock; the edges brighten toward the break.
+        private void Strain(BallAnimationConfig config, float time)
         {
-            var badge = config.FrozenBadgeOrbDiameter;
-            var size = badge * Mathf.Lerp(config.FrozenRingFrom, config.FrozenRingTo, 1f - (1f - k) * (1f - k));
-            Ring(config.Finish.Core, Mathf.Clamp01(k * 3f), size, _badge.localPosition);
-            SetFloat(_frozen, ChargeId, k * k);
-        }
-
-        // Horizon ring out to the tube's width, hot flash at the badge.
-        private void Hit(BallAnimationConfig config, float k)
-        {
-            var f = config.Finish;
-            var center = _badge.localPosition;
-            var badge = config.FrozenBadgeOrbDiameter;
-            var grow = 1f - (1f - k) * (1f - k) * (1f - k);
-            var fade = 1f - k * k;
-            var reach = TubeArt.ArtWidthPx / TubeArt.PixelsPerUnit * config.FrozenHorizonTo;
-            Ring(Color.Lerp(Color.white, f.Core, k), fade * 0.8f, Mathf.Lerp(badge * config.FrozenRingTo, reach, grow), center);
-            var flash = badge * Mathf.Lerp(0.9f, 1.4f, grow);
-            Stretch(_hot, center, flash, flash, Color.white, (1f - grow) * 0.6f);
-            SetFloat(_frozen, ChargeId, 1f - grow);
-            var punch = 1f + config.FrozenPunch * (1f - grow);
-            transform.localScale = new Vector3(punch, punch, 1f);
-            if (k >= 1f) _ringNear.enabled = _ringFar.enabled = _hot.enabled = false;
-        }
-
-        // Crack light sweeps from the badge out along every stroke, then holds while the ice thins.
-        private void Thaw(BallAnimationConfig config, float k)
-        {
-            var crack = Mathf.Clamp01(k * config.MeltDuration / Mathf.Max(config.FrozenCrackTime, 0.0001f));
-            SetFloat(_frozen, CrackId, 1f - (1f - crack) * (1f - crack));
-            SetFloat(_frozen, CrackLightId, 1f);
-            SetIceAlpha(Mathf.Lerp(1f, config.MeltHalfAlpha, k));
-        }
-
-        // The whole ice gives way to its pieces, each still lit.
-        private void Split()
-        {
-            _frozen.enabled = false;
-            foreach (var piece in _pieces)
+            var wobble = config.MeltWobbleDuration;
+            var w = 0f;
+            if (time < wobble)
             {
-                piece.enabled = true;
-                piece.color = new Color(1f, 1f, 1f, _iceAlpha);
+                var k = time / Mathf.Max(wobble, 0.0001f);
+                w = config.MeltWobble * (1f - k) * Mathf.Sin(k * config.MeltWobbleCycles * Mathf.PI * 2f);
             }
+            var beats = Mathf.Max(config.FrozenCrackBeats, 1);
+            var span = (Mathf.Max(config.MeltDuration, wobble) - wobble) / beats;
+            var crack = 0f;
+            var punch = 0f;
+            for (var b = 0; b < beats; b++)
+            {
+                var since = time - (wobble + b * span);
+                if (since < 0f) break;
+                var jump = Mathf.Clamp01(since / Mathf.Max(config.FrozenBeatTime, 0.0001f));
+                crack = (b + 1f - (1f - jump) * (1f - jump)) / beats;
+                punch = config.FrozenPunch * Mathf.Max(0f, 1f - since / 0.15f);
+            }
+            transform.localScale = new Vector3(1f + w + punch, 1f - w + punch, 1f);
+            SetFloat(_frozen, CrackId, crack);
+            var charge = Mathf.Clamp01((time - wobble) / Mathf.Max(config.MeltDuration - wobble, 0.0001f));
+            SetFloat(_frozen, ChargeId, charge * charge);
         }
 
-        // Pieces slide and fade, vapour rises, the rim flashes gold and the badge orb pops away.
-        private void Shatter(BallAnimationConfig config, float time)
+        // The whole block gives way to its chunks.
+        private void Break()
         {
-            var f = config.Finish;
             transform.localScale = Vector3.one;
-            var k = Mathf.Clamp01(time / Mathf.Max(config.FrozenPieceTime, 0.0001f));
-            var out3 = 1f - (1f - k) * (1f - k) * (1f - k);
-            for (var i = 0; i < _pieces.Length; i++)
+            _frozen.enabled = false;
+            foreach (var piece in _pieces) piece.enabled = true;
+        }
+
+        // Chunks drift down slowly as if in low gravity, turning in depth, and dissolve to dust inside the tube's own column.
+        private void Tumble(BallAnimationConfig config, float time)
+        {
+            var art = _frozen.sprite.bounds;
+            var low = _frozen.transform.TransformPoint(art.min);
+            var high = _frozen.transform.TransformPoint(art.max);
+            var clip = new Vector4(low.x, low.y, high.x, high.y);
+            for (var i = 0; i < ChunkCount; i++)
             {
                 var piece = _pieces[i];
-                var slide = Slides[i];
-                var t = piece.transform;
-                t.localPosition = new Vector3(slide.x * config.FrozenPieceSlide * out3,
-                    slide.y * config.FrozenPieceSlide * out3 - config.FrozenPieceDrop * k * k, 0f);
-                t.localRotation = Quaternion.Euler(0f, 0f, -slide.x * config.FrozenPieceSpin * out3);
-                var alpha = _iceAlpha * (1f - k * k);
-                piece.enabled = alpha > 0.001f;
-                piece.color = new Color(1f, 1f, 1f, alpha);
-                SetFloat(piece, CrackId, 1f);
-                SetFloat(piece, CrackLightId, 1f - out3);
+                var pivot = piece.transform.parent;
+                var t = Mathf.Max(time - _delay[i], 0f);
+                var k = Mathf.Clamp01(t / Mathf.Max(config.FrozenChunkTime, 0.0001f));
+                var away = _away[i];
+                var turn = 1f - (1f - k) * (1f - k);
+                pivot.localPosition = _rest[i] + new Vector3(away.x * config.FrozenChunkSpeed * t,
+                    away.y * config.FrozenChunkSpeed * t + config.FrozenChunkLift * t - 0.5f * config.FrozenChunkGravity * t * t, 0f);
+                var rotation = Quaternion.Euler(away.y * config.FrozenChunkTilt * turn, -away.x * config.FrozenChunkTilt * turn,
+                    -away.x * config.FrozenChunkSpin * turn);
+                pivot.localRotation = rotation;
+                pivot.localScale = Vector3.one * Mathf.Lerp(1f, config.FrozenChunkShrink, k);
+                var facing = rotation * Vector3.back;
+                SetVector(piece, TiltId, new Vector4(facing.x, facing.y, -facing.z, 0f));
+                var dissolve = Mathf.SmoothStep(0f, 1f, (k - config.FrozenChunkDissolveAt) / Mathf.Max(1f - config.FrozenChunkDissolveAt, 0.0001f));
+                piece.enabled = dissolve < 1f;
+                SetVector(piece, ClipId, clip);
+                SetFloat(piece, DissolveId, dissolve);
             }
 
-            var pop = Mathf.Clamp01(time / Mathf.Max(config.FrozenBadgePopTime, 0.0001f));
-            var swell = 1f + (config.FrozenBadgePop - 1f) * Mathf.Sin(pop * Mathf.PI * 0.5f);
-            _badge.localScale = Vector3.one * (_badgeScale * swell);
-            SetBadgeAlpha(_iceAlpha * (1f - pop * pop));
-
-            var v = Mathf.Clamp01(time / Mathf.Max(config.FrozenVapourTime, 0.0001f));
-            var width = TubeArt.ArtWidthPx / TubeArt.PixelsPerUnit;
-            var mist = Color.Lerp(f.Core, Color.white, 0.4f);
-            for (var i = 0; i < _vapour.Length; i++)
-            {
-                var vk = Mathf.Clamp01(v * (1f + i * 0.35f) - i * 0.15f);
-                var rise = config.FrozenVapourRise * (1f - (1f - vk) * (1f - vk));
-                var shape = Mathf.Lerp(0.9f, 1.4f, vk) * width;
-                var alpha = config.FrozenVapourAlpha * Mathf.Sin(Mathf.PI * Mathf.Sqrt(vk)) * (i == 0 ? 1f : 0.7f);
-                Stretch(_vapour[i], _badge.localPosition + new Vector3((i - 0.5f) * width * 0.25f, rise, 0f),
-                    shape, shape * (1.6f - i * 0.3f), mist, alpha);
-            }
-
-            var r = Mathf.Clamp01(time / Mathf.Max(config.FrozenRimTime, 0.0001f));
-            var flash = r < 0.2f ? r / 0.2f : 1f - Mathf.SmoothStep(0f, 1f, (r - 0.2f) / 0.8f);
-            var top = _frozen.sprite.bounds.max.y * _frozen.transform.localScale.y;
-            Stretch(_rimGlow, new Vector3(0f, top, 0f), width, config.FrozenRimHeight,
-                Color.Lerp(config.CompleteGlowColor, Color.white, 0.35f), flash * config.FrozenRimAlpha);
+            var holder = _pieces[0].transform.parent;
+            _badge.localPosition = holder.localPosition + holder.localRotation * (BadgeRest - _rest[0]) * holder.localScale.x;
+            _badge.localRotation = holder.localRotation;
+            _badge.localScale = Vector3.one * (_badgeScale * holder.localScale.x);
+            var badgeK = Mathf.Clamp01((time - _delay[0]) / Mathf.Max(config.FrozenChunkTime, 0.0001f));
+            SetBadgeAlpha(1f - Mathf.SmoothStep(0f, 1f, badgeK / Mathf.Max(config.FrozenChunkDissolveAt + 0.2f, 0.0001f)));
         }
 
-        private void SetIceAlpha(float alpha)
-        {
-            _iceAlpha = alpha;
-            _frozen.color = new Color(1f, 1f, 1f, alpha);
-            SetBadgeAlpha(alpha);
-        }
+        private static Vector3 BadgeRest => new(0f, TubeArt.ArtY(BadgeYPx), 0f);
 
         private void SetBadgeAlpha(float alpha)
         {
             foreach (var layer in _badgeLayers)
                 layer.color = new Color(1f, 1f, 1f, layer == _badgeOuterGlow ? alpha * _haloAlpha : alpha);
-        }
-
-        private void Ring(Color color, float alpha, float width, Vector3 center)
-        {
-            Stretch(_ringNear, center, width, width * RingAspect, color, alpha);
-            Stretch(_ringFar, center, width, width * RingAspect, color, alpha * 0.6f);
-        }
-
-        private static void Stretch(SpriteRenderer renderer, Vector3 position, float width, float height, Color color, float alpha)
-        {
-            renderer.enabled = alpha > 0.001f && renderer.sprite != null;
-            if (!renderer.enabled) return;
-            var native = renderer.sprite.bounds.size;
-            renderer.transform.localPosition = position;
-            renderer.transform.localScale = new Vector3(width / native.x, height / native.y, 1f);
-            renderer.color = new Color(color.r, color.g, color.b, color.a * alpha);
         }
 
         // Read first: the renderer keeps its sprite texture in this block.
@@ -247,18 +223,23 @@ namespace Project.Contexts.Game.Items
             if (_play.isAlive) _play.Stop();
             transform.localScale = Vector3.one;
             _frozen.enabled = true;
+            _frozen.color = Color.white;
             SetFloat(_frozen, CrackId, 0f);
             SetFloat(_frozen, ChargeId, 0f);
-            foreach (var piece in _pieces)
+            for (var i = 0; i < _pieces.Length; i++)
             {
+                var piece = _pieces[i];
                 piece.enabled = false;
-                piece.transform.localPosition = Vector3.zero;
-                piece.transform.localRotation = Quaternion.identity;
+                SetFloat(piece, DissolveId, 0f);
+                var pivot = piece.transform.parent;
+                pivot.localPosition = _rest[i];
+                pivot.localRotation = Quaternion.identity;
+                pivot.localScale = Vector3.one;
             }
-            _ringNear.enabled = _ringFar.enabled = _hot.enabled = _rimGlow.enabled = false;
-            foreach (var mist in _vapour) mist.enabled = false;
+            _badge.localPosition = BadgeRest;
+            _badge.localRotation = Quaternion.identity;
             _badge.localScale = Vector3.one * _badgeScale;
-            SetIceAlpha(1f);
+            SetBadgeAlpha(1f);
         }
 
         public override void OnDespawn() => Stop();

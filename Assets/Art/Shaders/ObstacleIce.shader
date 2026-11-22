@@ -1,4 +1,4 @@
-// Ice over a tube: frost on its sides, a slow diagonal light; bold crack strokes run from the badge and become the cuts it splits along.
+// Ice block over a tube lit as a thick rounded slab; it cracks into bevelled chunks that break off with depth and their own light.
 Shader "Project/Obstacle Ice"
 {
     Properties
@@ -6,28 +6,42 @@ Shader "Project/Obstacle Ice"
         [PerRendererData] _MainTex ("Sprite", 2D) = "white" {}
         _HalfWidth ("Ice half width in u", Float) = 0.44
         _Aspect ("Art height over width", Float) = 2.667
-        _FrostColor ("Frost edge", Color) = (0.9, 0.98, 1, 1)
-        _FrostGain ("Frost edge strength", Range(0, 1)) = 0.35
-        _FrostPower ("Frost edge falloff", Range(1, 12)) = 4
+        _LightDir ("Light direction", Vector) = (-0.45, 0.65, 0.62, 0)
+        _Shade ("Shade on the side away from the light", Range(0, 1)) = 0.7
+        _Lit ("Light on the side facing it", Range(1, 1.5)) = 1.1
+        _Round ("Roundness of the slab's sides", Range(0, 1.5)) = 0.85
+        _Bump ("Relief from the art", Range(0, 8)) = 1.2
+        _RimColor ("Edge light", Color) = (0.86, 0.98, 1, 1)
+        _RimGain ("Edge light strength", Range(0, 1)) = 0.32
+        _SpecCut ("Glint size (higher is smaller)", Range(0.85, 1)) = 0.935
+        _SpecGain ("Glint strength", Range(0, 1)) = 0.55
+        _DeepColor ("Inner depth tint", Color) = (0.36, 0.6, 0.95, 1)
+        _Depth ("Inner layer shift", Range(0, 0.1)) = 0.035
+        _DepthGain ("Inner layer strength", Range(0, 1)) = 0.35
         _ShineColor ("Light drift", Color) = (0.92, 1, 1, 1)
         _ShineGain ("Light drift strength", Range(0, 1)) = 0.1
         _ShineWidth ("Light drift width", Range(0.02, 0.5)) = 0.12
         _ShinePeriod ("Light drift period", Range(2, 20)) = 8
         _ShineSlope ("Light drift slope", Range(0, 2)) = 0.8
-        _CoolColor ("Cold tint", Color) = (0.62, 0.78, 1, 1)
-        _CoolGain ("Cold tint strength", Range(0, 1)) = 0.12
-        [PerRendererData] _Charge ("Charge (frost brightens before the hit)", Range(0, 1)) = 0
-        [PerRendererData] _Crack ("Crack reach (0 none, 1 every stroke)", Range(0, 1)) = 0
-        [PerRendererData] _CrackLight ("Crack strength", Range(0, 1)) = 1
-        [PerRendererData] _CrackOrigin ("Crack origin uv (the badge)", Vector) = (0.5, 0.5, 0, 0)
-        // x lower cut v, y upper cut v, z jag.
-        [PerRendererData] _Cuts ("Cut lines", Vector) = (0.34, 0.66, 0.025, 0)
-        _CrackColor ("Crack light", Color) = (0.42, 0.86, 1, 1)
-        _CrackInk ("Crack ink", Color) = (0.12, 0.2, 0.5, 1)
-        _CrackWidth ("Crack line half width in u", Range(0.002, 0.05)) = 0.02
-        _CrackInkWidth ("Crack ink width in u", Range(0, 0.05)) = 0.009
-        // x lower cut v, y upper cut v, w on.
-        [PerRendererData] _Piece ("Piece band", Vector) = (0, 1, 0, 0)
+        [PerRendererData] _Charge ("Charge (edges brighten before the break)", Range(0, 1)) = 0
+        [PerRendererData] _Crack ("Crack reach (0 none, 1 every chunk)", Range(0, 1)) = 0
+        [PerRendererData] _CrackOrigin ("Crack origin and its ring radius, in ice units", Vector) = (0.5, 1.33, 0.28, 0)
+        _CrackColor ("Light inside the cracks", Color) = (0.55, 0.9, 1, 1)
+        _CrackInk ("Crack depth", Color) = (0.1, 0.2, 0.45, 1)
+        _CrackWidth ("Crack gap half width", Range(0.002, 0.03)) = 0.01
+        _Bevel ("Chunk bevel width", Range(0.005, 0.08)) = 0.05
+        _BevelTilt ("Chunk bevel slope", Range(0, 3)) = 1.8
+        _Facet ("Chunk facet tilt", Range(0, 2)) = 1.3
+        // x chunk index, w on; a chunk alone, seen with its side walls when it turns.
+        [PerRendererData] _Piece ("Chunk", Vector) = (0, 0, 0, 0)
+        [PerRendererData] _Tilt ("Chunk facing (z toward the viewer)", Vector) = (0, 0, 1, 0)
+        _Thickness ("Chunk thickness", Range(0, 0.2)) = 0.09
+        _SideColor ("Chunk side", Color) = (0.42, 0.68, 0.95, 1)
+        [PerRendererData] _Dissolve ("Chunk turned to dust (0 whole, 1 gone)", Range(0, 1)) = 0
+        // World rect a chunk stays inside, so it never covers a neighbour: x min, y min, x max, y max.
+        [PerRendererData] _Clip ("Chunk clip rect", Vector) = (-100000, -100000, 100000, 100000)
+        _DustColor ("Dust", Color) = (0.8, 0.95, 1, 1)
+        _DustSize ("Dust grain size", Range(0.005, 0.1)) = 0.045
     }
 
     SubShader
@@ -48,8 +62,11 @@ Shader "Project/Obstacle Ice"
             CGPROGRAM
             #pragma vertex vert
             #pragma fragment frag
+            #pragma target 3.0
             #include "UnityCG.cginc"
-            #include "ObstacleCommon.cginc"
+
+            // Must match FrozenTubeItem.ChunkCount.
+            #define CHUNKS 7
 
             struct appdata
             {
@@ -63,23 +80,18 @@ Shader "Project/Obstacle Ice"
                 float4 pos : SV_POSITION;
                 fixed4 color : COLOR;
                 float2 uv : TEXCOORD0;
-                float worldX : TEXCOORD1;
+                float2 world : TEXCOORD1;
             };
 
             sampler2D _MainTex;
-            float _HalfWidth, _Aspect, _FrostGain, _FrostPower, _ShineGain, _ShineWidth, _ShinePeriod, _ShineSlope, _CoolGain;
-            float _Charge, _Crack, _CrackLight, _CrackWidth, _CrackInkWidth;
-            float4 _CrackOrigin, _Cuts, _Piece;
-            fixed4 _FrostColor, _ShineColor, _CoolColor, _CrackColor, _CrackInk;
-
-            // Strokes from the badge's ring to the cuts, and short twigs off the cuts; x across, y up from the badge, in u.
-            static const float4 Strokes[8] =
-            {
-                float4(0.035, 0.27, -0.04, 0.34), float4(-0.04, 0.34, 0.02, 0.45),
-                float4(-0.03, -0.27, 0.045, -0.35), float4(0.045, -0.35, -0.02, -0.45),
-                float4(0.22, 0.44, 0.3, 0.66), float4(-0.25, 0.43, -0.31, 0.6),
-                float4(-0.2, -0.44, -0.28, -0.68), float4(0.26, -0.45, 0.33, -0.6)
-            };
+            float4 _MainTex_TexelSize;
+            float _HalfWidth, _Aspect, _Shade, _Lit, _Round, _Bump, _RimGain, _SpecCut, _SpecGain, _Depth, _DepthGain;
+            float _ShineGain, _ShineWidth, _ShinePeriod, _ShineSlope;
+            float _Charge, _Crack, _CrackWidth, _Bevel, _BevelTilt, _Facet, _Thickness, _Dissolve, _DustSize;
+            float4 _LightDir, _CrackOrigin, _Piece, _Tilt, _Clip;
+            fixed4 _RimColor, _DeepColor, _ShineColor, _CrackColor, _CrackInk, _SideColor, _DustColor;
+            // xy chunk seed in ice units (u across, v times aspect up), zw its facet tilt; set from FrozenTubeItem.
+            float4 _Chunks[CHUNKS];
 
             v2f vert(appdata v)
             {
@@ -87,54 +99,135 @@ Shader "Project/Obstacle Ice"
                 o.pos = UnityObjectToClipPos(v.vertex);
                 o.uv = v.uv;
                 o.color = v.color;
-                o.worldX = mul(unity_ObjectToWorld, v.vertex).x;
+                o.world = mul(unity_ObjectToWorld, v.vertex).xy;
                 return o;
             }
 
-            // The jagged line between two pieces, the same for both and for its crack stroke.
-            float Cut(float u, float v0, float jag)
+            // Nearest chunk, distance to its border and the direction across that border.
+            int Chunk(float2 q, out float edge, out float2 across)
             {
-                return v0 + jag * (Zigzag(u * 2.6 + v0 * 7) * 0.7 + Zigzag(u * 6.1 + v0 * 13) * 0.3);
+                int near = 0;
+                float best = 1e9;
+                for (int k = 0; k < CHUNKS; k++)
+                {
+                    float2 d = q - _Chunks[k].xy;
+                    float dd = dot(d, d);
+                    if (dd < best) { best = dd; near = k; }
+                }
+                float2 seed = _Chunks[near].xy;
+                edge = 1e9;
+                across = float2(0, 1);
+                for (int j = 0; j < CHUNKS; j++)
+                {
+                    if (j == near) continue;
+                    float2 dir = normalize(_Chunks[j].xy - seed);
+                    float e = dot((seed + _Chunks[j].xy) * 0.5 - q, dir);
+                    if (e < edge) { edge = e; across = dir; }
+                }
+                return near;
+            }
+
+            float Luma(float2 uv)
+            {
+                return dot(tex2D(_MainTex, uv).rgb, float3(0.3, 0.59, 0.11));
             }
 
             fixed4 frag(v2f i) : SV_Target
             {
                 fixed4 tex = tex2D(_MainTex, i.uv);
                 float x = (i.uv.x - 0.5) / _HalfWidth;
-                fixed3 rgb = lerp(tex.rgb, tex.rgb * _CoolColor.rgb, _CoolGain);
+                float2 q = float2(i.uv.x, i.uv.y * _Aspect);
 
-                // Frost brightens toward the sides like a rounded block, more while it charges.
-                rgb += _FrostColor.rgb * pow(saturate(abs(x)), _FrostPower) * _FrostGain * (1 + _Charge * 2);
-                rgb += _FrostColor.rgb * _Charge * 0.12;
+                // The slab is flat in front and rounds off toward its sides; the art's relief lifts its swirls.
+                float side = sign(x) * pow(saturate(abs(x)), 2.5) * _Round;
+                float2 t = _MainTex_TexelSize.xy * 2;
+                float2 relief = float2(Luma(i.uv + float2(t.x, 0)) - Luma(i.uv - float2(t.x, 0)),
+                                       Luma(i.uv + float2(0, t.y)) - Luma(i.uv - float2(0, t.y))) * _Bump;
+                float3 n = float3(side - relief.x, -relief.y, 1);
+
+                // Cracks run out from the badge ring; each chunk they reach takes its own facet, its edges bevel down into the gap.
+                float edge;
+                float2 across;
+                int chunk = Chunk(q, edge, across);
+                float reach = _Crack * 1.5;
+                float from = length(q - _CrackOrigin.xy) - _CrackOrigin.z;
+                float aa = max(fwidth(edge), 1e-4);
+                float shown = step(1e-3, _Crack) * (1 - smoothstep(reach - 0.02, reach + 0.02, from));
+                float seedFrom = length(_Chunks[chunk].xy - _CrackOrigin.xy) - _CrackOrigin.z;
+                float facet = saturate((reach - seedFrom) / 0.25) * step(1e-3, _Crack);
+                float piece = _Piece.w;
+                facet = max(facet, piece);
+                shown = max(shown, piece);
+                n.xy += _Chunks[chunk].zw * _Facet * facet;
+                float bevel = (1 - smoothstep(_CrackWidth, _CrackWidth + _Bevel, edge)) * shown;
+                n.xy += across * bevel * _BevelTilt;
+
+                // A turning chunk carries its facing into the light.
+                n.xy += _Tilt.xy;
+                n.z *= max(abs(_Tilt.z), 0.05);
+                n = normalize(n);
+
+                float3 l = normalize(_LightDir.xyz);
+                float diffuse = saturate(dot(n, l) * 0.5 + 0.5);
+                // The inner layer sits deeper, so it shifts against the surface's slope.
+                fixed3 deep = tex2D(_MainTex, i.uv - n.xy * _Depth).rgb * _DeepColor.rgb;
+                fixed3 rgb = lerp(tex.rgb, deep, _DepthGain * n.z);
+                rgb *= lerp(_Shade, _Lit, diffuse);
+                float fresnel = pow(1 - saturate(n.z), 2);
+                rgb += _RimColor.rgb * fresnel * _RimGain * (1 + _Charge * 1.5);
+                rgb += _RimColor.rgb * _Charge * 0.08;
+                float3 h = normalize(l + float3(0, 0, 1));
+                float glint = smoothstep(_SpecCut - 0.006, _SpecCut + 0.006, dot(n, h));
+                rgb += glint * _SpecGain;
 
                 // A faint diagonal light drifts up the ice now and then; tubes along a row follow a little later.
                 float s = i.uv.y * _Aspect * 0.5 + x * _ShineSlope;
-                float pos = lerp(-1, _Aspect * 0.5 + 1.5, frac((_Time.y - i.worldX * 0.2) / _ShinePeriod));
+                float pos = lerp(-1, _Aspect * 0.5 + 1.5, frac((_Time.y - i.world.x * 0.2) / _ShinePeriod));
                 float d = (s - pos) / _ShineWidth;
-                rgb += _ShineColor.rgb * exp(-d * d) * _ShineGain;
+                rgb += _ShineColor.rgb * exp(-d * d) * _ShineGain * (1 - piece);
 
-                // Crack strokes in u units from the badge; the light runs along them out to the ends.
-                float2 q = float2(i.uv.x - _CrackOrigin.x, (i.uv.y - _CrackOrigin.y) * _Aspect);
-                float lo = Cut(i.uv.x, _Cuts.x, _Cuts.z);
-                float hi = Cut(i.uv.x, _Cuts.y, _Cuts.z);
-                float crackDist = min(abs(i.uv.y - lo), abs(i.uv.y - hi)) * _Aspect;
-                crackDist = lerp(1e3, crackDist, step(abs(q.x), _HalfWidth * 0.98));
-                for (int k = 0; k < 8; k++) crackDist = min(crackDist, SegmentDistance(q, Strokes[k].xy, Strokes[k].zw) + (k >= 4 ? 0.003 : 0));
-                float3 stroke = CrackStroke(crackDist, _CrackWidth, _CrackInkWidth);
-                float ay = abs(q.y);
-                float path = min(max(ay - 0.27, 0), 0.17) + abs(q.x) + max(ay - 0.44, 0);
-                float reach = _Crack * 0.95;
-                float aa = max(fwidth(path), 1e-4);
-                float shown = (1 - smoothstep(reach - aa, reach + aa, path)) * step(1e-3, _Crack) * step(0.25, length(q));
-                float tip = 1 - saturate((reach - path) / 0.12);
-                rgb = ApplyCrack(rgb, stroke, shown, tip, _CrackInk.rgb, _CrackColor.rgb, _CrackLight);
+                // The gap itself: light caught on its walls, dark at its bottom, burning bright at the newest stretch.
+                float gap = (1 - smoothstep(_CrackWidth - aa, _CrackWidth + aa, edge)) * shown;
+                float tip = 1 - saturate((reach - from) / 0.2);
+                float bottom = 1 - smoothstep(0, _CrackWidth * 0.6, edge);
+                fixed3 inside = lerp(_CrackColor.rgb, _CrackInk.rgb, bottom * (1 - tip));
+                inside = lerp(inside, fixed3(1, 1, 1), tip * 0.6);
+                rgb = lerp(rgb, inside, gap * (1 - piece));
 
-                // Pieces: one band between two jagged cuts.
-                float pa = max(fwidth(i.uv.y), 1e-4);
-                float pieceLo = Cut(i.uv.x, _Piece.x, _Cuts.z);
-                float pieceHi = Cut(i.uv.x, _Piece.y, _Cuts.z);
-                float band = smoothstep(pieceLo - pa, pieceLo + pa, i.uv.y) * (1 - smoothstep(pieceHi - pa, pieceHi + pa, i.uv.y));
-                float alpha = tex.a * i.color.a * lerp(1, band, _Piece.w);
+                float alpha = tex.a * i.color.a;
+                if (piece > 0.5)
+                {
+                    // Only this chunk's face; the gap falls away.
+                    float face = (float)(chunk == (int)_Piece.x) * smoothstep(_CrackWidth - aa, _CrackWidth + aa, edge);
+                    // Its back outline shows behind the face as a side wall, opposite to where it faces.
+                    float wall = 0;
+                    for (int k = 1; k <= 3; k++)
+                    {
+                        float2 back = q + _Tilt.xy * _Thickness * (k / 3.0);
+                        float be;
+                        float2 ba;
+                        float inChunk = (float)(Chunk(back, be, ba) == (int)_Piece.x);
+                        wall = max(wall, inChunk * step(_CrackWidth, be) * tex2D(_MainTex, float2(back.x, back.y / _Aspect)).a);
+                    }
+                    float wallLight = saturate(dot(normalize(float3(-_Tilt.xy, 0.4)), l) * 0.5 + 0.5);
+                    fixed3 sideRgb = _SideColor.rgb * lerp(0.55, 1.15, wallLight);
+                    rgb = lerp(sideRgb, rgb, face);
+                    alpha = max(alpha * face, wall * i.color.a);
+
+                    // It breaks up into round grains that shrink away, each at its own pace, turning to pale stardust.
+                    float2 grain = floor(q / _DustSize);
+                    float2 cell = frac(q / _DustSize) - 0.5;
+                    float h = frac(sin(dot(grain, float2(12.9898, 78.233))) * 43758.5453);
+                    float radius = 0.75 * (1 - saturate(_Dissolve * 1.6 - h * 0.6));
+                    float r = length(cell);
+                    float ra = max(fwidth(r), 1e-4);
+                    alpha *= 1 - smoothstep(radius - ra, radius + ra, r);
+                    rgb = lerp(rgb, _DustColor.rgb, saturate(_Dissolve * 1.4));
+
+                    // Fade out softly before the tube's own edges.
+                    float2 inside = min(i.world - _Clip.xy, _Clip.zw - i.world);
+                    alpha *= saturate(min(inside.x, inside.y) / 0.12);
+                }
                 return fixed4(rgb * i.color.rgb * alpha, alpha);
             }
             ENDCG

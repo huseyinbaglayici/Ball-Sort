@@ -41,7 +41,7 @@ namespace Project.Contexts.Game
             if (move == null) return at;
             if (move.Revealed.Count > 0) at = Math.Max(at, movedAt + config.HiddenReadableTime);
             if (move.LockboxesOpened.Count > 0) at = Math.Max(at, landedAt + config.ShutterClearTime);
-            if (move.CurtainsLifted.Count > 0) at = Math.Max(at, landedAt + config.MeltDuration);
+            if (move.CurtainsLifted.Count > 0) at = Math.Max(at, landedAt + config.MeltDuration + config.MeltOutDuration);
             if (move.Exploded) at = Math.Max(at, landedAt + config.ExplodeReadableTime);
             return at;
         }
