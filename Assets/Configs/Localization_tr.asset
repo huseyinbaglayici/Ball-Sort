@@ -211,6 +211,34 @@ MonoBehaviour:
     Value: 'Toplar tüpler arasında portallarla geçer.'
   - Key: help.tower
     Value: 'Kuleler daha çok top alan uzun tüplerdir.'
+  - Key: tutorial.pick
+    Value: 'Topları kaldırmak için soldaki tüpe dokun'
+  - Key: tutorial.drop_right
+    Value: 'Bırakmak için sağdaki tüpe dokun'
+  - Key: tutorial.drop_left
+    Value: 'Bırakmak için soldaki tüpe dokun'
+  - Key: tutorial.same
+    Value: 'Toplar yalnız aynı rengin üstüne gider'
+  - Key: intro.new_item
+    Value: 'Yeni Nesne!'
+  - Key: intro.new_booster
+    Value: 'Yeni Güçlendirici!'
+  - Key: intro.hidden
+    Value: 'Gizli Toplar'
+  - Key: intro.frozen
+    Value: 'Donmuş Tüp'
+  - Key: intro.shutter
+    Value: 'Kepenk ve Anahtar'
+  - Key: intro.bomb
+    Value: 'Bomba'
+  - Key: intro.tower
+    Value: 'Kule'
+  - Key: intro.undo
+    Value: 'Son hamleni geri alır.'
+  - Key: intro.extra_tube
+    Value: 'Tahtaya küçük boş bir tüp ekler.'
+  - Key: intro.free_move
+    Value: 'Topları bir kez herhangi bir rengin üstüne bırak.'
   - Key: game.life_cost
     Value: '-1 can'
   - Key: result.peek

@@ -211,6 +211,34 @@ MonoBehaviour:
     Value: 'Balls warp between tubes through portals.'
   - Key: help.tower
     Value: 'Towers are tall tubes that hold more balls.'
+  - Key: tutorial.pick
+    Value: 'Tap the left tube to lift the balls'
+  - Key: tutorial.drop_right
+    Value: 'Tap the right tube to drop them'
+  - Key: tutorial.drop_left
+    Value: 'Tap the left tube to drop them'
+  - Key: tutorial.same
+    Value: 'Balls go only onto the same colour'
+  - Key: intro.new_item
+    Value: 'New Item!'
+  - Key: intro.new_booster
+    Value: 'New Booster!'
+  - Key: intro.hidden
+    Value: 'Hidden Balls'
+  - Key: intro.frozen
+    Value: 'Frozen Tube'
+  - Key: intro.shutter
+    Value: 'Shutter & Key'
+  - Key: intro.bomb
+    Value: 'Bomb'
+  - Key: intro.tower
+    Value: 'Tower'
+  - Key: intro.undo
+    Value: 'Takes back your last move.'
+  - Key: intro.extra_tube
+    Value: 'Adds a small empty tube to the board.'
+  - Key: intro.free_move
+    Value: 'Drop balls onto any colour, once.'
   - Key: game.life_cost
     Value: '-1 life'
   - Key: result.peek

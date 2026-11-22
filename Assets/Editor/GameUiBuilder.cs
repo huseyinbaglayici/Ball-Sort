@@ -79,6 +79,7 @@ namespace Project.Editor
             var settings = BuildSettingsPopup();
             var daily = BuildDailyRewardPopup();
             var orbitRush = BuildOrbitRushScreen();
+            var intro = BuildIntroPopup();
 
             var scene = SceneManager.GetSceneByPath(MainScenePath);
             var openedHere = !scene.isLoaded;
@@ -103,6 +104,7 @@ namespace Project.Editor
                 BuildHome(scene, message, settings);
                 BuildLiveOpsHome(scene, daily, orbitRush, message);
                 BuildHud(scene, message, result);
+                BuildTutorial(scene, intro);
                 BuildLevelOpen(scene);
                 EditorSceneManager.MarkSceneDirty(scene);
                 EditorSceneManager.SaveScene(scene);

@@ -62,6 +62,7 @@ namespace Project.Contexts.Application
             Services.Register(new MonetizationService(playerData, lives));
             Services.Register(new ProgressService(playerData, wallet, boosters, lives));
             Services.Register(new ContinueService(playerData, wallet));
+            Services.Register(new TutorialService(playerData));
             Services.Register(new DailyRewardService(playerData, wallet));
             var orbitRush = new OrbitRushService(playerData, wallet);
             Services.Register(orbitRush);

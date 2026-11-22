@@ -202,6 +202,7 @@ namespace Project.Contexts.Game
             _board.PlayEntrance();
             _ads.BeginActivePlay();
             RefreshHud();
+            EventBus<LevelStarted>.Raise(new LevelStarted(_level, data, _model));
         }
 
         // Gap kept between the board's art and each HUD block, as a share of the screen height.
@@ -283,6 +284,7 @@ namespace Project.Contexts.Game
             _lastMove = move;
             _movedAt = Time.time;
             _board.Sync(_model, move);
+            EventBus<MoveMade>.Raise(new MoveMade(from, to));
             var reveal = MechanicSounds.OnMove(move);
             if (reveal != null) _audio.PlayOneShotSound(reveal);
             _winPending = _model.IsSolved();
@@ -324,6 +326,7 @@ namespace Project.Contexts.Game
             // The board plays the lift sounds and the one selection haptic.
             _board.Select(bottle.Index, _model.TopRun(bottle.Index));
             ShowFreeTargets();
+            EventBus<BottleSelected>.Raise(new BottleSelected(bottle.Index));
         }
 
         // With Free Move armed and balls lifted, every tube that can take them is marked; cleared otherwise.
@@ -345,9 +348,11 @@ namespace Project.Contexts.Game
         private void Deselect()
         {
             if (_selected == null) return;
-            _board.Deselect(_selected.Index);
+            var index = _selected.Index;
+            _board.Deselect(index);
             _selected = null;
             _board.HideTargets();
+            EventBus<BottleDeselected>.Raise(new BottleDeselected(index));
         }
 
         // The debug panel's free Undo.
@@ -570,6 +575,7 @@ namespace Project.Contexts.Game
                 _c._leaving = false;
                 _c._stuckCheckPending = false;
                 _c._hud.SetActive(false);
+                EventBus<LevelLeft>.Raise(default);
             }
         }
 

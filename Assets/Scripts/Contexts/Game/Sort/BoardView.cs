@@ -84,6 +84,15 @@ namespace Project.Contexts.Game.Sort
         // Also locked: a tube under a still-showing obstacle, and one the model has but the view has not placed yet.
         public bool IsLocked(int bottle) => bottle >= _locks.Length || _locks[bottle] > 0 || Time.time < _settledAt || _markers.IsCovered(bottle);
 
+        public int BottleCount => _bottles.Count;
+
+        // World point on a tube: x across its width (-0.5..0.5), y from its bottom (0) to its mouth (1).
+        public Vector3 TubePoint(int bottle, float x, float y)
+        {
+            var tube = _bottles[bottle];
+            return tube.transform.TransformPoint(new Vector3(x * tube.Size.x, y * tube.MouthLocalY));
+        }
+
         public float WinPopupDelay => _animation.WinPopupDelay;
         public BallAnimationConfig Animation => _animation;
 

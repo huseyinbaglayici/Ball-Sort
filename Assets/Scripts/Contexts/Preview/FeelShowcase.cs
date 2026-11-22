@@ -9,6 +9,7 @@ using Project.Common.UI.PopUps;
 using Project.Contexts.Application;
 using Project.Contexts.Application.Economy;
 using Project.Contexts.Game;
+using Project.Contexts.Game.Levels;
 using Project.Contexts.Home;
 using Project.Contexts.LiveOps;
 using Project.Contexts.Main;
@@ -93,6 +94,17 @@ namespace Project.Contexts.Preview
                 ("Win", () => Game(() => DebugPanel.Run("Win level"))),
                 ("Lose + peek", () => Game(() => DebugPanel.Run("Lose level"))),
                 ("Side menu", () => Game(() => Field<SettingsMenu>(Find<GameController>(), "_settings")?.SetOpen(true))));
+            Add("Tutorial",
+                ("Level 1 hand", () => PlayLevel(TutorialService.TapLevel)),
+                ("Level 2 marks", () => PlayLevel(TutorialService.SameColorLevel)),
+                ("New hidden", () => Card(Intro.Of(Mechanic.HiddenBall))),
+                ("New tower", () => Card(Intro.Of(Mechanic.Tower))),
+                ("New frozen", () => Card(Intro.Of(Mechanic.FrozenTube))),
+                ("New shutter", () => Card(Intro.Of(Mechanic.ShutterKey))),
+                ("New bomb", () => Card(Intro.Of(Mechanic.Bomb))),
+                ("New Undo", () => Card(Intro.Of(BoosterType.Undo))),
+                ("New Extra Tube", () => Card(Intro.Of(BoosterType.ExtraTube))),
+                ("New Free Move", () => Card(Intro.Of(BoosterType.FreeMove))));
             Add("Board",
                 ("Board FX scene", EnterBoard));
         }
@@ -116,6 +128,20 @@ namespace Project.Contexts.Preview
                 yield return new WaitForSecondsRealtime(1f);
             }
             action();
+        }
+
+        // The lesson plays on every visit to its level.
+        private IEnumerator PlayLevel(int level)
+        {
+            yield return Ensure(MainState.Game);
+            Services.Get<PlayerData>().Model.Level = level;
+            StartLevel();
+        }
+
+        private IEnumerator Card(Intro intro)
+        {
+            yield return Ensure(MainState.Game);
+            Find<LevelTutorial>().ShowIntro(intro);
         }
 
         private IEnumerator BoardEntrance()
@@ -365,6 +391,9 @@ namespace Project.Contexts.Preview
             model.Daily.Streak = 2;
             model.Daily.LastClaimDay = today - 1;
             model.Daily.LastAutoShownDay = today;
+            // Cards only from their buttons.
+            model.Tutorial.Mechanics = ~0;
+            model.Tutorial.Boosters = new[] { true, true, true };
             new SaveService().Save(PlayerData.Key, model);
         }
 

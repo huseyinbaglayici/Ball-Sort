@@ -61,11 +61,21 @@ namespace Project.Contexts.Application.Economy
         public int FinishCoins;
     }
 
+    // First-time intros already shown.
+    [Serializable]
+    public sealed class TutorialModel
+    {
+        // Mechanic flags.
+        public int Mechanics;
+        // Indexed by BoosterType.
+        public bool[] Boosters = new bool[3];
+    }
+
     // One file so a win's coins, road reward and next level are written together.
     [Serializable]
     public sealed class ProgressModel
     {
-        public const int CurrentVersion = 2;
+        public const int CurrentVersion = 3;
 
         public int Version = CurrentVersion;
         // MaxLevel + 1 once the campaign is won.
@@ -92,6 +102,7 @@ namespace Project.Contexts.Application.Economy
         public ContinueReceipt LastContinue = new();
         public DailyRewardModel Daily = new();
         public OrbitRushModel OrbitRush = new();
+        public TutorialModel Tutorial = new();
     }
 
     // Batch() defers writes so one logical change is one file write.
@@ -147,6 +158,30 @@ namespace Project.Contexts.Application.Economy
                 model.BoosterStock = new int[3];
                 model.OpeningGranted = new bool[3];
                 model.Version = 2;
+                changed = true;
+            }
+
+            if (model.Version < 3)
+            {
+                // Boosters a version 2 player has already passed need no intro.
+                model.Tutorial ??= new TutorialModel();
+                foreach (var type in CampaignRules.AllBoosters)
+                    if (model.Level > CampaignRules.UnlockLevel(type)) model.Tutorial.Boosters[(int)type] = true;
+                model.Version = 3;
+                changed = true;
+            }
+
+            if (model.Tutorial == null)
+            {
+                model.Tutorial = new TutorialModel();
+                changed = true;
+            }
+
+            if (model.Tutorial.Boosters == null || model.Tutorial.Boosters.Length != 3)
+            {
+                var shown = new bool[3];
+                if (model.Tutorial.Boosters != null) Array.Copy(model.Tutorial.Boosters, shown, Math.Min(3, model.Tutorial.Boosters.Length));
+                model.Tutorial.Boosters = shown;
                 changed = true;
             }
 
