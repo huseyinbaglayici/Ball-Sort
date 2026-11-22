@@ -22,7 +22,6 @@ namespace Project.Contexts.Game.Items
         private const float MascotPx = 512f;
         private const string IntroAnimation = "intro";
         private const string CelebrateAnimation = "celebrate";
-        private const string RibbonSlot = "ribbon";
 
         [SerializeField] private SpriteRenderer _dim;
         [SerializeField] private SpriteRenderer _flash;
@@ -35,10 +34,11 @@ namespace Project.Contexts.Game.Items
         [SerializeField] private SkeletonAnimation _stage;
         [SerializeField] private MeshRenderer _stageRenderer;
         [SerializeField] private TMP_Text _ribbonText;
+        [SerializeField] private TitleLetters _letters;
 
         private static Sprite _dimSprite;
         private Action<WinFx> _onFinished;
-        private Spine.Slot _ribbonSlot;
+        private WinFxSettings _w;
         // The screen in the board's units, so the stage reads the same on a narrow and a wide board.
         private float _view;
         private float _viewHeight;
@@ -51,7 +51,7 @@ namespace Project.Contexts.Game.Items
             _dim.sprite = _dimSprite;
         }
 
-        // From the last landing to the panel: the time the panel should wait for the ribbon to settle.
+        // From the last landing to the coins: the time to wait for the ribbon and its last letter to settle.
         public static float PanelAt(BallAnimationConfig c, int completedTubes)
         {
             var w = c.Win;
@@ -59,7 +59,8 @@ namespace Project.Contexts.Game.Items
             var ring = slam + Mathf.Max(completedTubes - 1, 0) * w.CapStagger + w.RingDelay;
             var burst = ring + w.RingTime;
             var landed = burst + w.MascotDelay + w.MascotTime;
-            return landed + w.RibbonDelay + w.RibbonTime;
+            var ribbon = landed + w.RibbonDelay;
+            return ribbon + Mathf.Max(w.RibbonTime, w.LetterDelay + w.LettersTime);
         }
 
         // tubes: every tube on the board; origin: the one that completed last; width: the board's width in its own units.
@@ -69,6 +70,7 @@ namespace Project.Contexts.Game.Items
             Stop();
             _onFinished = onFinished;
             var w = config.Win;
+            _w = w;
             var f = config.Finish;
             MeasureView(width);
 
@@ -88,14 +90,16 @@ namespace Project.Contexts.Game.Items
             var mascotAt = burstAt + w.MascotDelay;
             var landedAt = mascotAt + w.MascotTime;
             var ribbonAt = landedAt + w.RibbonDelay;
+            var lettersAt = ribbonAt + w.LetterDelay;
 
             Sweep(w, f, ringAt);
             PrimeTween.Tween.Delay(this, burstAt, fx => fx.Burst(w, f));
             Dim(w, f, burstAt);
             PrepareStage(w);
             PrimeTween.Tween.Delay(this, burstAt, fx => fx.PlayStage());
+            PrimeTween.Tween.Delay(this, lettersAt, fx => fx._letters.Play(0f, w));
 
-            var total = Mathf.Max(panelAt + w.AfterPanel, ribbonAt + w.RibbonTime + Tail);
+            var total = Mathf.Max(panelAt + w.AfterPanel, lettersAt + w.LettersTime + Tail);
             PrimeTween.Tween.Delay(this, total, fx => fx.Finish());
         }
 
@@ -199,7 +203,7 @@ namespace Project.Contexts.Game.Items
             stage.localScale = Vector3.one * scale;
             _ribbonText.text = Services.TryGet<LocalizationService>(out var loc) ? loc.Get("result.win") : "Great!";
             _ribbonText.fontSize = w.RibbonFontSize;
-            _ribbonText.alpha = 0f;
+            _ribbonText.alpha = 1f;
         }
 
         // Intro once, then the celebrate loop; both are authored in the skeleton from the same settings.
@@ -209,20 +213,15 @@ namespace Project.Contexts.Game.Items
             var skeleton = _stage.Skeleton;
             if (skeleton == null) return;
             skeleton.SetupPose();
-            _ribbonSlot = skeleton.FindSlot(RibbonSlot);
             var state = _stage.AnimationState;
             state.ClearTracks();
             state.SetAnimation(0, IntroAnimation, false);
             state.AddAnimation(0, CelebrateAnimation, true, 0f);
             _stage.Update(0f);
             _stageRenderer.enabled = true;
+            // The letters are hidden until their own arrival; the bone follower keeps the title on the band.
+            _letters.Play(float.MaxValue, _w);
             _ribbonText.enabled = true;
-        }
-
-        // The title fades with its ribbon; the bone follower keeps it on the band.
-        private void LateUpdate()
-        {
-            if (_ribbonText.enabled && _ribbonSlot != null) _ribbonText.alpha = _ribbonSlot.Pose.GetColor().a;
         }
 
         private void HideRing() => _ringNear.enabled = _ringFar.enabled = _glowNear.enabled = _glowFar.enabled = false;
@@ -249,7 +248,7 @@ namespace Project.Contexts.Game.Items
             _dim.enabled = _flash.enabled = false;
             _stageRenderer.enabled = false;
             _ribbonText.enabled = false;
-            _ribbonSlot = null;
+            _letters.Stop();
             if (_stage.AnimationState != null) _stage.AnimationState.ClearTracks();
             HideRing();
             _dust.Clear();

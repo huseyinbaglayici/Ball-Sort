@@ -272,7 +272,7 @@ namespace Project.Editor
             var landAt = inAt + w.MascotTime;
             var ribbonAt = landAt + w.RibbonDelay;
             var ribbonEnd = ribbonAt + w.RibbonTime;
-            var end = ribbonEnd + 0.1f;
+            var end = ribbonEnd + Mathf.Max(0.1f, w.LetterDelay + w.LettersTime - w.RibbonTime + 0.1f);
             var flashTime = Mathf.Max(w.FlashTime, 0.1f);
             var squashEnd = landAt + w.MascotSquashTime + w.MascotRecover;
 
@@ -334,7 +334,10 @@ namespace Project.Editor
                     Join(Times(0f, flashTime, 6), new[] { end }), 1f))),
                 ["ribbon"] = Dict(
                     ("translate", Keys2(t => new Vector2(0f, s.RibbonY + s.RibbonDrop * (1f - RibbonK(t))), Join(new[] { 0f }, Times(ribbonAt, ribbonEnd, 8), new[] { end }))),
-                    ("scale", Keys2(t => Vector2.one * (s.RibbonScale * Mathf.LerpUnclamped(0.7f, 1f, RibbonK(t))), Join(new[] { 0f }, Times(ribbonAt, ribbonEnd, 8), new[] { end }), 1f))),
+                    ("scale", Keys2(t => Vector2.one * (s.RibbonScale * Mathf.LerpUnclamped(0.7f, 1f, RibbonK(t))), Join(new[] { 0f }, Times(ribbonAt, ribbonEnd, 8), new[] { end }), 1f)),
+                    // A small damped wobble while the letters land on it.
+                    ("rotate", Keys1(t => t <= ribbonEnd ? 0f : 3f * Mathf.Exp(-(t - ribbonEnd) * 5f) * Mathf.Sin((t - ribbonEnd) * Mathf.PI * 2f / 0.36f),
+                        Join(new[] { 0f, ribbonEnd }, Times(ribbonEnd, end, 10))))),
             };
             var sparkTimes = Join(Times(0f, 0.4f, 6), new[] { end });
             for (var i = 0; i < SparkCount; i++)

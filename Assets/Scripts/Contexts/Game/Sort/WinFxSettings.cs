@@ -62,6 +62,17 @@ namespace Project.Contexts.Game.Sort
         public float RibbonDrop = 0.1f;
         public float RibbonFontSize = 18f;
 
+        [Header("Title letters")]
+        [Tooltip("From the ribbon's start: the letters pop in one after another, all within this time, each pop this long.")]
+        public float LetterDelay = 0.08f;
+        public float LettersTime = 0.5f;
+        public float LetterPopTime = 0.2f;
+        [Tooltip("Each letter grows from this to this and settles at 1, tilting this many degrees on the way, then sways by this share.")]
+        public float LetterFrom = 0.4f;
+        public float LetterPeak = 1.6f;
+        public float LetterTilt = 8f;
+        [Range(0f, 0.2f)] public float LetterWave = 0.04f;
+
         [Header("Hand-off")]
         [Tooltip("The effect ends this long after the panel opens; the panel's dim already covers it.")]
         public float AfterPanel = 0.5f;

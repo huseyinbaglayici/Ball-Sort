@@ -10096,6 +10096,7 @@ MonoBehaviour:
   _stage: {fileID: 4159042250167456883}
   _stageRenderer: {fileID: 1912426556424361133}
   _ribbonText: {fileID: 7720419571052653141}
+  _letters: {fileID: 7810940164012901093}
 --- !u!1 &7777554889369784003
 GameObject:
   m_ObjectHideFlags: 0
@@ -10515,6 +10516,7 @@ GameObject:
   - component: {fileID: 6438582287446294683}
   - component: {fileID: 3924171056456602966}
   - component: {fileID: 7720419571052653141}
+  - component: {fileID: 7810940164012901093}
   - component: {fileID: 1161120601989953251}
   m_Layer: 0
   m_Name: Title
@@ -10684,6 +10686,19 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_renderer: {fileID: 3924171056456602966}
   m_maskType: 0
+--- !u!114 &7810940164012901093
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8601503957858525794}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6242757f310f5e347a361f1b50e86d8b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Project.Contexts::Project.Contexts.Game.Items.TitleLetters
+  _text: {fileID: 7720419571052653141}
 --- !u!114 &1161120601989953251
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -387,7 +387,7 @@ MonoBehaviour:
   BallWaveDuration: 0.16
   BallWaveStagger: 0.04
   BallWaveLand: 0.5
-  WinPopupDelay: 2.75
+  WinPopupDelay: 2.95
   CompleteGlowColor: {r: 1, g: 0.858, b: 0.179, a: 0.85}
   CompleteGlowIn: 0.12
   CompleteGlowHold: 0.1
@@ -428,6 +428,13 @@ MonoBehaviour:
     RibbonGap: 0.02
     RibbonDrop: 0.1
     RibbonFontSize: 18
+    LetterDelay: 0.08
+    LettersTime: 0.5
+    LetterPopTime: 0.2
+    LetterFrom: 0.4
+    LetterPeak: 1.6
+    LetterTilt: 8
+    LetterWave: 0.04
     AfterPanel: 0.5
   Result:
     LoseDelay: 0.1

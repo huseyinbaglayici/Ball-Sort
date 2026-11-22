@@ -80,6 +80,10 @@ namespace Project.Editor
             text.rectTransform.sizeDelta = new Vector2(6f, 2f);
             text.sortingOrder = 2;
             text.enabled = false;
+            var letters = text.gameObject.AddComponent<TitleLetters>();
+            var lettersSo = new SerializedObject(letters);
+            lettersSo.FindProperty("_text").objectReferenceValue = text;
+            lettersSo.ApplyModifiedPropertiesWithoutUndo();
             var follower = text.gameObject.AddComponent<BoneFollower>();
             follower.skeletonRenderer = components.skeletonRenderer;
             follower.boneName = "ribbon";
@@ -98,6 +102,7 @@ namespace Project.Editor
             so.FindProperty("_stage").objectReferenceValue = skeleton;
             so.FindProperty("_stageRenderer").objectReferenceValue = meshRenderer;
             so.FindProperty("_ribbonText").objectReferenceValue = text;
+            so.FindProperty("_letters").objectReferenceValue = letters;
             so.ApplyModifiedPropertiesWithoutUndo();
 
             var prefab = PrefabUtility.SaveAsPrefabAsset(root, PrefabPath);
