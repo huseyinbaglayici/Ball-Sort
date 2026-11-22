@@ -53,7 +53,6 @@ namespace Project.Contexts.Game.Preview
         private SortBoard _model;
         private LevelData _level;
         private int _selected = -1;
-        private FreeMoveHint _hint;
         private readonly List<int> _targets = new();
 
         private void Start()
@@ -61,14 +60,11 @@ namespace Project.Contexts.Game.Preview
             _pools = new PoolService(new GameObject("Pool").transform);
             _factory = new ItemFactory(_pools, _registry);
             _board = new GameObject("Board").transform;
-            _hint = _config.Boosters.Hint;
             Build();
         }
 
         private void OnDestroy()
         {
-            // The hint is switched on the shared config asset; put it back.
-            if (_config != null) _config.Boosters.Hint = _hint;
             if (_level != null) Destroy(_level);
             Time.timeScale = 1f;
             _pools?.Dispose();
@@ -378,12 +374,11 @@ namespace Project.Contexts.Game.Preview
             _boardView.AddBottle(_model, _model.AddBottle(2), null);
         }
 
-        // Lifts tube 2 with Free Move armed and marks every tube that can take its top, in the given hint.
-        private void ArmFree(FreeMoveHint hint)
+        // Lifts tube 2 with Free Move armed and marks every tube that can take its top.
+        private void ArmFree()
         {
             if (_boardView.IsAnimating || !_model.CanSelectAsOrigin(2)) return;
             Drop();
-            _config.Boosters.Hint = hint;
             _selected = 2;
             _boardView.Select(_selected, _model.TopRun(_selected));
             _targets.Clear();
@@ -539,8 +534,7 @@ namespace Project.Contexts.Game.Preview
             }
             y += 64f;
             var half = (width - 40f) / 2f;
-            if (GUI.Button(new Rect(20f, y, half - 8f, 56f), "Free Move A: portals", _button)) ArmFree(FreeMoveHint.Portals);
-            if (GUI.Button(new Rect(20f + half, y, half - 8f, 56f), "Free Move B: slots", _button)) ArmFree(FreeMoveHint.SlotOutlines);
+            if (GUI.Button(new Rect(20f, y, width - 40f, 56f), "Free Move", _button)) ArmFree();
             y += 64f;
             if (GUI.Button(new Rect(20f, y, half - 8f, 56f), "Win", _button)) _boardView.PlayResult(true);
             if (GUI.Button(new Rect(20f + half, y, half - 8f, 56f), "Lose", _button)) _boardView.PlayResult(false);

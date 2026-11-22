@@ -37,7 +37,6 @@ namespace Project.Contexts.Game.Sort
         private readonly Dictionary<BallItem, (OrbContact contact, bool last)> _landings = new();
         // Tween target for delayed lift sounds, so they can be stopped together.
         private readonly object _contactClock = new();
-        private const int TowerCapacity = 8;
         private readonly List<float> _liftDelays = new();
         private int[] _locks = Array.Empty<int>();
         // A receiving bottle draws above the one the balls come from.
@@ -50,7 +49,6 @@ namespace Project.Contexts.Game.Sort
         private HapticModule _haptics;
         private readonly List<PortalView> _portals = new();
         // Free Move hints over the tubes that can take the lifted balls.
-        private readonly Dictionary<int, PortalView> _hintPortals = new();
         private readonly List<GameObject> _slotOutlines = new();
         // Slot of each rim, so it breathes with the ball that would sit there.
         private readonly List<int> _slotOf = new();
@@ -305,7 +303,6 @@ namespace Project.Contexts.Game.Sort
             for (var b = 0; b < _fx.Length; b++) StopFx(b);
             StopResult();
             _flights.Clear();
-            _hintPortals.Clear();
             StopIdle();
             ClearOutlines();
             _focused = false;
@@ -379,7 +376,7 @@ namespace Project.Contexts.Game.Sort
                 var selected = Mathf.Clamp(Mathf.Max(source.LiftedCount, count), 1, OrbContacts.MaxBalls);
                 var moved = Mathf.Min(count, selected);
                 plan = OrbContacts.Plan(ContactKind.Transfer, selected, moved, empty: target.BallCount == 0,
-                    tower: target.Capacity >= TowerCapacity);
+                    tower: target.Capacity >= LevelMechanics.TowerCapacity);
             }
             if (count <= 0)
             {
@@ -395,10 +392,7 @@ namespace Project.Contexts.Game.Sort
             var targetPortal = PortalOver(target, facesDown: false);
             var allThrough = lastStart + _animation.WarpCross;
             var sourceView = NewPortal(sourcePortal, SourcePortalOrder, facesDown: true);
-            // A Free Move hint portal already open over the target becomes the move's own.
-            var targetView = _hintPortals.Remove(to, out var held) && !held.IsGone
-                ? held
-                : NewPortal(targetPortal, TargetPortalOrder, facesDown: false);
+            var targetView = NewPortal(targetPortal, TargetPortalOrder, facesDown: false);
             HideTargets();
             sourceView.Close(allThrough);
             targetView.Close(allThrough + Mathf.Max(_animation.PortalCloseLag, 0f));
@@ -415,20 +409,14 @@ namespace Project.Contexts.Game.Sort
             source.ReturnLifted(_animation);
         }
 
-        // Free Move armed and balls lifted from: target tubes breathe in a tap-me idle with either portals or landing-slot rims.
+        // Free Move armed and balls lifted from: target tubes breathe in a tap-me idle with their landing slots outlined.
         public void ShowTargets(int from, IReadOnlyList<int> targets)
         {
             HideTargets();
-            var b = _animation.Boosters;
             foreach (var t in targets)
             {
                 if (t < 0 || t >= _bottles.Count) continue;
                 _idleTubes.Add(_bottles[t]);
-                if (b.Hint == FreeMoveHint.Portals)
-                {
-                    _hintPortals[t] = NewPortal(PortalOver(_bottles[t], facesDown: false), TargetPortalOrder, facesDown: false);
-                    continue;
-                }
                 var landing = _model != null ? _model.MoveAmount(from, t) : 0;
                 var first = _bottles[t].BallCount;
                 for (var slot = first; slot < first + landing && slot < _bottles[t].Capacity; slot++) Outline(_bottles[t], slot);
@@ -453,8 +441,6 @@ namespace Project.Contexts.Game.Sort
 
         public void HideTargets()
         {
-            foreach (var portal in _hintPortals.Values) portal.Close();
-            _hintPortals.Clear();
             StopIdle();
             FadeOutlines();
             if (!_focused) return;
@@ -555,15 +541,18 @@ namespace Project.Contexts.Game.Sort
             _slotOf.Clear();
         }
 
+        // Reused every frame of the idle, so it allocates nothing.
+        private readonly List<SpriteRenderer> _outlineLayers = new();
+
         private void ApplyOutline(GameObject outline, float alpha, float scale)
         {
             var b = _animation.Boosters;
             outline.transform.localScale = Vector3.one * scale;
-            var layers = outline.GetComponentsInChildren<SpriteRenderer>();
-            if (layers.Length < 3) return;
-            layers[0].color = Fade(b.SlotInnerColor, alpha);
-            layers[1].color = Fade(b.SlotRimColor, alpha);
-            layers[2].color = Fade(b.SlotGlossColor, alpha);
+            outline.GetComponentsInChildren(_outlineLayers);
+            if (_outlineLayers.Count < 3) return;
+            _outlineLayers[0].color = Fade(b.SlotInnerColor, alpha);
+            _outlineLayers[1].color = Fade(b.SlotRimColor, alpha);
+            _outlineLayers[2].color = Fade(b.SlotGlossColor, alpha);
         }
 
         private static Color Fade(Color color, float alpha) => new(color.r, color.g, color.b, color.a * alpha);

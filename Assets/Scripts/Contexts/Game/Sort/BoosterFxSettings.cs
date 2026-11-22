@@ -3,14 +3,6 @@ using UnityEngine;
 
 namespace Project.Contexts.Game.Sort
 {
-    public enum FreeMoveHint
-    {
-        // Every tube that can take the lifted balls opens its warp portal and breathes in a tap-me idle.
-        Portals,
-        // Every tube that can take the lifted balls breathes in the same idle, with the slots they would land in outlined.
-        SlotOutlines,
-    }
-
     // Booster looks: the undo's cap-off, the extra tube's descent from orbit and the Free Move target hints.
     [Serializable]
     public sealed class BoosterFxSettings
@@ -59,8 +51,6 @@ namespace Project.Contexts.Game.Sort
         public Color GlintColor = new(1f, 0.84f, 0.4f, 1f);
 
         [Header("Free Move")]
-        [Tooltip("How the tubes that can take the lifted balls are shown while Free Move is armed.")]
-        public FreeMoveHint Hint = FreeMoveHint.Portals;
         [Tooltip("Tap-me idle of each target tube: breath share and period; its balls breathe a little more, bottom first.")]
         [Range(0f, 0.05f)] public float IdleTubeBreath = 0.012f;
         [Range(0f, 0.08f)] public float IdleBallBreath = 0.025f;
