@@ -4,11 +4,18 @@ using UnityEngine;
 
 namespace Project.Contexts.Game.Items
 {
-    // The ribbon's title arrives one letter at a time: each pops in large with a small tilt, settles, then sways on the loop.
+    // The ribbon's title, printed on the banner: the letters are scaled to fill its face, bent along its arch and turned to
+    // its tangent. They arrive one at a time, each popping in large with a small tilt at its own spot, then sway on the loop.
     // Drawn from the localized string, so every language keeps its own word.
     public sealed class TitleLetters : MonoBehaviour
     {
         [SerializeField] private TMP_Text _text;
+        // The banner's face in the text's units: its size, how far its middle rises per unit squared, and how much the
+        // letters shrink toward its ends; the title fills this share of the face.
+        [SerializeField] private Vector2 _face = new(4.8f, 1.27f);
+        [SerializeField] private float _arch = 0.043f;
+        [SerializeField] private float _falloff = 0.05f;
+        [SerializeField] private Vector2 _fill = new(0.92f, 0.95f);
 
         private WinFxSettings _w;
         private float _startAt;
@@ -30,15 +37,27 @@ namespace Project.Contexts.Game.Items
             if (_playing) Apply();
         }
 
-        // Rebuilds the mesh, then moves each letter's four corners about its own middle.
+        // Rebuilds the flat layout, then places every letter on the arch and moves its four corners about its own middle.
         private void Apply()
         {
             _text.ForceMeshUpdate();
             var info = _text.textInfo;
             var visible = 0;
+            var tallest = 0f;
+            float left = float.MaxValue, right = float.MinValue;
             for (var i = 0; i < info.characterCount; i++)
-                if (info.characterInfo[i].isVisible) visible++;
-            if (visible == 0) return;
+            {
+                var c = info.characterInfo[i];
+                if (!c.isVisible) continue;
+                visible++;
+                tallest = Mathf.Max(tallest, c.topRight.y - c.bottomLeft.y);
+                left = Mathf.Min(left, c.bottomLeft.x);
+                right = Mathf.Max(right, c.topRight.x);
+            }
+            if (visible == 0 || tallest <= 0f) return;
+            // One scale for the whole word: as tall as the face allows, no wider than it.
+            var fit = Mathf.Min(_face.y * _fill.y / tallest, _face.x * _fill.x / Mathf.Max(right - left, 0.0001f));
+
             var t = Time.time - _startAt;
             var stagger = visible > 1 ? Mathf.Max(_w.LettersTime - _w.LetterPopTime, 0f) / (visible - 1) : 0f;
             var order = 0;
@@ -49,7 +68,7 @@ namespace Project.Contexts.Game.Items
                 var local = t - order * stagger;
                 var side = order % 2 == 0 ? 1f : -1f;
                 order++;
-                Letter(info, c, Pop(local, side, order));
+                Letter(info, c, fit, Pop(local, side, order));
             }
             _text.UpdateVertexData(TMP_VertexDataUpdateFlags.Vertices | TMP_VertexDataUpdateFlags.Colors32);
         }
@@ -73,7 +92,8 @@ namespace Project.Contexts.Game.Items
             return (1f + _w.LetterWave * 0.5f * Mathf.Sin(phase), 0f, _w.LetterWave * Mathf.Sin(phase + 1f), 1f);
         }
 
-        private static void Letter(TMP_TextInfo info, TMP_CharacterInfo c, (float scale, float angle, float lift, float alpha) pose)
+        // The letter's flat middle goes onto the arch at its scaled x; the whole letter turns to the arch's slope there.
+        private void Letter(TMP_TextInfo info, TMP_CharacterInfo c, float fit, (float scale, float angle, float lift, float alpha) pose)
         {
             var mesh = info.meshInfo[c.materialReferenceIndex];
             var vertices = mesh.vertices;
@@ -81,11 +101,17 @@ namespace Project.Contexts.Game.Items
             var v = c.vertexIndex;
             var centre = (vertices[v] + vertices[v + 2]) * 0.5f;
             var height = vertices[v + 2].y - vertices[v].y;
-            var rotation = Quaternion.Euler(0f, 0f, pose.angle);
-            var lift = Vector3.up * (pose.lift * height);
+            var x = centre.x * fit;
+            var slope = -2f * _arch * x;
+            var tangent = Mathf.Atan(slope) * Mathf.Rad2Deg;
+            var shrink = 1f - _falloff * Mathf.Clamp01(Mathf.Abs(x) / (_face.x * 0.5f));
+            var placed = new Vector3(x, centre.y * fit - _arch * x * x, centre.z);
+            var rotation = Quaternion.Euler(0f, 0f, tangent + pose.angle);
+            var scale = fit * shrink * pose.scale;
+            var lift = rotation * Vector3.up * (pose.lift * height * fit);
             for (var k = 0; k < 4; k++)
             {
-                vertices[v + k] = centre + rotation * ((vertices[v + k] - centre) * pose.scale) + lift;
+                vertices[v + k] = placed + rotation * ((vertices[v + k] - centre) * scale) + lift;
                 var color = colors[v + k];
                 color.a = (byte)Mathf.RoundToInt(pose.alpha * 255f);
                 colors[v + k] = color;
