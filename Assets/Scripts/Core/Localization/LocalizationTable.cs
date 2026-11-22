@@ -16,9 +16,12 @@ namespace Project.Core.Localization
         }
 
         [SerializeField] private string _languageCode = "en";
+        // The language's name in itself, shown in the language picker.
+        [SerializeField] private string _nativeName = "English";
         [SerializeField] private List<Entry> _entries = new();
 
         public string LanguageCode => _languageCode;
+        public string NativeName => string.IsNullOrEmpty(_nativeName) ? _languageCode : _nativeName;
 
         public Dictionary<string, string> BuildLookup()
         {
