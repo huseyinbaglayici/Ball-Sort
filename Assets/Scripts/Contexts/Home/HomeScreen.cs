@@ -56,6 +56,20 @@ namespace Project.Contexts.Home
 
         public RectTransform Orb => _orb;
 
+        // Lays hidden Home out for the level it returns to, within this frame and unseen, so a close lands on the orb shown next.
+        public RectTransform ReturnOrb()
+        {
+            if (_orb == null || _view.activeSelf) return _orb;
+            _view.SetActive(true);
+            if (_poster != null && _progress != null) _poster.Show(_progress.Level);
+            Canvas.ForceUpdateCanvases();
+            // The open left Home pushed in about the old orb; measure it at rest, the close pushes about the new one.
+            Push(1f);
+            Canvas.ForceUpdateCanvases();
+            _view.SetActive(false);
+            return _orb;
+        }
+
         public void SetOpen(bool open)
         {
             _view.SetActive(open);

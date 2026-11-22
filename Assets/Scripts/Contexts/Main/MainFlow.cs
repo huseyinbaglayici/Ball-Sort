@@ -104,7 +104,7 @@ namespace Project.Contexts.Main
                     _home.Leave();
                     await _levelOpen.OpenAsync(_home.Orb, _home.Push, () => _states.ChangeState(next));
                 }
-                else await _levelOpen.CloseAsync(_home.Orb, _home.Push, () => _states.ChangeState(next));
+                else await _levelOpen.CloseAsync(_home.ReturnOrb(), _home.Push, () => _states.ChangeState(next));
             }
             finally
             {
