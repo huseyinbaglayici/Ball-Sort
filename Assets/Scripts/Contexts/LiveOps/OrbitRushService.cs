@@ -57,9 +57,6 @@ namespace Project.Contexts.LiveOps
         public static readonly int[] GearMultipliers = { 1, 2, 3, 4, 5 };
         public static int Stages => Targets.Length;
 
-        private static readonly string[] BotNames =
-            { "Nova", "Kai", "Mira", "Orion", "Lyra", "Zed", "Vega", "Juno", "Rex", "Sky", "Pip", "Luma" };
-
         private readonly PlayerData _data;
         private readonly WalletService _wallet;
         private readonly Func<DateTime> _localNow;
@@ -113,8 +110,8 @@ namespace Project.Contexts.LiveOps
             var model = Model;
             var racers = new List<OrbitRushRacer>(Capacity);
             var elapsed = Elapsed(model);
-            for (var i = 1; i < Capacity; i++) racers.Add(Bot(model, i, elapsed));
-            var playerFinished = model.Score >= Target ? (model.WonRank > 0 ? BotFinishBefore(model, model.WonRank) : elapsed) : double.MaxValue;
+            for (var i = 1; i < Capacity; i++) racers.Add(OrbitRushBots.Racer(model, i, elapsed));
+            var playerFinished = model.Score >= Target ? (model.WonRank > 0 ? OrbitRushBots.FinishBefore(model, model.WonRank) : elapsed) : double.MaxValue;
             racers.Add(new OrbitRushRacer(null, model.Score, true, playerFinished));
             racers.Sort((a, b) =>
             {
@@ -171,7 +168,7 @@ namespace Project.Contexts.LiveOps
             model.Gear = Math.Min(GearMultipliers.Length - 1, model.Gear + 1);
             if (model.Score >= Target)
             {
-                model.WonRank = BotsFinished(model, Elapsed(model)) + 1;
+                model.WonRank = OrbitRushBots.Finished(model, Elapsed(model)) + 1;
                 model.State = (int)OrbitRushState.StageWon;
             }
             Changed();
@@ -256,10 +253,20 @@ namespace Project.Contexts.LiveOps
         }
 
         // Window rollover, the level gate and the stage clock.
+        private static bool Clamp(OrbitRushModel model)
+        {
+            var before = (model.Gear, model.Stage, model.WonRank, model.State);
+            model.Gear = Math.Clamp(model.Gear, 0, GearMultipliers.Length - 1);
+            model.Stage = Math.Clamp(model.Stage, 0, Stages);
+            model.WonRank = Math.Clamp(model.WonRank, 0, Winners);
+            model.State = Math.Clamp(model.State, (int)OrbitRushState.Locked, (int)OrbitRushState.Completed);
+            return before != (model.Gear, model.Stage, model.WonRank, model.State);
+        }
+
         private void Sync()
         {
             var model = _data.Model.OrbitRush;
-            var changed = false;
+            var changed = Clamp(model);
             var window = Window;
             // Only forward: a clock or time zone moved back keeps the event it already has.
             if (window > model.Window)
@@ -289,7 +296,7 @@ namespace Project.Contexts.LiveOps
             if (model.State == (int)OrbitRushState.Racing)
             {
                 var elapsed = Elapsed(model);
-                if (BotsFinished(model, elapsed) >= Winners || elapsed >= StageHours * 3600)
+                if (OrbitRushBots.Finished(model, elapsed) >= Winners || elapsed >= StageHours * 3600)
                 {
                     model.State = (int)OrbitRushState.StageLost;
                     changed = true;
@@ -319,52 +326,5 @@ namespace Project.Contexts.LiveOps
 
         private double Elapsed(OrbitRushModel model) =>
             Math.Max(0, (_localNow() - new DateTime(model.StageStartTicks)).TotalSeconds);
-
-        private int BotsFinished(OrbitRushModel model, double elapsed)
-        {
-            var count = 0;
-            for (var i = 1; i < Capacity; i++)
-                if (BotFinishTime(model, i) <= elapsed) count++;
-            return count;
-        }
-
-        // When the bot that took the given place crossed the line; used to rank a winner behind them.
-        private double BotFinishBefore(OrbitRushModel model, int rank)
-        {
-            var times = new List<double>();
-            for (var i = 1; i < Capacity; i++) times.Add(BotFinishTime(model, i));
-            times.Sort();
-            return rank - 1 < times.Count ? times[rank - 1] - 0.001 : double.MaxValue;
-        }
-
-        // Each bot crosses the line between a third of the stage time and past its end.
-        private double BotFinishTime(OrbitRushModel model, int bot) =>
-            (0.35 + 0.95 * Random01(model, bot, 0)) * StageHours * 3600;
-
-        private OrbitRushRacer Bot(OrbitRushModel model, int bot, double elapsed)
-        {
-            var finish = BotFinishTime(model, bot);
-            var target = Targets[Math.Min(model.Stage, Stages - 1)];
-            var score = elapsed >= finish ? target : (int)Math.Floor(target * Math.Pow(elapsed / finish, 0.85));
-            // Steps of three over twelve names keep the four bots apart.
-            var name = BotNames[((int)(Random01(model, 0, 1) * BotNames.Length) + bot * 3) % BotNames.Length];
-            return new OrbitRushRacer(name, Math.Min(score, target), false, elapsed >= finish ? finish : double.MaxValue);
-        }
-
-        // Stable per window, stage, room and bot.
-        private static double Random01(OrbitRushModel model, int bot, int salt)
-        {
-            unchecked
-            {
-                var x = (uint)(model.Window * 73856093) ^ (uint)(model.Stage * 19349663) ^ (uint)(model.Attempt * 83492791) ^
-                        (uint)(bot * 2654435761u) ^ (uint)(salt * 40503);
-                x ^= x << 13;
-                x ^= x >> 17;
-                x ^= x << 5;
-                x *= 0x9E3779B1u;
-                x ^= x >> 15;
-                return (x & 0xFFFFFF) / (double)0x1000000;
-            }
-        }
     }
 }

@@ -1,3 +1,4 @@
+#if UNITY_EDITOR
 using System.Collections.Generic;
 using Project.Contexts.Game.Items;
 using Project.Contexts.Game.Levels;
@@ -5,7 +6,7 @@ using Project.Contexts.Game.Sort;
 using Project.Core.Pooling;
 using UnityEngine;
 
-namespace Project.Contexts.Game.Preview
+namespace Project.Contexts.Preview
 {
     // Debug scene driver: three real tubes for the completion moment, or a small real board for the boosters.
     public sealed class TubeFxPreview : MonoBehaviour
@@ -541,3 +542,4 @@ namespace Project.Contexts.Game.Preview
         }
     }
 }
+#endif

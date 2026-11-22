@@ -4,14 +4,11 @@ using UnityEngine;
 
 namespace Project.Contexts.Game.Items
 {
-    // The ribbon's title, printed on the banner: the letters are scaled to fill its face, bent along its arch and turned to
-    // its tangent. They arrive one at a time, each popping in large with a small tilt at its own spot, then sway on the loop.
-    // Drawn from the localized string, so every language keeps its own word.
+    // The ribbon's localized title, fitted to the banner face along its arch; letters pop in one by one, then sway.
     public sealed class TitleLetters : MonoBehaviour
     {
         [SerializeField] private TMP_Text _text;
-        // The banner's face in the text's units: its size, how far its middle rises per unit squared, and how much the
-        // letters shrink toward its ends; the title fills this share of the face.
+        // Banner face in text units: size, arch rise per unit squared, shrink toward the ends and the share the title fills.
         [SerializeField] private Vector2 _face = new(4.8f, 1.27f);
         [SerializeField] private float _arch = 0.043f;
         [SerializeField] private float _falloff = 0.05f;

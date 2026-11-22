@@ -9,8 +9,7 @@ using UnityEngine;
 
 namespace Project.Contexts.Game.Items
 {
-    // Level won: caps pulse, an orbit ring collapses into a gold burst, then the stage skeleton plays its intro (the mascot
-    // swings in and lands, the ribbon drops over it) and its celebrate loop until the coins fly.
+    // Level won: caps pulse, an orbit ring bursts, then the stage skeleton plays its intro and celebrate loop until the coins fly.
     public sealed class WinFx : Item
     {
         // Lifetime of the longest grain, so nothing is cut when the item is released.

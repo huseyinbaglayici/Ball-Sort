@@ -9,8 +9,7 @@ using UnityEngine;
 
 namespace Project.Editor
 {
-    // Writes the level-won skeleton from the packed atlas and the win settings: the mascot rig, the ribbon and the burst,
-    // with an intro (burst, swing in, land, ribbon drop) and a celebrate loop. Atlas and parts come from ArtSource/Spine/make_win_atlas.py.
+    // Writes the level-won skeleton (mascot, ribbon, burst; intro and celebrate) from the packed atlas and the win settings.
     public static class WinSkeletonBuilder
     {
         private const string Folder = "Assets/Art/Spine/WinFx";

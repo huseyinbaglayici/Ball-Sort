@@ -8,22 +8,19 @@ using UnityEngine.Rendering;
 
 namespace Project.Editor
 {
-    // Builds the level-won prefab: dim and flash behind the tubes, the orbit ring halves, the grains, and the stage skeleton
-    // (mascot rig, burst and ribbon) with the ribbon's title following its bone.
+    // Builds the level-won prefab: dim, flash, orbit ring halves, grains and the stage skeleton with its ribbon title.
     public static class WinFxBuilder
     {
         private const string FxFolder = "Assets/Art/Sprites/Fx";
         private const string PrefabPath = "Assets/Prefabs/Items/WinFx.prefab";
         private const string FontPath = "Assets/Art/Fonts/PeaceSans SDF.asset";
         private const string TitleMaterialPath = "Assets/Art/Fonts/PeaceSans SDF - Title.mat";
-        // The flash sits behind idle tubes, the far ring half just over them; the near half over the board, the dim over
-        // the tubes under the grains; the stage over everything the board draws, under the bomb blast's group.
+        // Flash behind the tubes, ring halves around them, dim under the grains, stage over the board and under the bomb blast.
         private const int DimOrder = 29;
         private const int BehindOrder = -2;
         private const int FrontOrder = 30;
         private const int StageOrder = 40;
-        // The ribbon's face, measured on its art (780x222 px, 0.01 units per pixel, between the gold borders): its size at the
-        // middle, how far its centre line rises toward the middle per unit squared, and the height lost toward its ends.
+        // Ribbon face measured on its art between the gold borders: size, arch rise per unit squared and end shrink.
         private static readonly Vector2 RibbonFace = new(4.8f, 1.27f);
         private const float RibbonArch = 0.043f;
         private const float RibbonFalloff = 0.05f;

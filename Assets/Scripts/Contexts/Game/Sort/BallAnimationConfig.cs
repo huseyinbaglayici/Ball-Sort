@@ -8,7 +8,7 @@ namespace Project.Contexts.Game.Sort
         [Header("Selection wave")]
         [Tooltip("How far every selected ball rises from its slot, in slot heights. The same for a full tube and a single ball at the bottom, so a selection always reads the same. The balls keep their stack spacing.")]
         [Range(0f, 2f)] public float LiftHeight = 1f;
-        [Tooltip("The selected group always rises to one fixed spot at the mouth instead of by LiftHeight from its slots. The top ball ends where a full tube's top ball lifts to (LiftHeight above the top slot), wherever the stack ends; the group keeps its stack spacing below it. Off = the fixed short lift.")]
+        [Tooltip("The lifted group rises to one fixed spot at the mouth, the top ball where a full tube lifts it; off = a short lift from its slots.")]
         public bool LiftToMouth;
         [Tooltip("Lift speed in board units per second; the lift time is distance / speed within the limits below.")]
         public float LiftSpeed = 30f;
@@ -40,13 +40,13 @@ namespace Project.Contexts.Game.Sort
         public float HoverPeriod = 0.6f;
 
         [Header("Warp (the jump between tubes)")]
-        [Tooltip("Time from the second tap until the ball is all in the source ring (so all out of the target ring), on an ease-in 'toward' curve: no anticipation, it sets off at once and is pulled in faster and faster. Short, so the whole move (crossing, drop into the tube and landing) reads as one quick motion. The same from any depth: a ball deep in its tube travels faster, not longer.")]
+        [Tooltip("Second tap to the ball fully in the source ring, eased in; the same from any depth, so one move reads as one quick motion.")]
         public float WarpCross = 0.26f;
         [Tooltip("How many times as tall the ball is when fully inside a portal (area kept, so it gets thinner).")]
         public float VanishStretch = 1.08f;
-        [Tooltip("Gap between a tube's mouth and the bottom edge of the portal ring over it, in board units, at both ends of a move. Small, so the ring sits on the mouth like a cap and the ball goes straight from the tube into the ring.")]
+        [Tooltip("Gap from a tube's mouth to the portal ring's lower edge, in board units, so the ring sits on the mouth like a cap.")]
         public float PortalHeight = 0.1f;
-        [Tooltip("The portal, a thick ring 1 unit wide seen from above like the tubes (ArtSource/Hole/make_hole.py), pivoted on the center of its face. Back is the face and the void through the opening, Front the near half and the side wall under it. The ring a ball goes into is turned upside down (seen from below, its opening toward the tube) and draws under the ball: the ball rises over its rim and lit inner wall into the black. The one it comes out of faces up and draws over the ball, which comes down from behind its side wall.")]
+        [Tooltip("Portal ring art, 1 unit wide: Back is its face and void, Front its near half; the entry ring is flipped and draws under the ball.")]
         public Sprite PortalBack;
         public Sprite PortalFront;
         [Tooltip("Tint of the portal art; white keeps its colors. Its alpha fades with the portal.")]
@@ -61,13 +61,13 @@ namespace Project.Contexts.Game.Sort
         public float PortalCloseLag = 0.05f;
         [Tooltip("The ring art's outer half width, as a share of its width (make_hole.py: 0.5 minus the padding). With the flatness it sets how far the ring reaches under its center, so it sits just over the mouth.")]
         public float PortalRim = 0.49f;
-        [Tooltip("Height of the ring art's side wall under its face, as a share of its width (make_hole.py THICK). With the rim and the flatness it sets the ring's lowest edge: where it sits over the mouth and where it splits the balls.")]
+        [Tooltip("Ring side wall height as a share of its width; sets where the ring sits over the mouth and where it splits the balls.")]
         public float PortalWall = 0.085f;
 
         [Header("Narrow mouth and snap")]
-        [Tooltip("Out of the target portal the ball keeps falling, straight through the mouth into its slot, starting at the speed it came out with. A deep slot keeps speeding it up, like gravity; a near one slows it down, but it always hits the slot with at least this share of its exit speed, and the snap takes the impact. 0 = it may ease to a stop.")]
+        [Tooltip("Leaving the portal the ball keeps falling into its slot; it hits with at least this share of its exit speed (0 = may ease to a stop).")]
         [Range(0f, 1f)] public float ExitKeep = 0.35f;
-        [Tooltip("Ball scale at its tightest in the mouth, on the way in and out. Keep x times y near 1 so the ball keeps its volume, and y under TubeArt.MaxStackStretch so a stretched ball never reaches its neighbour.")]
+        [Tooltip("Ball scale at its tightest in the mouth; keep x*y near 1 and y under TubeArt.MaxStackStretch.")]
         public Vector2 NeckSqueeze = new(0.985f, 1.015f);
         [Tooltip("The hard stop in the slot: hit pose, linear hit time, and an eased release with no overshoot.")]
         public Vector2 SnapSquash = new(1.16f, 0.82f);
@@ -84,9 +84,9 @@ namespace Project.Contexts.Game.Sort
         [Range(0f, 0.5f)] public float SmearThin = 0.12f;
 
         [Header("Drop into the slot")]
-        [Tooltip("The entry window of a move, from the first ball starting into the target mouth to the last ball in its slot. The same for any number of balls, so a move never grows with the group: more balls share it. A single ball only uses its own entry (EntryShare of it).")]
+        [Tooltip("From the first ball entering the target mouth to the last in its slot; the same for any group size.")]
         public float EntryWindow = 0.25f;
-        [Tooltip("Each ball's own entry, as a share of the window, for any number of balls; with several balls the rest is spread as the stagger between them, so they land one after another and the last one lands at the end of the window.")]
+        [Tooltip("Each ball's entry as a share of the window; the rest is the stagger, so the last ball lands at the window's end.")]
         [Range(0.2f, 1f)] public float EntryShare = 0.55f;
 
         [Header("Return after a partial transfer")]
@@ -174,7 +174,7 @@ namespace Project.Contexts.Game.Sort
         public Color ContourColor = new(1f, 1f, 1f, 1f);
         [Tooltip("How far the rim goes from the ball's color toward white: a light accent in the ball's hue.")]
         [Range(0f, 1f)] public float ContourWhiten = 0.55f;
-        [Tooltip("Outer diameter of the soft light around each selected ball, relative to the ball. It is full at the ball's edge and fades out to here. It also sets the lifted spacing: the selected balls stand apart so their lights only meet at the faint tails (smaller = tighter group).")]
+        [Tooltip("Outer size of the light round a lifted ball, relative to it; also sets how far lifted balls stand apart.")]
         public float GlowScale = 1.18f;
         [Tooltip("Multiplies the ball's own color, brought to full brightness. White = the ball's color as is.")]
         public Color GlowColor = new(1f, 1f, 1f, 0.9f);
@@ -182,7 +182,7 @@ namespace Project.Contexts.Game.Sort
         [Range(0f, 1f)] public float GlowWhiten = 0.4f;
 
         [Header("Ball at rest")]
-        [Tooltip("Strength of the orb art's own halo around every ball. Resting balls are only a few pixels apart, narrower than the halo, so any value above 0 lets neighbours' halos touch and blurs the ball edges; 0 keeps every ball's edge crisp against the tube.")]
+        [Tooltip("Orb art's own halo strength; above 0 neighbouring halos touch and soften the edges, 0 keeps them crisp.")]
         [Range(0f, 1f)] public float OrbHaloAlpha;
 
         [Header("Completed bottle")]
@@ -371,7 +371,7 @@ namespace Project.Contexts.Game.Sort
         public float KeyUseScale = 1.25f;
         public float KeyUsePop = 0.2f;
         public float KeyUseFade = 0.4f;
-        [Tooltip("A freed key glides on one curve through the screen's centre into the padlock: the spans share one eased speed profile; centre size is a multiple of its mark in the ball, lock size of the padlock's width.")]
+        [Tooltip("A freed key glides on one eased curve through the screen's centre into the padlock; sizes relative to its mark and the lock.")]
         public float KeyFlyToCentre = 0.26f;
         public float KeyFlyToLock = 0.24f;
         public float KeyFlyCentreScale = 2.3f;

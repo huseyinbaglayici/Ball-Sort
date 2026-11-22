@@ -66,7 +66,7 @@ namespace Project.Contexts.Game.Sort
         public float DiskDustSpacing = 0.9f;
         [Tooltip("The singularity drops into the gem over this long, ending when the cap seats.")]
         public float CollapseTime = 0.12f;
-        [Tooltip("Each ball in turn, bottom first, has its glow drained into the singularity as a wisp: first start, longest stagger, travel time, tail lag, width, side reach in tube units and how far the colour lifts toward white.")]
+        [Tooltip("Each ball's glow drains into the singularity as a wisp, bottom first: start, stagger, travel, lag, width, reach and whitening.")]
         public float WispStart = 0.1f;
         public float WispStagger = 0.065f;
         public float WispTime = 0.3f;
@@ -78,13 +78,13 @@ namespace Project.Contexts.Game.Sort
         [Range(0f, 1f)] public float DrainShare = 0.4f;
         public float DrainTime = 0.12f;
         public float GlowReturnTime = 0.25f;
-        [Tooltip("The orb exhales its essence toward the pull above: how much it shrinks, stretches toward the singularity (with a slight squash across) and drifts up in tube units, the shortest shrink (it otherwise lasts one stagger, so the next orb starts as it peaks) and how long it takes to fill back out.")]
+        [Tooltip("The orb exhales toward the pull above: shrink, stretch, drift, shortest shrink and refill time.")]
         [Range(0f, 0.2f)] public float ExhaleShrink = 0.1f;
         [Range(0f, 0.2f)] public float ExhaleStretch = 0.08f;
         public float ExhaleDrift = 0.07f;
         public float ExhaleMinTime = 0.06f;
         public float ExhaleRecover = 0.18f;
-        [Tooltip("The essence: a ghostly copy of the orb's inner glow that brightens the orb for this share of its travel while rising out of its top, then drifts off; start and end size over the ball's, stretch at full speed, core share, colour lift, alpha, alpha left on arrival and rise in tube units.")]
+        [Tooltip("The essence, a ghost of the orb's glow rising out of its top: travel share, sizes, stretch, core, colour, alpha and rise.")]
         [Range(0.05f, 0.6f)] public float SoulPeel = 0.3f;
         public float SoulStartSize = 0.3f;
         public float SoulSize = 0.6f;
@@ -95,7 +95,7 @@ namespace Project.Contexts.Game.Sort
         [Range(0f, 1f)] public float SoulAlpha = 0.75f;
         [Range(0f, 1f)] public float SoulEndAlpha = 0.3f;
         public float SoulRise = 0.45f;
-        [Tooltip("The singularity inhales each essence: a quick contraction just before it arrives, then a pulse; pulse size and time, contraction size and lead, its growth once all are in, and how much the photon ring tightens once all are in.")]
+        [Tooltip("The singularity inhales each essence: contraction and pulse per arrival, then growth and ring tightening once all are in.")]
         public float SwallowPulse = 0.16f;
         public float SwallowTime = 0.12f;
         public float SwallowGrowth = 0.12f;

@@ -3,8 +3,7 @@ using UnityEngine;
 
 namespace Project.Contexts.Game.Sort
 {
-    // The level-won beat over the board, from the last landing to the coins: caps, orbit sweep, burst, mascot, ribbon.
-    // The mascot and ribbon values are baked into the stage skeleton by the prefab builder; rebuild the prefabs after tuning them.
+    // Level-won beat from the last landing to the coins; mascot and ribbon values bake into the skeleton on prefab rebuild.
     [Serializable]
     public sealed class WinFxSettings
     {
