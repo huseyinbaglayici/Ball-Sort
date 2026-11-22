@@ -112,7 +112,11 @@ namespace Project.Contexts.Main
                     _home.Leave();
                     await _levelOpen.OpenAsync(_home.Orb, _home.Push, () => _states.ChangeState(next));
                 }
-                else await _levelOpen.CloseAsync(_home.Orb, _home.Push, () => _states.ChangeState(next));
+                else
+                {
+                    _game.ExitFocus(out var point, out var radius);
+                    await _levelOpen.CloseAsync(point, radius, _home.Push, () => _states.ChangeState(next));
+                }
             }
             finally
             {

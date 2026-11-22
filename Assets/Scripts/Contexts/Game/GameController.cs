@@ -120,6 +120,18 @@ namespace Project.Contexts.Game
 
         public void Exit() => _states.ChangeState(GameState.Idle);
 
+        // Where the leave to Home dives in: the win mascot's orb on screen, else the screen's middle.
+        public void ExitFocus(out Vector2 screenPoint, out float screenRadius)
+        {
+            screenPoint = new Vector2(Screen.width, Screen.height) * 0.5f;
+            screenRadius = Screen.height * 0.05f;
+            var camera = Camera.main;
+            if (camera == null || !_board.TryGetWinOrb(out var centre, out var radius)) return;
+            var at = camera.WorldToScreenPoint(centre);
+            screenPoint = at;
+            screenRadius = Mathf.Max(Vector2.Distance(at, camera.WorldToScreenPoint(centre + camera.transform.right * radius)), 1f);
+        }
+
         // From a won level straight into the next one's board, built for the saved level.
         public void NextLevel()
         {

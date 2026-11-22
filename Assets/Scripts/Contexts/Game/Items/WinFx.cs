@@ -299,6 +299,22 @@ namespace Project.Contexts.Game.Items
             _ribbonText.enabled = true;
         }
 
+        // The mascot's orb in world space while the stage shows: its centre and radius.
+        public bool TryGetOrb(out Vector3 centre, out float radius)
+        {
+            centre = default;
+            radius = 0f;
+            var skeleton = _stageRenderer.enabled ? _stage.Skeleton : null;
+            var slot = skeleton?.FindSlot("orb");
+            if (slot == null || !(slot.AppliedPose.Attachment is Spine.RegionAttachment region)) return false;
+            var bone = slot.Bone.AppliedPose;
+            bone.LocalToWorld(region.X, region.Y, out var x, out var y);
+            var stage = _stage.transform;
+            centre = stage.TransformPoint(x, y, 0f);
+            radius = region.Width * Mathf.Abs(region.ScaleX) * 0.5f * bone.WorldScaleX * Mathf.Abs(stage.lossyScale.x);
+            return true;
+        }
+
         private void HideRing() => _ringNear.enabled = _ringFar.enabled = _glowNear.enabled = _glowFar.enabled = false;
 
         private void Show(SpriteRenderer renderer, Color color, float alpha, float width, float height)

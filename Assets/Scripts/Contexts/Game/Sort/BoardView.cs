@@ -92,6 +92,13 @@ namespace Project.Contexts.Game.Sort
         }
 
         public float WinPopupDelay => _animation.WinPopupDelay;
+
+        public bool TryGetWinOrb(out Vector3 centre, out float radius)
+        {
+            centre = default;
+            radius = 0f;
+            return _result is WinFx fx && fx.TryGetOrb(out centre, out radius);
+        }
         public BallAnimationConfig Animation => _animation;
 
         // Free HUD band (0-1 of screen height) set before Build; null keeps the layout's fallback.

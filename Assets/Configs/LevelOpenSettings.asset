@@ -14,8 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Project.Contexts::Project.Contexts.Main.LevelOpenSettings
   DarkenTime: 0.25
   GrowTime: 0.6
-  ShrinkTime: 0.5
-  ClearTime: 0.25
+  ZoomTime: 0.55
+  RevealTime: 0.6
+  ZoomFill: 1.3
+  TintShare: 0.45
+  ZoomTint: {r: 0.16, g: 0.08, b: 0.38, a: 1}
   FeatherShare: 0.35
   FeatherMin: 80
   Dark: {r: 0.03, g: 0.02, b: 0.09, a: 1}

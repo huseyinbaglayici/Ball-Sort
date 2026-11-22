@@ -12,10 +12,14 @@ namespace Project.Contexts.Main
         public float GrowTime = 0.6f;
 
         [Header("Close")]
-        [Tooltip("The won level shrinks into the orb with Home around it, then fades into the orb.")]
-        public float ShrinkTime = 0.55f;
-        public float ClearTime = 0.2f;
-        [Tooltip("Home starts this much zoomed in about the orb and settles over the whole close.")]
+        [Tooltip("The level dives into the mascot's orb until it fills the screen with the tint, then Home opens out of the middle.")]
+        public float ZoomTime = 0.55f;
+        public float RevealTime = 0.6f;
+        [Tooltip("How many times the orb's radius covers the screen at the end of the dive, and the share of the dive washed in the tint.")]
+        public float ZoomFill = 1.3f;
+        public float TintShare = 0.45f;
+        public Color ZoomTint = new(0.16f, 0.08f, 0.38f, 1f);
+        [Tooltip("Home starts this much zoomed in and settles as it opens.")]
         public float ClosePush = 0.15f;
 
         [Header("Edge")]
@@ -36,6 +40,6 @@ namespace Project.Contexts.Main
         public float Dim = 0.12f;
 
         public float OpenTotal => DarkenTime + GrowTime;
-        public float CloseTotal => ShrinkTime + ClearTime;
+        public float CloseTotal => ZoomTime + RevealTime;
     }
 }

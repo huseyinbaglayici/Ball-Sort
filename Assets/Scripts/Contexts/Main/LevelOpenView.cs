@@ -5,7 +5,7 @@ using UnityEngine.UI;
 
 namespace Project.Contexts.Main
 {
-    // Home-to-level reveal: a dark cover whose hole grows out of the mascot's hand orb; on close the level shrinks back into it.
+    // Home-to-level reveal: a dark cover whose hole grows out of the mascot's orb; on close the level dives into a spot and Home opens out of it.
     [RequireComponent(typeof(CanvasGroup), typeof(Image))]
     public sealed class LevelOpenView : MonoBehaviour
     {
@@ -26,6 +26,8 @@ namespace Project.Contexts.Main
         private static readonly int SnapshotId = Shader.PropertyToID("_Snapshot");
         private static readonly int ScaleId = Shader.PropertyToID("_Scale");
         private static readonly int AnchorId = Shader.PropertyToID("_Anchor");
+        private static readonly int TintId = Shader.PropertyToID("_Tint");
+        private static readonly int TintAmountId = Shader.PropertyToID("_TintAmount");
 
         private RectTransform _rect;
         private CanvasGroup _group;
@@ -39,6 +41,8 @@ namespace Project.Contexts.Main
         private Vector2 _centre;
         private float _orbRadius;
         private float _coverRadius;
+        private float _zoomScale;
+        private bool _revealing;
         private bool _switched;
         private Action _onCovered;
 
@@ -69,13 +73,14 @@ namespace Project.Contexts.Main
             return RunAsync(_settings.OpenTotal, EvaluateOpen, onCovered);
         }
 
-        // Freezes the level's last frame over the screen, runs onCovered so Home sets up under it, then shrinks that frame into the orb.
-        public async Awaitable CloseAsync(RectTransform orb, Action<float> push, Action onCovered)
+        // Freezes the level's last frame, runs onCovered so Home sets up under it, dives into the given screen spot until the tint
+        // fills the screen, then opens Home out of the middle.
+        public async Awaitable CloseAsync(Vector2 screenPoint, float screenRadius, Action<float> push, Action onCovered)
         {
             Init();
-            _orb = orb;
             _push = push;
             IsRunning = true;
+            _revealing = false;
             try
             {
                 await Awaitable.EndOfFrameAsync();
@@ -86,12 +91,9 @@ namespace Project.Contexts.Main
                 gameObject.SetActive(true);
                 _group.alpha = 1f;
                 _group.blocksRaycasts = true;
-                // The whole frame at full size until Home is measured, so the switch underneath never shows.
-                var middle = _rect.rect.size * 0.5f;
-                ApplyClose(float.MaxValue * 0.5f, 1f, middle, middle);
+                LocateScreen(screenPoint, screenRadius);
+                EvaluateClose(0f);
                 onCovered?.Invoke();
-                Canvas.ForceUpdateCanvases();
-                Locate();
                 var total = _settings.CloseTotal;
                 await Tween.Custom(this, 0f, total, total, (view, t) => view.EvaluateClose(t), Ease.Linear, useUnscaledTime: true);
             }
@@ -153,53 +155,70 @@ namespace Project.Contexts.Main
             // Home moves into the orb over the whole open; the inside is dimmest as the hole starts to grow.
             _push?.Invoke(1f + s.PushScale * Easing.Evaluate(Mathf.Clamp01(t / s.OpenTotal), Ease.InOutSine));
             if (t >= s.DarkenTime) Switch();
-            Apply(Mathf.LerpUnclamped(_orbRadius, _coverRadius, grow), darken, s.Dim * darken * (1f - grow));
+            Apply(Mathf.LerpUnclamped(_orbRadius, _coverRadius, grow), darken, s.Dim * darken * (1f - grow), s.Dark);
         }
 
-        // The level frame shrinks whole into the orb while Home settles from zoomed in, then it fades into the orb.
+        // The dive: the spot drifts to the middle while the frame scales up about it and washes into the tint; then the
+        // tint's hole grows from the middle like a vignette opening while Home settles from zoomed in.
         private void EvaluateClose(float t)
         {
             var s = _settings;
-            var shrink = Easing.Evaluate(Mathf.Clamp01(t / s.ShrinkTime), Ease.InOutSine);
-            var fade = Easing.Evaluate(Mathf.Clamp01((t - s.ShrinkTime) / s.ClearTime), Ease.OutQuad);
-            var settle = Easing.Evaluate(Mathf.Clamp01(t / s.CloseTotal), Ease.OutCubic);
-            _push?.Invoke(1f + s.ClosePush * (1f - settle));
-            var radius = Mathf.Lerp(_coverRadius, _orbRadius, shrink);
-            // The round window first trims the level's edges, then the level shrinks with it so it always reads round.
             var size = _rect.rect.size;
-            var scale = Mathf.Min(1f, radius / Mathf.Max(Mathf.Min(size.x, size.y) * 0.5f, 1f));
-            ApplyClose(radius, scale, _centre, Vector2.Lerp(_centre, size * 0.5f, shrink));
-            _image.color = new Color(1f, 1f, 1f, 1f - fade);
+            var middle = size * 0.5f;
+            if (t < s.ZoomTime)
+            {
+                var k = t / Mathf.Max(s.ZoomTime, 0.0001f);
+                var dive = Easing.Evaluate(k, Ease.InCubic);
+                var share = Mathf.Max(s.TintShare, 0.0001f);
+                var tint = Easing.Evaluate(Mathf.Clamp01((k - (1f - share)) / share), Ease.InQuad);
+                _push?.Invoke(1f + s.ClosePush);
+                _closeMaterial.SetVector(SizeId, size);
+                _closeMaterial.SetVector(AnchorId, _centre);
+                _closeMaterial.SetVector(CenterId, Vector2.Lerp(_centre, middle, Easing.Evaluate(k, Ease.InOutSine)));
+                _closeMaterial.SetFloat(ScaleId, Mathf.Pow(_zoomScale, dive));
+                _closeMaterial.SetColor(TintId, s.ZoomTint);
+                _closeMaterial.SetFloat(TintAmountId, tint);
+                return;
+            }
+
+            if (!_revealing)
+            {
+                _revealing = true;
+                _image.material = _material;
+                _material.SetVector(CenterId, middle);
+                _material.SetVector(SizeId, size);
+                _coverRadius = middle.magnitude;
+            }
+            var reveal = Easing.Evaluate(Mathf.Clamp01((t - s.ZoomTime) / Mathf.Max(s.RevealTime, 0.0001f)), Ease.OutCubic);
+            _push?.Invoke(1f + s.ClosePush * (1f - reveal));
+            Apply(_coverRadius * reveal, 1f, 0f, s.ZoomTint);
         }
 
-        private void ApplyClose(float radius, float scale, Vector2 centre, Vector2 anchor)
-        {
-            var s = _settings;
-            _closeMaterial.SetVector(CenterId, centre);
-            _closeMaterial.SetVector(AnchorId, anchor);
-            _closeMaterial.SetVector(SizeId, _rect.rect.size);
-            _closeMaterial.SetFloat(RadiusId, radius);
-            _closeMaterial.SetFloat(FeatherId, Mathf.Max(radius * s.FeatherShare * 0.3f, 2f));
-            _closeMaterial.SetFloat(ScaleId, scale);
-            _closeMaterial.SetColor(RimInnerId, s.RimInner);
-            _closeMaterial.SetColor(RimOuterId, s.RimOuter);
-            _closeMaterial.SetFloat(RimWidthId, s.RimWidth);
-            _closeMaterial.SetFloat(RimAlphaId, s.RimAlpha);
-        }
-
-        private void Apply(float radius, float alpha, float dim)
+        private void Apply(float radius, float alpha, float dim, Color color)
         {
             var s = _settings;
             var feather = Mathf.Max(radius * s.FeatherShare, s.FeatherMin);
             _material.SetFloat(RadiusId, radius + feather);
             _material.SetFloat(FeatherId, feather);
-            _material.SetColor(ColorId, s.Dark);
+            _material.SetColor(ColorId, color);
             _material.SetColor(RimInnerId, s.RimInner);
             _material.SetColor(RimOuterId, s.RimOuter);
             _material.SetFloat(RimWidthId, s.RimWidth);
             _material.SetFloat(RimAlphaId, s.RimAlpha);
             _material.SetFloat(DimId, dim);
             _image.color = new Color(1f, 1f, 1f, alpha);
+        }
+
+        // A screen spot and radius in this view's space, and how far the frame must scale for that radius to cover the screen.
+        private void LocateScreen(Vector2 screenPoint, float screenRadius)
+        {
+            var camera = _canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : _canvas.worldCamera;
+            var size = _rect.rect.size;
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(_rect, screenPoint, camera, out var at);
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(_rect, screenPoint + new Vector2(screenRadius, 0f), camera, out var edge);
+            _centre = at + size * 0.5f;
+            _orbRadius = Mathf.Max((edge - at).magnitude, 2f);
+            _zoomScale = Mathf.Max(size.magnitude * 0.5f * _settings.ZoomFill / _orbRadius, 1f);
         }
 
         // The orb's centre and radius in this view's space (origin bottom-left, as the shader reads it), and the radius that covers the screen.
