@@ -4,26 +4,52 @@ A space-themed ball sort puzzle for portrait mobile. Tap a tube to lift its top 
 
 <h2>Gameplay</h2>
 
+Videos are 1080x1920 H.264 MP4s recorded in the editor. GitHub does not play repository videos inline, so each one also has a direct link.
+
 <table>
   <tr>
-    <td align="center"><b>Home</b><br/>Level orb, daily reward, events</td>
-    <td align="center"><b>Play</b><br/>Warp moves, boosters</td>
-    <td align="center"><b>Win</b><br/>Orbit sweep, mascot, coins</td>
+    <td align="center" valign="top"><b>Level 1</b><br/>Tap tutorial, win, slide into level 2<br/>
+      <video width="250" src="Orbit_Sort_Screenshots/Tutorial-Level1.mp4" controls muted loop playsinline></video><br/>
+      <a href="Orbit_Sort_Screenshots/Tutorial-Level1.mp4">Tutorial-Level1.mp4</a></td>
+    <td align="center" valign="top"><b>Level 10</b><br/>Last level of the opening chain, dive into Home<br/>
+      <video width="250" src="Orbit_Sort_Screenshots/Level10-ToHome.mp4" controls muted loop playsinline></video><br/>
+      <a href="Orbit_Sort_Screenshots/Level10-ToHome.mp4">Level10-ToHome.mp4</a></td>
+    <td align="center" valign="top"><b>Menus</b><br/>Shop, No Ads, daily reward, Orbit Rush, settings, Play<br/>
+      <video width="250" src="Orbit_Sort_Screenshots/Menus-ToGameplay.mp4" controls muted loop playsinline></video><br/>
+      <a href="Orbit_Sort_Screenshots/Menus-ToGameplay.mp4">Menus-ToGameplay.mp4</a></td>
+  </tr>
+</table>
+
+<h2>Boosters</h2>
+
+<table>
+  <tr>
+    <td align="center" valign="top"><b>Undo</b><br/>Takes back the last moves<br/>
+      <video width="250" src="Orbit_Sort_Screenshots/Booster-Undo.mp4" controls muted loop playsinline></video><br/>
+      <a href="Orbit_Sort_Screenshots/Booster-Undo.mp4">Booster-Undo.mp4</a></td>
+    <td align="center" valign="top"><b>Extra Tube</b><br/>Adds a temporary tube<br/>
+      <video width="250" src="Orbit_Sort_Screenshots/Booster-ExtraTube.mp4" controls muted loop playsinline></video><br/>
+      <a href="Orbit_Sort_Screenshots/Booster-ExtraTube.mp4">Booster-ExtraTube.mp4</a></td>
+    <td align="center" valign="top"><b>Free Move</b><br/>One drop onto any color<br/>
+      <video width="250" src="Orbit_Sort_Screenshots/Booster-FreeMove.mp4" controls muted loop playsinline></video><br/>
+      <a href="Orbit_Sort_Screenshots/Booster-FreeMove.mp4">Booster-FreeMove.mp4</a></td>
+  </tr>
+</table>
+
+<h2>Screens</h2>
+
+<table>
+  <tr>
+    <td align="center" valign="top"><b>Home</b><br/>Level orb, daily reward, events<br/>
+      <img width="250" alt="Home" src="Orbit_Sort_Screenshots/Home.png" /></td>
+    <td align="center" valign="top"><b>Shop</b><br/>Bundles, coin packs, No Ads (demo)<br/>
+      <img width="250" alt="Shop" src="Orbit_Sort_Screenshots/Shop.png" /></td>
   </tr>
   <tr>
-    <td><img width="250" alt="Home" src="Orbit_Sort_Screenshots/Home.png" /></td>
-    <td><img width="250" alt="Gameplay" src="Orbit_Sort_Screenshots/Gameplay.gif" /></td>
-    <td><img width="250" alt="Win" src="Orbit_Sort_Screenshots/Win.gif" /></td>
-  </tr>
-  <tr>
-    <td align="center"><b>Fail</b><br/>Continue, refill lives, hold to see the board</td>
-    <td align="center"><b>Shop</b><br/>Bundles, coin packs, No Ads (demo)</td>
-    <td align="center"><b>Obstacles</b><br/>Hidden orbs, bomb fuse, tower tube</td>
-  </tr>
-  <tr>
-    <td><img width="250" alt="Fail" src="Orbit_Sort_Screenshots/Fail.png" /></td>
-    <td><img width="250" alt="Shop" src="Orbit_Sort_Screenshots/Shop.png" /></td>
-    <td><img width="250" alt="Obstacles" src="Orbit_Sort_Screenshots/Obstacles.png" /></td>
+    <td align="center" valign="top"><b>Fail</b><br/>Continue, refill lives, hold to see the board<br/>
+      <img width="250" alt="Fail" src="Orbit_Sort_Screenshots/Fail.png" /></td>
+    <td align="center" valign="top"><b>Obstacles</b><br/>Hidden orbs, bomb fuse, tower tube<br/>
+      <img width="250" alt="Obstacles" src="Orbit_Sort_Screenshots/Obstacles.png" /></td>
   </tr>
 </table>
 
@@ -31,9 +57,10 @@ A space-themed ball sort puzzle for portrait mobile. Tap a tube to lift its top 
 
 - **Campaign:** 100 levels with 5 layout variants each; a retry plays the next variant. Every board is checked solvable.
 - **Opening chain:** levels 1 to 10 run back to back with a side swipe, no menu in between.
-- **Tubes:** 4, 8, 12 and 16 slots, up to 6 per row.
+- **Tubes:** 4-slot tubes, with 8-slot tubes from level 20 and 12-slot towers from level 33; up to 6 per row.
 - **Obstacles:** hidden orbs, frozen tubes, shutters opened by key orbs, bombs with a move fuse.
-- **Boosters:** Undo, Extra Tube and Free Move, each introduced with a one-time card and a hand tutorial.
+- **Tutorial:** level 1 teaches the tap with a hand, level 2 marks where the lifted orbs can go.
+- **Boosters:** Undo, Extra Tube and Free Move, each introduced with a one-time card.
 - **Fail flow:** a rescue search decides whether Undo or Continue can still save the board.
 - **Economy:** coins, 5 lives with a 30-minute refill, a 500-coin refill and a rewarded +1 life.
 - **Live ops:** daily reward streak and the Orbit Rush race event.
@@ -46,7 +73,7 @@ A space-themed ball sort puzzle for portrait mobile. Tap a tube to lift its top 
 `Tools > Project > Level Editor`
 
 - Lists every level with its variants and previews the board.
-- Add, remove and auto-arrange tubes; set each tube's size (4, 8, 12 or 16 slots).
+- Add, remove and auto-arrange tubes; set each tube's size (4, 8, 12 or 16 slots; the campaign uses up to 12).
 - Paint orbs with a brush: color, hidden, key for a lockbox, bomb fuse. Freeze a tube until a color fills.
 - **Solvability check:** a depth-first solver with a seen-set proves the board can be won and reports when it cannot.
 - **Check All Levels** runs the solver over the whole catalog; **Import JSON...** brings in a level pack.
