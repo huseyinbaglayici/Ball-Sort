@@ -36,3 +36,5 @@
 *.zip binary
 *.so binary
 *.aar binary
+# Generated project graph; keep it out of the language stats
+graphify-out/** linguist-generated=true

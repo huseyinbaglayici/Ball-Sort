@@ -2,6 +2,12 @@
 
 A space-themed ball sort puzzle for portrait mobile. Tap a tube to lift its top group of orbs, tap another to warp them through the portals. Fill every tube with a single color to win.
 
+<h2>Team</h2>
+
+- **Product:** Mahmut Yuvanç
+- **Art:** İzel Semin
+- **Development:** Hüseyin Bağlayici
+
 <h2>Gameplay</h2>
 
 <h3>Level 1</h3>
@@ -14,9 +20,9 @@ https://github.com/user-attachments/assets/0136c758-3e20-49b8-912a-365c603ef3dc
 
 <h3>Level 10</h3>
 
-The last level of the opening chain, then the dive into the orb and Home.
+The last level of the opening chain; the mascot's orb grows over the still board and Home opens from its middle.
 
-https://github.com/user-attachments/assets/d8b01a03-be3a-4581-8ba9-e1c30ae19a07
+https://github.com/user-attachments/assets/fce4c993-9004-494d-8e61-f32c4e9c97c1
 
 <sub>Local copy: <a href="Orbit_Sort_Screenshots/Level10-ToHome.mp4">Level10-ToHome.mp4</a></sub>
 
@@ -83,7 +89,7 @@ https://github.com/user-attachments/assets/c430a756-bc46-4874-b059-1a805aa57407
 - **Economy:** coins, 5 lives with a 30-minute refill, a 500-coin refill and a rewarded +1 life.
 - **Live ops:** daily reward streak and the Orbit Rush race event.
 - **Store:** beginner pack, three bundles, coin packs and No Ads. Purchases and ads are local stand-ins in this build.
-- **Transitions:** a level grows out of the mascot's orb on Home; on a win the camera dives into the orb and Home opens like a vignette.
+- **Transitions:** a level grows out of the mascot's orb on Home; on a win the mascot's orb grows over the still board and Home opens like a vignette.
 - **Languages:** English and Turkish.
 
 <h2>Level Editor</h2>
