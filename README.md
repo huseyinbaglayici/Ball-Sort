@@ -26,6 +26,48 @@ https://github.com/user-attachments/assets/fce4c993-9004-494d-8e61-f32c4e9c97c1
 
 <sub>Local copy: <a href="Orbit_Sort_Screenshots/Level10-ToHome.mp4">Level10-ToHome.mp4</a></sub>
 
+<h2>Obstacles</h2>
+
+<h3>Hidden Orbs</h3>
+
+Covered orbs show their color once they reach an open top.
+
+https://github.com/user-attachments/assets/7c1e9d6b-7b2d-4b49-8569-099a334f646b
+
+<sub>Local copy: <a href="Orbit_Sort_Screenshots/Mechanic-HiddenOrb.mp4">Mechanic-HiddenOrb.mp4</a></sub>
+
+<h3>Tower Tube</h3>
+
+A tall tube that holds more orbs.
+
+https://github.com/user-attachments/assets/f32732fc-6065-40a7-a101-13a2a286f250
+
+<sub>Local copy: <a href="Orbit_Sort_Screenshots/Mechanic-TowerTube.mp4">Mechanic-TowerTube.mp4</a></sub>
+
+<h3>Frozen Tube</h3>
+
+The ice breaks once a tube of its color is complete.
+
+https://github.com/user-attachments/assets/5577ea90-942c-467c-ac6a-de8b830f3dcc
+
+<sub>Local copy: <a href="Orbit_Sort_Screenshots/Mechanic-FrozenTube.mp4">Mechanic-FrozenTube.mp4</a></sub>
+
+<h3>Shutter and Key</h3>
+
+A shutter lifts when its key orb reaches an open top.
+
+https://github.com/user-attachments/assets/57bdf2cc-3ce6-4fcc-9f1e-b64944623816
+
+<sub>Local copy: <a href="Orbit_Sort_Screenshots/Mechanic-ShutterKey.mp4">Mechanic-ShutterKey.mp4</a></sub>
+
+<h3>Bomb</h3>
+
+Counts down with each move; complete its color before it reaches zero.
+
+https://github.com/user-attachments/assets/48191527-e89e-4708-9472-bce72175fd0c
+
+<sub>Local copy: <a href="Orbit_Sort_Screenshots/Mechanic-Bomb.mp4">Mechanic-Bomb.mp4</a></sub>
+
 <h2>Boosters</h2>
 
 <h3>Undo</h3>
