@@ -161,7 +161,7 @@ namespace Project.Contexts.Game.Items
             ApplyLook();
         }
 
-        // The completion pulls the glow out of the orb: it dims to share over duration after delay, then comes back at returnAt.
+        // Completion drains the glow: it dims to share over duration after delay, then returns at returnAt.
         public void DrainGlow(float delay, float duration, float share, float returnAt, float returnTime)
         {
             // Only its own sequence: the exhale may already be running.

@@ -63,7 +63,7 @@ namespace Project.Contexts.Game
         [SerializeField] private GameObject _peek;
         [SerializeField] private Button _primary;
         [SerializeField] private Button _optionTemplate;
-        // Frame height and main button y (from the frame top); the "-1 life" line and the hold-to-peek caption sit inside it.
+        // Frame height and main button y from the frame top; the "-1 life" line and peek caption fit inside.
         [SerializeField] private Vector2 _layout = new(1030f, -750f);
 
         private readonly List<Button> _options = new();

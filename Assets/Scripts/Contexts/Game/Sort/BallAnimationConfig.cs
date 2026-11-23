@@ -6,9 +6,9 @@ namespace Project.Contexts.Game.Sort
     public sealed class BallAnimationConfig : ScriptableObject
     {
         [Header("Selection wave")]
-        [Tooltip("How far every selected ball rises from its slot, in slot heights. The same for a full tube and a single ball at the bottom, so a selection always reads the same. The balls keep their stack spacing.")]
+        [Tooltip("How far every selected ball rises from its slot, in slot heights, whatever the tube's fill.")]
         [Range(0f, 2f)] public float LiftHeight = 1f;
-        [Tooltip("The lifted group rises to one fixed spot at the mouth, the top ball where a full tube lifts it; off = a short lift from its slots.")]
+        [Tooltip("Lifts the group to one fixed spot at the mouth, as a full tube would; off = a short lift from its slots.")]
         public bool LiftToMouth;
         [Tooltip("Lift speed in board units per second; the lift time is distance / speed within the limits below.")]
         public float LiftSpeed = 30f;
@@ -25,7 +25,7 @@ namespace Project.Contexts.Game.Sort
         public float LowerMinDuration = 0.09f;
         public float LowerMaxDuration = 0.12f;
         public AnimationCurve LowerCurve = Curve(0f, 0f, 0f, 0f, 1f, 1f, 0f, 0f);
-        [Tooltip("Follow-through: the balls first rise this much further, in slot heights, then settle back down to LiftHeight over LiftSettleDuration. 0 = no overshoot.")]
+        [Tooltip("Overshoot past LiftHeight in slot heights, settling back over LiftSettleDuration; 0 = none.")]
         [Range(0f, 1f)] public float LiftOvershoot = 0f;
         [Tooltip("Time to settle back from the overshoot into the mouth.")]
         public float LiftSettleDuration = 0.08f;
@@ -34,38 +34,38 @@ namespace Project.Contexts.Game.Sort
         [Tooltip("On the tap, the balls that stay in the tube give one tiny up-and-down. Height in board units and time.")]
         public float TapBob = 0.04f;
         public float TapBobDuration = 0.16f;
-        [Tooltip("While selected, the lifted balls float up and down by this much (board units), so the selection stays alive while the player decides. 0 = still.")]
+        [Tooltip("Float of the lifted balls while selected, in board units; 0 = still.")]
         public float HoverHeight = 0.03f;
         [Tooltip("One full float up and down, in seconds.")]
         public float HoverPeriod = 0.6f;
 
         [Header("Warp (the jump between tubes)")]
-        [Tooltip("Second tap to the ball fully in the source ring, eased in; the same from any depth, so one move reads as one quick motion.")]
+        [Tooltip("Time from the second tap to the ball fully in the source ring, the same from any depth.")]
         public float WarpCross = 0.26f;
         [Tooltip("How many times as tall the ball is when fully inside a portal (area kept, so it gets thinner).")]
         public float VanishStretch = 1.08f;
         [Tooltip("Gap from a tube's mouth to the portal ring's lower edge, in board units, so the ring sits on the mouth like a cap.")]
         public float PortalHeight = 0.1f;
-        [Tooltip("Portal ring art, 1 unit wide: Back is its face and void, Front its near half; the entry ring is flipped and draws under the ball.")]
+        [Tooltip("Portal ring art, 1 unit wide: Back is its face and void, Front its near half; the entry ring is flipped.")]
         public Sprite PortalBack;
         public Sprite PortalFront;
         [Tooltip("Tint of the portal art; white keeps its colors. Its alpha fades with the portal.")]
         public Color PortalColor = Color.white;
         [Tooltip("Portal width, as a multiple of the ball diameter.")]
         public float PortalWidth = 1.6f;
-        [Tooltip("Time for a portal to open like an iris: a flat slit that widens, then opens up with a small overshoot. Both portals open together on the target tap, as the balls set off; the selection opens none.")]
+        [Tooltip("Iris-like portal open time; both portals open together on the target tap.")]
         public float PortalOpen = 0.12f;
-        [Tooltip("Time for a portal to close: it swells a little and collapses into its center. It starts once the last ball of the move is through.")]
+        [Tooltip("Portal close time: it swells a little and collapses, starting once the move's last ball is through.")]
         public float PortalClose = 0.14f;
-        [Tooltip("The target portal starts closing this long after the source one, so the door shuts behind the ball and the eye ends on the target. 2-4 frames; much more and they read as two separate events.")]
+        [Tooltip("Target portal close delay after the source one, so the eye ends on the target; keep to 2-4 frames.")]
         public float PortalCloseLag = 0.05f;
-        [Tooltip("The ring art's outer half width, as a share of its width (make_hole.py: 0.5 minus the padding). With the flatness it sets how far the ring reaches under its center, so it sits just over the mouth.")]
+        [Tooltip("Ring art's outer half width as a share of its width; with the flatness it sets where the ring sits on the mouth.")]
         public float PortalRim = 0.49f;
         [Tooltip("Ring side wall height as a share of its width; sets where the ring sits over the mouth and where it splits the balls.")]
         public float PortalWall = 0.085f;
 
         [Header("Narrow mouth and snap")]
-        [Tooltip("Leaving the portal the ball keeps falling into its slot; it hits with at least this share of its exit speed (0 = may ease to a stop).")]
+        [Tooltip("Least share of its exit speed the ball keeps when it hits its slot after the portal (0 = may ease to a stop).")]
         [Range(0f, 1f)] public float ExitKeep = 0.35f;
         [Tooltip("Ball scale at its tightest in the mouth; keep x*y near 1 and y under TubeArt.MaxStackStretch.")]
         public Vector2 NeckSqueeze = new(0.985f, 1.015f);
@@ -76,7 +76,7 @@ namespace Project.Contexts.Game.Sort
         public float SnapRecover = 0.07f;
 
         [Header("Motion smear (keeps fast moves continuous)")]
-        [Tooltip("Each frame the ball stretches back over the distance it just travelled, times this, so there is never a gap between two frames for the eye to jump. 1 = it covers the whole step.")]
+        [Tooltip("Share of each frame's travel the ball stretches back over, so no gap shows between frames; 1 = the whole step.")]
         public float SmearAmount = 1f;
         [Tooltip("Longest the smeared ball may get, as a multiple of its diameter.")]
         public float MaxSmear = 1.15f;
@@ -116,7 +116,7 @@ namespace Project.Contexts.Game.Sort
         public float TubeRecoverDuration = 0.20f;
 
         [Header("Tube reactions (they add up; the tube art and its resting balls squash from the bottom)")]
-        [Tooltip("Picked: the tube presses down (wide and short, and this far down) as if pushing the balls up, then releases. Together they last as long as the lift.")]
+        [Tooltip("Picked: the tube presses down (wide, short and this far down), then releases, over the lift time.")]
         public Vector2 SelectPress = new(1.04f, 0.96f);
         public float SelectDrop = 0.03f;
         public float SelectPressDuration = 0.03f;
@@ -148,16 +148,16 @@ namespace Project.Contexts.Game.Sort
         public Vector2 ImpactSquash = new(1.04f, 0.97f);
         public float ImpactIn = 0.04f;
         public float ImpactOut = 0.12f;
-        [Tooltip("With several balls in one move, each later ball's launch, gulp and impact is this share of the one before; the first ball reacts hardest.")]
+        [Tooltip("In a multi-ball move, each later ball's launch, gulp and impact is this share of the one before.")]
         [Range(0f, 1f)] public float ReactionFalloff = 0.6f;
 
         [Header("Anticipation and follow-through")]
-        [Tooltip("Before a selected ball rises it presses down a little (wider, shorter). Taken out of the lift time, so the lift still ends on time.")]
+        [Tooltip("Small press (wider, shorter) before a selected ball rises, taken out of the lift time.")]
         public Vector2 AnticipationSquash = new(1.06f, 0.94f);
         public float AnticipationDuration = 0.02f;
 
         [Header("Impact wave on the balls below")]
-        [Tooltip("When a ball lands, each ball under it plays a small copy of the tube squash (TubeSquash, TubeStretch and their times), top to bottom. Share of the full squash for the ball right below.")]
+        [Tooltip("Share of the tube squash replayed by the ball right below a landing one; the wave runs top to bottom.")]
         [Range(0f, 1f)] public float RippleStrength = 0.6f;
         [Tooltip("Each ball further down gets this share of the one above, so the wave dies out toward the bottom.")]
         [Range(0f, 1f)] public float RippleFalloff = 0.6f;
@@ -165,7 +165,7 @@ namespace Project.Contexts.Game.Sort
         public float RippleStep = 0.04f;
 
         [Header("Highlight")]
-        [Tooltip("Fade-in and fade-out times. Every selected ball lights up at once, holds steady while selected, and goes out almost at once.")]
+        [Tooltip("Fade-in and fade-out times; every selected ball lights up at once and goes out almost at once.")]
         public float HighlightInDuration = 0.12f;
         public float HighlightOutDuration = 0.06f;
         [Tooltip("How far the thin bright rim on each selected ball's edge reaches past the ball, relative to the ball.")]
@@ -227,13 +227,13 @@ namespace Project.Contexts.Game.Sort
         [Header("Completion finish")]
         [Tooltip("The finish when a tube completes: the singularity, the essences drawn from the orbs, its palette and timing.")]
         public FinishFxSettings Finish = new();
-        [Tooltip("After the slam the balls hop bottom to top, each landing with a soft squash: delay, height, hop time, stagger and squash share.")]
+        [Tooltip("Post-slam ball hops, bottom to top: delay, height, hop time, stagger and squash share.")]
         public float BallWaveDelay = 0.06f;
         public float BallWaveHop = 0.1f;
         public float BallWaveDuration = 0.16f;
         public float BallWaveStagger = 0.04f;
         [Range(0f, 1f)] public float BallWaveLand = 0.5f;
-        [Tooltip("When the last tube completes, the win popup waits this long so the win beat over the board plays out (see WinFx.PanelAt).")]
+        [Tooltip("Wait before the win popup after the last tube completes, so the win beat plays out (see WinFx.PanelAt).")]
         public float WinPopupDelay = 3.05f;
         [Tooltip("As the cap lands, an additive glow around the tube flashes up in this color and fades out.")]
         public Color CompleteGlowColor = new(1f, 0.858f, 0.179f, 0.85f);
@@ -252,12 +252,12 @@ namespace Project.Contexts.Game.Sort
         public BoosterFxSettings Boosters = new();
 
         [Header("Hidden ball")]
-        [Tooltip("Before it breaks the shell trembles, harder toward the end: time, peak scale, peak tilt in degrees and peak side shift in board units.")]
+        [Tooltip("Shell tremble before the break, harder toward the end: time, peak scale, tilt in degrees and side shift.")]
         public float HiddenShakeDuration = 0.56f;
         public float HiddenShakeScale = 1.06f;
         public float HiddenShakeDegrees = 6f;
         public float HiddenShakeShift = 4f / 190f;
-        [Tooltip("The shake ends in a charge (the shell squashes to HiddenSquash as a ring closes from and to these ball widths), then a crack light.")]
+        [Tooltip("Charge after the shake: the shell squashes to HiddenSquash as a ring closes between these ball widths.")]
         public float HiddenChargeTime = 0.08f;
         public float HiddenCrackTime = 0.12f;
         public Vector2 HiddenSquash = new(1.1f, 0.88f);
@@ -291,7 +291,7 @@ namespace Project.Contexts.Game.Sort
         public float MeltWobbleDuration = 0.3f;
         public float MeltWobble = 0.012f;
         public float MeltWobbleCycles = 3f;
-        [Tooltip("The ice cracks out from the badge in beats and breaks this long after the start; the tube is usable MeltOutDuration after the break.")]
+        [Tooltip("Ice cracks out in beats and breaks this long after the start; the tube is usable MeltOutDuration later.")]
         public float MeltDuration = 1.03f;
         public float MeltOutDuration = 0.17f;
         [Tooltip("Crack beats after the tremble, each jumping the cracks in this time and knocking the ice by this scale.")]
@@ -335,22 +335,22 @@ namespace Project.Contexts.Game.Sort
         public float ShutterHopDuration = 0.56f;
         public float ShutterHopStagger = 0.24f;
         [Header("Shutter open FX")]
-        [Tooltip("Charge during the shake: an orbit ring spins in round the padlock from and to these multiples of its width while the lock squashes to this scale.")]
+        [Tooltip("Charge during the shake: an orbit ring spins in between these padlock widths as the lock squashes to this scale.")]
         public float ShutterFxSnapFrom = 1.4f;
         public float ShutterFxSnapTo = 0.55f;
         public Vector2 ShutterFxSquash = new(1.12f, 0.88f);
-        [Tooltip("The hit at the release: horizon ring time and reach (lock widths), hot flash size, gold sparks, and the frame's scale punch.")]
+        [Tooltip("Release hit: horizon ring time and reach (lock widths), flash size, gold sparks and the frame's scale punch.")]
         public float ShutterFxHorizonTime = 0.22f;
         public float ShutterFxHorizonTo = 1.6f;
         public float ShutterFxFlashSize = 1f;
         public int ShutterFxSparks = 5;
         public Vector2 ShutterFxSparkSpeed = new(3f, 5.5f);
         [Range(0f, 0.1f)] public float ShutterFxPunch = 0.035f;
-        [Tooltip("The light seam on the curtain's lower edge and the violet energy filling the opened glass: seam height and alpha, spill alpha.")]
+        [Tooltip("Seam on the curtain's lower edge and violet spill in the opened glass: seam height and alpha, spill alpha.")]
         public float ShutterFxSeamHeight = 0.12f;
         [Range(0f, 1f)] public float ShutterFxSeamAlpha = 0.7f;
         [Range(0f, 1f)] public float ShutterFxSpillAlpha = 0.3f;
-        [Tooltip("After the tubes are usable the spill sinks away and the rims flash in the completion gold over this time: rim height and peak alpha.")]
+        [Tooltip("Once the tubes are usable the spill sinks and the rims flash gold over this time: rim height and peak alpha.")]
         public float ShutterFxLinger = 0.25f;
         public float ShutterFxRimHeight = 0.8f;
         [Range(0f, 1f)] public float ShutterFxRimAlpha = 0.45f;
@@ -371,7 +371,7 @@ namespace Project.Contexts.Game.Sort
         public float KeyUseScale = 1.25f;
         public float KeyUsePop = 0.2f;
         public float KeyUseFade = 0.4f;
-        [Tooltip("A freed key glides on one eased curve through the screen's centre into the padlock; sizes relative to its mark and the lock.")]
+        [Tooltip("A freed key glides on one eased curve into the padlock; sizes are relative to its mark and the lock.")]
         public float KeyFlyToCentre = 0.26f;
         public float KeyFlyToLock = 0.24f;
         public float KeyFlyCentreScale = 2.3f;
@@ -412,7 +412,7 @@ namespace Project.Contexts.Game.Sort
         public float ExplodeEndScale = 2f;
 
         [Header("Contacts")]
-        [Tooltip("When a group drops back into its own tube, its balls land this far apart, bottom ball first, so each landing is heard on its own.")]
+        [Tooltip("Gap between landings when a group drops back into its own tube, bottom first, so each is heard.")]
         public float ReturnContactStagger = 0.05f;
 
         public float WaveDelay(int index)

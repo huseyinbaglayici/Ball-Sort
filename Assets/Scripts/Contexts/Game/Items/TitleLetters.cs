@@ -8,7 +8,7 @@ namespace Project.Contexts.Game.Items
     public sealed class TitleLetters : MonoBehaviour
     {
         [SerializeField] private TMP_Text _text;
-        // Banner face in text units: size, arch rise per unit squared, shrink toward the ends and the share the title fills.
+        // Banner face in text units: size, arch rise per unit squared, end shrink and the share the title fills.
         [SerializeField] private Vector2 _face = new(4.8f, 1.27f);
         [SerializeField] private float _arch = 0.043f;
         [SerializeField] private float _falloff = 0.05f;
@@ -34,7 +34,7 @@ namespace Project.Contexts.Game.Items
             if (_playing) Apply();
         }
 
-        // Rebuilds the flat layout, then places every letter on the arch and moves its four corners about its own middle.
+        // Rebuilds the flat layout, then bends each letter onto the arch about its own middle.
         private void Apply()
         {
             _text.ForceMeshUpdate();
@@ -89,7 +89,7 @@ namespace Project.Contexts.Game.Items
             return (1f + _w.LetterWave * 0.5f * Mathf.Sin(phase), 0f, _w.LetterWave * Mathf.Sin(phase + 1f), 1f);
         }
 
-        // The letter's flat middle goes onto the arch at its scaled x; the whole letter turns to the arch's slope there.
+        // The letter's middle goes onto the arch at its scaled x and turns to the arch's slope there.
         private void Letter(TMP_TextInfo info, TMP_CharacterInfo c, float fit, (float scale, float angle, float lift, float alpha) pose)
         {
             var mesh = info.meshInfo[c.materialReferenceIndex];

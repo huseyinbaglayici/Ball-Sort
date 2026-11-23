@@ -21,7 +21,7 @@ namespace Project.Contexts.Game.Items
         private static readonly int TiltId = Shader.PropertyToID("_Tilt");
         private static readonly int DissolveId = Shader.PropertyToID("_Dissolve");
         private static readonly int ClipId = Shader.PropertyToID("_Clip");
-        // Chunk seeds in ice units (u across, v times the art's aspect up) with their facet tilt; the badge's chunk first.
+        // Chunk seeds in ice units (u across, v times aspect up) with facet tilt; the badge's chunk comes first.
         private static readonly Vector4[] Chunks =
         {
             new(0.48f, 1.34f, 0f, 0f), new(0.2f, 2.06f, -0.18f, 0.1f), new(0.83f, 1.86f, 0.15f, 0.14f),
@@ -154,7 +154,7 @@ namespace Project.Contexts.Game.Items
             foreach (var piece in _pieces) piece.enabled = true;
         }
 
-        // Chunks drift down slowly as if in low gravity, turning in depth, and dissolve to dust inside the tube's own column.
+        // Chunks drift down in low gravity, turning in depth, and dissolve to dust within the tube's column.
         private void Tumble(BallAnimationConfig config, float time)
         {
             var art = _frozen.sprite.bounds;

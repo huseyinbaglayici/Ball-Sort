@@ -174,7 +174,7 @@ namespace Project.Contexts.Game.Sort
             return max - min;
         }
 
-        // Added bottle on a tall-tube board: one pitch past its neighbour and any tall tube, rows rebalanced, then recentred.
+        // Added bottle on a tall-tube board: one pitch past neighbours and tall tubes; rows rebalance and recentre.
         private static Vector2 AddBeside(List<List<int>> rows, IReadOnlyList<int> capacities, int bottle, Fit fit,
             Vector2[] origins)
         {
@@ -286,7 +286,7 @@ namespace Project.Contexts.Game.Sort
             return (target, index);
         }
 
-        // Zoom out just enough to fit art (up to a completed cap) inside the HUD band and center it; a fitting board stays.
+        // Zooms out only as needed to fit the art (completed caps included) in the HUD band, centred.
         private static void KeepClearOfHud(Vector2[] origins, float[] rises, Vector2 band, ref float orthoSize)
         {
             if (origins.Length == 0 || band.y <= band.x) return;

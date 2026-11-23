@@ -6,7 +6,7 @@ using UnityEngine.Rendering;
 
 namespace Project.Editor
 {
-    // Builds the key flight prefab: the key, two crisp ghost frames, the keyhole mask and the click star; the board prefab builder registers it.
+    // Builds the key flight prefab (key, two ghost frames, keyhole mask, click star); the board builder registers it.
     public static class KeyFlightFxBuilder
     {
         private const string PrefabPath = "Assets/Prefabs/Items/KeyFlightFx.prefab";

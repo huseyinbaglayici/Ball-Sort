@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Project.Contexts.Game.Items
 {
-    // A hidden ball's reveal: a ring snaps in, one crack lights up across the shell, its halves part, the orb's rim flares, a gold glint.
+    // Hidden ball reveal: a ring snaps in, a crack lights up, the halves part, the rim flares and a gold glint shows.
     public sealed class ShellBreakFx : MonoBehaviour
     {
         private static readonly int CrackId = Shader.PropertyToID("_Crack");

@@ -21,7 +21,7 @@ namespace Project.Contexts.Main
     // Raised once, when Main has opened its first screen.
     public readonly struct MainReady : IEvent { }
 
-    // Home and Game are states of one scene; a switch happens under the level-open portal, or the loading overlay without one.
+    // Home and Game share one scene; switches run under the level-open portal, or the loading overlay without it.
     public sealed class MainFlow : MonoBehaviour
     {
         [SerializeField] private HomeScreen _home;

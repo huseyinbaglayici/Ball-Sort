@@ -9,7 +9,7 @@ using UnityEngine;
 
 namespace Project.Editor
 {
-    // Writes the level-won skeleton (mascot, ribbon, burst; intro and celebrate) from the packed atlas and the win settings.
+    // Writes the level-won skeleton (mascot, ribbon, burst; intro and loop) from the packed atlas and win settings.
     public static class WinSkeletonBuilder
     {
         private const string Folder = "Assets/Art/Spine/WinFx";
@@ -177,7 +177,7 @@ namespace Project.Editor
             var attachments = new Dictionary<string, object>
             {
                 ["flash"] = Region("halo", Vector2.zero, regions["halo"]),
-                // The ribbon hangs under its bone so the bone sits on the middle of its face, measured on the art; the title follows the bone.
+                // The ribbon hangs so its bone sits mid-face (measured on the art); the title follows the bone.
                 ["ribbon"] = Region("ribbon", new Vector2(0f, -ribbonSize.y * RibbonBandLift), ribbonSize),
             };
             for (var i = 0; i < SparkCount; i++)
@@ -263,7 +263,7 @@ namespace Project.Editor
             public float RibbonY, RibbonDrop, RibbonScale, FlashScale, SparkReach, BobPx;
         }
 
-        // Burst at 0, the mascot swings in and lands with a squash, the ribbon drops over it; every value ends on the loop's start.
+        // Burst, mascot swing-in and landing, ribbon drop; every value ends where the loop starts.
         private static Dictionary<string, object> Intro(Stage s)
         {
             var w = s.W;
@@ -426,7 +426,7 @@ namespace Project.Editor
 
         // ---------------------------------------------------------------- Keys
 
-        // Samples a motion at the given times; each key gets bezier handles from the motion's slope, so the curve stays smooth.
+        // Samples a motion at the given times, with bezier handles from its slope so the curve stays smooth.
         private static List<object> Keys1(Func<float, float> f, float[] times)
         {
             var keys = new List<object>();

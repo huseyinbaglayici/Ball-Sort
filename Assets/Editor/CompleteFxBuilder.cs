@@ -50,7 +50,7 @@ namespace Project.Editor
             var back = Group(root.transform, "Back", BackOrder);
             var front = Group(root.transform, "Front", FrontOrder);
 
-            // Back to front: halo, far disk half and trails, dark body, rim, gloss, photon ring, then the near disk half.
+            // Back to front: halo, far disk half and trails, body, rim, gloss, photon ring, near disk half.
             var lensRenderer = AddSprite(front, "Lens", lens, 0, additive);
             var heatRenderer = AddSprite(front, "Heat", lens, 0, additive);
             var diskBack = AddLine(front, "DiskBack", line, 1);
@@ -105,7 +105,7 @@ namespace Project.Editor
             return prefab.GetComponent<CompleteFx>();
         }
 
-        // Per bead a core and an aura that change sides of the disk, a trail on each side; dust on each side and the glow behind.
+        // Per bead a core, an aura and a trail on each disk side; dust on each side and the glow behind.
         private static AccretionDisk Disk(Transform root, Transform back, Transform front, Sprite bead, Sprite aura,
             Material additive, Material wispLine, Texture dot, Texture glowTexture)
         {

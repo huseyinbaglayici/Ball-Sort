@@ -443,7 +443,7 @@ namespace Project.Editor
             return root;
         }
 
-        // Ring halves, a hot core and a glint round the ball, and the shell's two halves; far ring and halves sit behind the orb.
+        // Ring halves, hot core, glint and the shell's two halves; the far ring and halves sit behind the orb.
         private static ShellBreakFx CreateRevealFx(Transform root, Sprite shellArt, Material shellMaterial)
         {
             var fx = new GameObject("RevealFx").transform;
@@ -516,7 +516,7 @@ namespace Project.Editor
             return material;
         }
 
-        // Ice over the tube art with the needed color's orb (all its layers) on the badge; its chunks, each under its own pivot.
+        // Ice over the tube art, the needed color's orb on its badge, and chunks each under its own pivot.
         private static GameObject CreateFrozenTube(ObstacleSprites art, Sprite back, Sprite front, OrbSkin sample)
         {
             var root = new GameObject("FrozenTube");
@@ -559,7 +559,7 @@ namespace Project.Editor
             return root;
         }
 
-        // Curtain, frame and housing sliced to any width, then the padlock; the curtain shows only below the housing line.
+        // Curtain, frame and housing slice to any width; the curtain shows only below the housing line.
         private static GameObject CreateShutter(ObstacleSprites art)
         {
             var root = new GameObject("Shutter");
@@ -607,7 +607,7 @@ namespace Project.Editor
             return root;
         }
 
-        // The open beat, in the shutter's own sorting group: ring halves round the lock, seam, spill, rim glow and sparks.
+        // Open beat in the shutter's sorting group: ring halves round the lock, seam, spill, rim glow and sparks.
         private static void ShutterFx(Transform root, SerializedObject so)
         {
             var lineNear = CompleteFxBuilder.ImportSprite("TouchLineNear", 128f);

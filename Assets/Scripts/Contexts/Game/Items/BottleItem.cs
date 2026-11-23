@@ -130,7 +130,7 @@ namespace Project.Contexts.Game.Items
         {
             foreach (var (part, size, position) in _body)
             {
-                // Switching to Simple turns a sliced size into scale, so restore the size first or a pooled tube stays tall.
+                // Simple mode turns a sliced size into scale; restore the size first or a pooled tube stays tall.
                 if (Mathf.Approximately(rise, 0f))
                 {
                     part.size = size;
@@ -193,7 +193,7 @@ namespace Project.Contexts.Game.Items
             return top;
         }
 
-        // celebrate plays the charge, hop and cap pop; otherwise the cap is shown or removed at once (undo, level start).
+        // celebrate plays the charge, hop and cap pop; otherwise the cap is set at once (undo, level start).
         public void SetCompleted(bool completed, bool celebrate)
         {
             StopMoment();
@@ -207,7 +207,7 @@ namespace Project.Contexts.Game.Items
             }
         }
 
-        // Orbs exhale bottom first toward the finish above; their glow dims and returns with the ball wave after the slam.
+        // Orbs exhale bottom first toward the finish; their glow dims and returns with the ball wave after the slam.
         private void PlayMoment()
         {
             var c = _config;
@@ -308,7 +308,7 @@ namespace Project.Contexts.Game.Items
         private void UpdateSorting() =>
             _sortingGroup.sortingOrder = _receiving ? ReceivingGroupOrder : _inMotion || _lifted.Count > 0 ? RaisedGroupOrder : 0;
 
-        // When the charge ends the empty cap fades as the completed cap pops up, stretches, slams onto the mouth and settles.
+        // After the charge the empty cap fades as the completed cap pops up, slams onto the mouth and settles.
         private void ShowCap(bool show, bool celebrate)
         {
             var cap = _completedCap.transform;
@@ -401,7 +401,7 @@ namespace Project.Contexts.Game.Items
                 startDelay: delay + config.CompleteGlowIn + config.CompleteGlowHold);
         }
 
-        // The only writer of the front glass tint: at once, or eased from where it is (rest, completion, undo, Free Move focus).
+        // Sole writer of the front glass tint, set at once or eased from its current value.
         public void SetTint(Color tint, float duration = 0f)
         {
             PrimeTween.Tween.StopAll(_front);

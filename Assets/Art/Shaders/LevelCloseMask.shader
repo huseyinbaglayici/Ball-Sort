@@ -6,7 +6,7 @@ Shader "UI/LevelCloseMask"
         // Unused; the UI image assigns it, so it must exist.
         [HideInInspector] _MainTex ("Texture", 2D) = "white" {}
         _Snapshot ("Snapshot", 2D) = "black" {}
-        // Rect size, the snapshot spot being zoomed into and where it shows, in the image's own units (origin bottom-left).
+        // Rect size, the zoomed snapshot spot and where it shows, in image units (origin bottom-left).
         _Size ("Size", Vector) = (1, 1, 0, 0)
         _Anchor ("Anchor", Vector) = (0, 0, 0, 0)
         _Center ("Center", Vector) = (0, 0, 0, 0)

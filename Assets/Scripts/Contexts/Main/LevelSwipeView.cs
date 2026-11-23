@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace Project.Contexts.Main
 {
-    // Level to level: the finished board slides off to the left and the next one slides in from the right; HUD and background stay.
+    // Level to level: the finished board slides off left, the next slides in from the right; the HUD stays.
     public sealed class LevelSwipeView : MonoBehaviour
     {
         [SerializeField] private LevelSwipeSettings _settings;

@@ -38,23 +38,23 @@ namespace Project.Contexts.Game.Sort
         public float SingularitySize = 0.7f;
         public float FormStart = 0.05f;
         public float FormTime = 0.5f;
-        [Tooltip("The sphere reads like a dark glass orb: body colour, fresnel rim alpha (brighter toward the lower right like the orbs) and the gloss cap alpha (light from the upper left).")]
+        [Tooltip("Dark glass sphere look: body colour, fresnel rim alpha (lit lower right) and gloss cap alpha (lit upper left).")]
         public Color Body = new Color32(9, 6, 28, 255);
         [Range(0f, 1f)] public float RimAlpha = 0.85f;
         [Range(0f, 1f)] public float GlossAlpha = 0.35f;
         [Tooltip("Soft violet halo behind the sphere: diameter over the sphere's and its alpha.")]
         public float LensSize = 2.6f;
         [Range(0f, 1f)] public float LensAlpha = 0.35f;
-        [Tooltip("Hot rim round the sphere in the portal edge's heat colours: outer and inner colour, diameter over the sphere's and alpha.")]
+        [Tooltip("Hot rim round the sphere in portal heat colours: outer and inner colour, diameter over the sphere's, alpha.")]
         public Color Heat = new Color32(236, 94, 159, 255);
         public Color HeatCore = new Color32(255, 203, 129, 255);
         public float HeatSize = 1.75f;
         [Range(0f, 1f)] public float HeatAlpha = 0.55f;
-        [Tooltip("Thin photon ring hugging the sphere: diameter over the sphere's, alpha and spin of its bright side in degrees per second.")]
+        [Tooltip("Thin photon ring round the sphere: diameter over the sphere's, alpha and bright-side spin in degrees/s.")]
         public float PhotonSize = 1.22f;
         [Range(0f, 1f)] public float PhotonAlpha = 0.9f;
         public float PhotonSpin = 160f;
-        [Tooltip("Accretion disk: diameter over the sphere's, height over width, tilt in degrees, line width, how much faster its beads turn and their size share.")]
+        [Tooltip("Accretion disk: relative diameter, height over width, tilt, line width, bead speed-up and bead size share.")]
         public float DiskSize = 2.1f;
         [Range(0.1f, 0.6f)] public float DiskAspect = 0.26f;
         public float DiskTilt = -10f;
@@ -66,14 +66,14 @@ namespace Project.Contexts.Game.Sort
         public float DiskDustSpacing = 0.9f;
         [Tooltip("The singularity drops into the gem over this long, ending when the cap seats.")]
         public float CollapseTime = 0.12f;
-        [Tooltip("Each ball's glow drains into the singularity as a wisp, bottom first: start, stagger, travel, lag, width, reach and whitening.")]
+        [Tooltip("Each ball's glow drains in as a wisp, bottom first: start, stagger, travel, lag, width, reach and whitening.")]
         public float WispStart = 0.1f;
         public float WispStagger = 0.065f;
         public float WispTime = 0.3f;
         public float WispLag = 0.12f;
         public float WispWidth = 0.08f;
         public float WispSide = 0.55f;
-        [Tooltip("The last wisp leaves by this time, so tall tubes stagger faster; the glow dims to this share and comes back over this long as the cap seats.")]
+        [Tooltip("Last wisp leaves by this time (tall tubes stagger faster); the glow dims to this share and recovers as the cap seats.")]
         public float DrainEnd = 0.65f;
         [Range(0f, 1f)] public float DrainShare = 0.4f;
         public float DrainTime = 0.12f;
@@ -84,7 +84,7 @@ namespace Project.Contexts.Game.Sort
         public float ExhaleDrift = 0.07f;
         public float ExhaleMinTime = 0.06f;
         public float ExhaleRecover = 0.18f;
-        [Tooltip("The essence, a ghost of the orb's glow rising out of its top: travel share, sizes, stretch, core, colour, alpha and rise.")]
+        [Tooltip("Essence, a ghost of the orb's glow rising out of it: travel share, sizes, stretch, core, colour, alpha, rise.")]
         [Range(0.05f, 0.6f)] public float SoulPeel = 0.3f;
         public float SoulStartSize = 0.3f;
         public float SoulSize = 0.6f;
@@ -95,7 +95,7 @@ namespace Project.Contexts.Game.Sort
         [Range(0f, 1f)] public float SoulAlpha = 0.75f;
         [Range(0f, 1f)] public float SoulEndAlpha = 0.3f;
         public float SoulRise = 0.45f;
-        [Tooltip("The singularity inhales each essence: contraction and pulse per arrival, then growth and ring tightening once all are in.")]
+        [Tooltip("Singularity inhale: contraction and pulse per essence, then growth and ring tightening once all are in.")]
         public float SwallowPulse = 0.16f;
         public float SwallowTime = 0.12f;
         public float SwallowGrowth = 0.12f;
@@ -120,7 +120,7 @@ namespace Project.Contexts.Game.Sort
         public float GlintSize = 0.45f;
         public float GlintTime = 0.35f;
 
-        // When ball index (bottom first) of count starts draining; the stagger shrinks so the last one still leaves by DrainEnd.
+        // When ball index (bottom first) of count starts draining; the stagger shrinks to finish by DrainEnd.
         public float DrainStart(int index, int count) => WispStart + DrainStagger(count) * index;
 
         // The beat between orbs; it shrinks so the last one still leaves by DrainEnd.

@@ -17,7 +17,7 @@ namespace Project.Contexts.Game.Items
             ApplyLook();
         }
 
-        // The shell trembles, squashes as a ring snaps in, cracks with light and breaks; the real orb pops in under the shards.
+        // The shell trembles, squashes as a ring snaps in, cracks and breaks; the real orb pops in under the shards.
         public void Reveal(OrbSkin orb, Color color, BallAnimationConfig config)
         {
             if (!IsHidden) return;

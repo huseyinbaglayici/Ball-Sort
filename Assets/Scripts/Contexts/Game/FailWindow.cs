@@ -3,7 +3,7 @@ using Project.Contexts.Game.Sort;
 
 namespace Project.Contexts.Game
 {
-    // Fail panel gate: opens once the board stayed readable for the window and the rescue search ended, in either order.
+    // Fail panel gate: opens once the board stayed readable long enough and the rescue search ended.
     public sealed class FailWindow
     {
         private float _left;

@@ -59,7 +59,7 @@ namespace Project.Contexts.Game.Items
         private float _mouth;
         private Vector3 _gemAtSlam;
 
-        // Plays on the tube's spot and scale, so its coordinates are tube coordinates; onFinished runs once nothing is left.
+        // Works in tube coordinates (the tube's spot and scale); onFinished runs once nothing is left.
         public void Play(BottleItem tube, BallAnimationConfig config, Action<CompleteFx> onFinished)
         {
             HideAll();
@@ -112,7 +112,7 @@ namespace Project.Contexts.Game.Items
             var form = Mathf.Max(0f, EaseOutBack(grow));
             var swallow = EaseInCubic(collapse);
             var center = Vector3.Lerp(new Vector3(0f, _mouth + s.SingularityHeight, 0f), GemLocal(), swallow);
-            // Each essence is an inhale: a quick contraction as it nears, then a pulse, a small growth step and a tighter ring.
+            // Each essence arrival: a quick contraction, then a pulse, a small growth step and a tighter ring.
             var taken = Swallowed(t, out var pulse, out var contract);
             var share = (float)taken / Mathf.Max(1, _tube.Balls.Count);
             var fed = 1f + s.SwallowGrowth * share + s.SwallowPulse * pulse - s.SwallowContract * contract;
@@ -173,7 +173,7 @@ namespace Project.Contexts.Game.Items
             }
         }
 
-        // The far half sits under the sphere, thinner and dimmer; the near half crosses in front, widest and hottest at the front.
+        // Far half sits behind the sphere, thinner and dimmer; the near half crosses in front, widest at the front.
         private void DrawDisk(Vector3 center, float radius, Vector3 squash, float alpha, float heat)
         {
             var s = _s;
@@ -211,7 +211,7 @@ namespace Project.Contexts.Game.Items
             line.colorGradient = _arcGradient;
         }
 
-        // Bottom first, a ghost of each orb's inner glow rises from its core and arcs into the sphere, snapping in at the end.
+        // Bottom first, a ghost of each orb's glow rises from its core and arcs into the sphere.
         private void Souls(float t, Vector3 target)
         {
             var s = _s;
@@ -276,7 +276,7 @@ namespace Project.Contexts.Game.Items
             }
         }
 
-        // How many essences are in, how strongly the last ones still pulse the sphere and how much it draws in for the next.
+        // Essences absorbed so far, the lingering pulse of recent ones and the pull toward the next.
         private int Swallowed(float t, out float pulse, out float contract)
         {
             var s = _s;

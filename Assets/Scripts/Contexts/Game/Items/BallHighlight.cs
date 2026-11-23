@@ -126,7 +126,7 @@ namespace Project.Contexts.Game.Items
         {
             if (RimSprites.TryGetValue(scale, out var sprite)) return sprite;
             var edge = 1f / scale;
-            // In sphere radii the glass band runs from ~0.81 (core) to 1; the rim peaks outside and is gone by the core.
+            // In sphere radii the glass band spans 0.81 to 1; the rim peaks outside it and fades out by the core.
             const float peak = 0.95f;
             const float inner = 0.07f;
             sprite = BuildCircle("BallRim", d =>

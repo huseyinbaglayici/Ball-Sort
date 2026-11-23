@@ -105,7 +105,7 @@ namespace Project.Editor
         private static Button CloseButton(RectTransform frame) =>
             ButtonRect("CloseButton", frame, Top, F(1004, 786), new Vector2(124, 128), S("UI_Button_Close")).GetComponent<Button>();
 
-        // A 150-high wide button at y with hidden price chip, count badge and "-1 life" line; a null key leaves the label to code.
+        // Wide 150-high button with hidden price chip, count badge and "-1 life" line; null key = label set by code.
         private static Button WideButton(Component parent, string name, float y, Sprite sprite, string key, float labelSize = 58f)
         {
             var box = new Vector2(630, 150);

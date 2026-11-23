@@ -15,7 +15,7 @@ namespace Project.Editor
         private const string PrefabPath = "Assets/Prefabs/Items/WinFx.prefab";
         private const string FontPath = "Assets/Art/Fonts/PeaceSans SDF.asset";
         private const string TitleMaterialPath = "Assets/Art/Fonts/PeaceSans SDF - Title.mat";
-        // Flash behind the tubes, ring halves around them, dim under the grains, stage over the board and under the bomb blast.
+        // Flash behind the tubes, ring halves round them, dim under grains, stage between board and bomb blast.
         private const int DimOrder = 29;
         private const int BehindOrder = -2;
         private const int FrontOrder = 30;
@@ -27,7 +27,7 @@ namespace Project.Editor
         // The title fills this share of the face's width and height.
         private static readonly Vector2 TitleFill = new(0.92f, 0.95f);
 
-        // Null when an input is missing; textures come from ArtSource/Fx/make_fx.py, the atlas from ArtSource/Spine/make_win_atlas.py.
+        // Null when an input is missing; inputs come from the scripts under ArtSource/Fx and ArtSource/Spine.
         public static WinFx Build(WinFxSettings settings)
         {
             var halo = CompleteFxBuilder.ImportSprite("Halo", 128f);
@@ -63,7 +63,7 @@ namespace Project.Editor
                 CompleteFxBuilder.ParticleMaterial("FxResultDust", bead), 0.12f, 0.35f, false, FrontOrder + 2);
             var sparks = ResultFxBuilder.Grains(root.transform, "Sparks",
                 CompleteFxBuilder.ParticleMaterial("FxResultSpark", dot), 0.02f, 0f, true, FrontOrder + 2);
-            // Salvos: comet streaks and orb sparks fall under gravity, stars and rings pop in place, stardust drifts down.
+            // Salvos: comets and orb sparks fall under gravity, stars and rings pop in place, stardust drifts down.
             var comets = ResultFxBuilder.Grains(root.transform, "Comets",
                 CompleteFxBuilder.ParticleMaterial("FxResultSpark", dot), 0.05f, 0.45f, true, FrontOrder + 2);
             var orbSparks = ResultFxBuilder.Grains(root.transform, "OrbSparks",
@@ -163,7 +163,7 @@ namespace Project.Editor
             return system;
         }
 
-        // The UI font's look (white face, dark outline) plus a soft shadow under the letters, so they sit on the banner.
+        // UI font look (white face, dark outline) plus a soft shadow so the letters sit on the banner.
         private static Material TitleMaterial(TMP_FontAsset font)
         {
             var material = AssetDatabase.LoadAssetAtPath<Material>(TitleMaterialPath);

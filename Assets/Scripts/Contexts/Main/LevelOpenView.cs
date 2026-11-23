@@ -5,7 +5,7 @@ using UnityEngine.UI;
 
 namespace Project.Contexts.Main
 {
-    // Home-to-level reveal: a dark cover whose hole grows out of the mascot's orb; on close the level dives into a spot and Home opens out of it.
+    // Reveals a level through a hole growing from the mascot's orb; closing dives into a spot and opens Home.
     [RequireComponent(typeof(CanvasGroup), typeof(Image))]
     public sealed class LevelOpenView : MonoBehaviour
     {
@@ -73,8 +73,7 @@ namespace Project.Contexts.Main
             return RunAsync(_settings.OpenTotal, EvaluateOpen, onCovered);
         }
 
-        // Freezes the level's last frame, runs onCovered so Home sets up under it, dives into the given screen spot until the tint
-        // fills the screen, then opens Home out of the middle.
+        // Freezes the level's last frame, runs onCovered, dives into the given spot until tinted, then opens Home.
         public async Awaitable CloseAsync(Vector2 screenPoint, float screenRadius, Action<float> push, Action onCovered)
         {
             Init();
@@ -158,8 +157,7 @@ namespace Project.Contexts.Main
             Apply(Mathf.LerpUnclamped(_orbRadius, _coverRadius, grow), darken, s.Dim * darken * (1f - grow), s.Dark);
         }
 
-        // The dive: the spot drifts to the middle while the frame scales up about it and washes into the tint; then the
-        // tint's hole grows from the middle like a vignette opening while Home settles from zoomed in.
+        // The dive drifts the spot to the middle while zooming and tinting; then Home opens through a growing hole.
         private void EvaluateClose(float t)
         {
             var s = _settings;
@@ -209,7 +207,7 @@ namespace Project.Contexts.Main
             _image.color = new Color(1f, 1f, 1f, alpha);
         }
 
-        // A screen spot and radius in this view's space, and how far the frame must scale for that radius to cover the screen.
+        // A screen spot and radius in view space, and the scale at which that radius covers the screen.
         private void LocateScreen(Vector2 screenPoint, float screenRadius)
         {
             var camera = _canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : _canvas.worldCamera;
@@ -221,7 +219,7 @@ namespace Project.Contexts.Main
             _zoomScale = Mathf.Max(size.magnitude * 0.5f * _settings.ZoomFill / _orbRadius, 1f);
         }
 
-        // The orb's centre and radius in this view's space (origin bottom-left, as the shader reads it), and the radius that covers the screen.
+        // Orb centre and radius in view space (origin bottom-left, as the shader reads it) and the covering radius.
         private void Locate()
         {
             var corners = new Vector3[4];

@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Project.Contexts.Game.Sort
 {
-    // Level-won beat from the last landing to the coins; mascot and ribbon values bake into the skeleton on prefab rebuild.
+    // Level-won beat from last landing to coins; mascot and ribbon values bake into the skeleton on rebuild.
     [Serializable]
     public sealed class WinFxSettings
     {
@@ -37,7 +37,7 @@ namespace Project.Contexts.Game.Sort
         public float DimTime = 0.25f;
 
         [Header("Mascot")]
-        [Tooltip("From the burst: the mascot swings in from off screen on an arc and rests over the board's centre, sized to the screen width.")]
+        [Tooltip("From the burst, the mascot swings in on an arc and rests over the board's centre, sized to the screen width.")]
         public float MascotDelay = 0.05f;
         public float MascotTime = 0.55f;
         public float MascotSize = 0.5f;
@@ -53,7 +53,7 @@ namespace Project.Contexts.Game.Sort
         public float MascotBobPeriod = 1.4f;
 
         [Header("Ribbon")]
-        [Tooltip("From the mascot's landing: the ribbon drops in above it and settles, sized to the screen width, this gap over the mascot.")]
+        [Tooltip("From the mascot's landing, the ribbon drops in this gap above it and settles, sized to the screen width.")]
         public float RibbonDelay = 0.1f;
         public float RibbonTime = 0.32f;
         public float RibbonWidth = 0.85f;
@@ -74,7 +74,7 @@ namespace Project.Contexts.Game.Sort
         [Range(0f, 0.2f)] public float LetterWave = 0.04f;
 
         [Header("Salvos")]
-        [Tooltip("From the ribbon's slam, three salvos this far apart: comets and stars from the right, comets and orb sparks from the left, rings and stardust over the middle.")]
+        [Tooltip("Gap between the three salvos after the ribbon's slam (right, left, then middle of the screen).")]
         public float SalvoGap = 0.2f;
         public int CometCount = 4;
         public int StarCount = 7;

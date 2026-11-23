@@ -154,7 +154,7 @@ namespace Project.Contexts.Game.Sort
             Sync(board);
         }
 
-        // Level start and restart: tubes settle into their seats with a small rise and swell, left to right; barely seen.
+        // Level start and restart: tubes settle into their seats left to right with a subtle rise and swell.
         private const float EntranceRise = 0.08f;
         private const float EntranceScale = 0.96f;
         private const float EntranceTime = 0.2f;

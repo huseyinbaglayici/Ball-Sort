@@ -1,4 +1,4 @@
-// Ice block over a tube lit as a thick rounded slab; it cracks into bevelled chunks that break off with depth and their own light.
+// Ice block over a tube, lit as a thick rounded slab; it cracks into bevelled chunks that break off in depth.
 Shader "Project/Obstacle Ice"
 {
     Properties
@@ -145,7 +145,7 @@ Shader "Project/Obstacle Ice"
                                        Luma(i.uv + float2(0, t.y)) - Luma(i.uv - float2(0, t.y))) * _Bump;
                 float3 n = float3(side - relief.x, -relief.y, 1);
 
-                // Cracks run out from the badge ring; each chunk they reach takes its own facet, its edges bevel down into the gap.
+                // Cracks run out from the badge ring; each chunk reached takes its own facet and bevels into the gap.
                 float edge;
                 float2 across;
                 int chunk = Chunk(q, edge, across);

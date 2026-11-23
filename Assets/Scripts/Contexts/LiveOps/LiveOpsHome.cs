@@ -11,7 +11,7 @@ using UnityEngine.UI;
 
 namespace Project.Contexts.LiveOps
 {
-    // Home's way into the live ops: buttons, badges, the event icon's timer and count, and what opens on its own on arrival.
+    // Home's live-ops entry: buttons, badges, the event icon's timer and count, and popups that open on arrival.
     public sealed class LiveOpsHome : MonoBehaviour
     {
         [SerializeField] private Button _daily;

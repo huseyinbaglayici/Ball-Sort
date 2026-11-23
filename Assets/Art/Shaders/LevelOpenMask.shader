@@ -6,7 +6,7 @@ Shader "UI/LevelOpenMask"
         // Unused; the UI image assigns it, so it must exist.
         [HideInInspector] _MainTex ("Texture", 2D) = "white" {}
         _Color ("Color", Color) = (0, 0, 0, 1)
-        // Hole centre and rect size in the image's own units (origin bottom-left); radius and edge softness in the same units.
+        // Hole centre, rect size, radius and edge softness, all in image units (origin bottom-left).
         _Center ("Center", Vector) = (0, 0, 0, 0)
         _Size ("Size", Vector) = (1, 1, 0, 0)
         _Radius ("Radius", Float) = 0

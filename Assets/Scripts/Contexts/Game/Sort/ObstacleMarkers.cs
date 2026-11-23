@@ -61,7 +61,7 @@ namespace Project.Contexts.Game.Sort
             _onUncovered = onUncovered;
         }
 
-        // forward: the move just made, whose removed obstacles wait for Play; null shows the model as it is (Undo, Build).
+        // forward: the latest move, whose removed obstacles wait for Play; null shows the model as is.
         public void Refresh(SortBoard board, IReadOnlyList<BottleItem> bottles, MoveResult forward)
         {
             _model = board;

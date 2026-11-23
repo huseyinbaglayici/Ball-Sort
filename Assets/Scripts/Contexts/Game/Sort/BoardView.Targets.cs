@@ -4,10 +4,10 @@ using UnityEngine;
 
 namespace Project.Contexts.Game.Sort
 {
-    // Free Move targets: a tap-me breath, landing-slot rims and a glass focus on the tubes that can take the lifted balls.
+    // Free Move targets: tap-me breath, landing-slot rims and glass focus on tubes that can take the lifted balls.
     public sealed partial class BoardView
     {
-        // Free Move armed and balls lifted from: target tubes breathe in a tap-me idle with their landing slots outlined.
+        // Target tubes for balls lifted from `from` breathe in a tap-me idle with their landing slots outlined.
         public void ShowTargets(int from, IReadOnlyList<int> targets)
         {
             HideTargets();
@@ -46,7 +46,7 @@ namespace Project.Contexts.Game.Sort
             foreach (var bottle in _bottles) bottle.ResetTint(_animation.Boosters.FocusTime);
         }
 
-        // Tap me: each target tube breathes very slightly; its balls a little more, bottom first, and the rims fade in and breathe on with them.
+        // Tap-me idle: target tubes breathe slightly; their balls and slot rims a bit more, bottom first.
         private void StartIdle()
         {
             var b = _animation.Boosters;
@@ -90,7 +90,7 @@ namespace Project.Contexts.Game.Sort
             _idleTubes.Clear();
         }
 
-        // An empty slot drawn like an orb waiting to land: violet inner glow lit from the lower right, crisp rim, gloss upper left.
+        // Empty slot drawn like an orb: violet inner glow from the lower right, crisp rim, gloss upper left.
         private void Outline(BottleItem tube, int slot)
         {
             var b = _animation.Boosters;

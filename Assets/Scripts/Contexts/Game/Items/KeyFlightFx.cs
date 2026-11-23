@@ -4,12 +4,12 @@ using UnityEngine;
 
 namespace Project.Contexts.Game.Items
 {
-    // A freed key glides on one smooth curve from its ball up past the screen's centre and down into its padlock's keyhole.
+    // A freed key glides on one smooth curve from its ball, past the screen's centre, into its padlock's keyhole.
     public sealed class KeyFlightFx : Item
     {
         // Speed profile samples; the curve eases in, slows at the apex and eases into the keyhole.
         private const int ProfileSamples = 128;
-        // Follow-through: the key leans toward its heading by this share, at most this far, and catches up at this rate.
+        // Follow-through lean toward the heading: share, maximum angle and catch-up rate.
         private const float LeanShare = 0.3f;
         private const float MaxLean = 20f;
         private const float LeanRate = 9f;
@@ -67,7 +67,7 @@ namespace Project.Contexts.Game.Items
         public static float Duration(BallAnimationConfig c) =>
             c.KeyFlyToCentre + c.KeyFlyToLock + c.KeyFlyInsertTime + c.KeyFlyTurn;
 
-        // Board-local points; size is the key's drawn width in its ball; lockWidth is the padlock's; tint is its lock's color.
+        // Board-local points; size is the key's drawn width, lockWidth the padlock's, tint the lock color.
         public void Play(Vector3 from, Vector3 centre, Vector3 lockAt, float size, float lockWidth, Color tint,
             BallAnimationConfig config, Action onInserted, Action<KeyFlightFx> onDone)
         {
@@ -86,7 +86,7 @@ namespace Project.Contexts.Game.Items
             var apex = size * c.KeyFlyCentreScale;
             var end = lockWidth * c.KeyFlyLockScale;
             lockAt += Vector3.down * (lockWidth * KeyholeDrop);
-            // One eased curve ends with the key slid into the hole: it decelerates all the way in, no stop at the mouth.
+            // One eased curve ends with the key inside the hole, decelerating all the way with no stop at the mouth.
             var hover = lockAt + Vector3.up * (end * 0.5f);
             var seated = hover + Vector3.down * (end * InsertDepth);
             var path = new Path(from, centre, seated, c.KeyFlyArc);
@@ -109,7 +109,7 @@ namespace Project.Contexts.Game.Items
                 .ChainCallback(this, fx => fx.Finish());
         }
 
-        // One frame of flight: eased position on the curve, a lagging tip-first rotation, depth swell and a stretch along speed.
+        // One flight frame: eased curve position, lagging tip-first rotation, depth swell and speed stretch.
         private void Fly(Path path, float s, float start, float apex, float end, float native)
         {
             var position = path.At(s);

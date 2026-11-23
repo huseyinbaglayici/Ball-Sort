@@ -110,7 +110,7 @@ namespace Project.Contexts.Game.Sort
                         if (!_board.CanMove(from, to)) continue;
                         var amount = _board.MoveAmount(from, to);
                         var toEmpty = _board.IsEmpty(to);
-                        // Pouring a whole one-color bottle into an empty one no bigger than it changes nothing, unless it flips a key to the top.
+                        // A one-color bottle poured into an empty one no bigger is a no-op unless it brings a key up.
                         if (toEmpty && run == count && _board.Capacity(to) <= _board.Capacity(from) && !RunHoldsKey(from, run)) continue;
 
                         var score = amount * 3;

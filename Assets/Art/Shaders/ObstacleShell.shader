@@ -1,4 +1,4 @@
-// Hidden orb shell: dark violet energy and a slow meridian light band; one bold crack lights up from the centre and splits it in halves.
+// Hidden orb shell: dark violet energy and a slow light band; one crack lights from the centre and splits it.
 Shader "Project/Obstacle Shell"
 {
     Properties

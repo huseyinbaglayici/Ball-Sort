@@ -19,7 +19,7 @@ namespace Project.Contexts.LiveOps
         public OrbitRushArgs(Action play) => Play = play;
     }
 
-    // The event screen: a race view of the five-racer room and a map view of the stage route, one action button under both.
+    // Event screen: race view of the five-racer room, map view of the stage route, one action button under both.
     public sealed class OrbitRushScreen : Popup
     {
         [Serializable]
@@ -115,7 +115,7 @@ namespace Project.Contexts.LiveOps
             _args = args is OrbitRushArgs a ? a : default;
             _infoPanel.SetActive(false);
             _rush.MarkIntroShown();
-            // The race is the main view while it runs; before joining and after the last stage the route tells the story.
+            // The race view leads while racing; before joining and after the last stage the map view shows.
             _mapView = _rush.State is OrbitRushState.Intro or OrbitRushState.Join or OrbitRushState.Completed;
             Refresh();
         }

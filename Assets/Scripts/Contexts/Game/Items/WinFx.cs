@@ -9,14 +9,14 @@ using UnityEngine;
 
 namespace Project.Contexts.Game.Items
 {
-    // Level won: caps pulse, an orbit ring bursts, then the stage skeleton plays its intro and celebrate loop until the coins fly.
+    // Level won: caps pulse, an orbit ring bursts, then the stage skeleton plays until the coins fly.
     public sealed class WinFx : Item
     {
         // Lifetime of the longest grain, so nothing is cut when the item is released.
         private const float Tail = 1.5f;
         // The dim reaches past the screen on every side.
         private const float DimMargin = 1.5f;
-        // Skeleton units per source pixel and the mascot's drawn width in pixels; the stage is scaled so the mascot fills its share of the screen.
+        // Skeleton units per source pixel and the mascot's drawn width, used to scale the stage to the screen.
         private const float SkeletonScale = 0.01f;
         private const float MascotPx = 512f;
         private const string IntroAnimation = "intro";
@@ -69,7 +69,7 @@ namespace Project.Contexts.Game.Items
             return ribbon + w.RibbonTime + w.LetterDelay + w.LettersTime;
         }
 
-        // tubes: every tube on the board; origin: the one that completed last; width: the board's width in its own units.
+        // tubes: all board tubes; origin: the last one completed; width: board width in its own units.
         public void Play(IReadOnlyList<BottleItem> tubes, int origin, float width, float panelAt, BallAnimationConfig config,
             Action<WinFx> onFinished)
         {
@@ -192,7 +192,7 @@ namespace Project.Contexts.Game.Items
             }
         }
 
-        // 0: comets and star pops from the right; 1: comets and orb-coloured sparks from the left; 2: orbit rings and stardust over the middle.
+        // Salvo 0: comets and stars from the right; 1: comets and sparks from the left; 2: rings and stardust.
         private void Salvo(int index, WinFxSettings w, FinishFxSettings f)
         {
             var scale = _view / 10f;
@@ -268,7 +268,7 @@ namespace Project.Contexts.Game.Items
                 }, PrimeTween.Ease.OutQuad, startDelay: at);
         }
 
-        // The stage is scaled so the mascot takes its share of the screen width; the title text follows the ribbon bone.
+        // The stage scales so the mascot takes its share of screen width; the title follows the ribbon bone.
         private void PrepareStage(WinFxSettings w)
         {
             var scale = _view * w.MascotSize / (MascotPx * SkeletonScale);

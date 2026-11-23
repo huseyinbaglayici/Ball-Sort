@@ -1,4 +1,4 @@
-// Shared by the obstacle shaders: crack strokes drawn as bold cartoon lines, a dark ink edge round a lit core with a white heart.
+// Shared obstacle crack strokes: bold lines with a dark ink edge round a lit core and a white heart.
 #ifndef OBSTACLE_COMMON_INCLUDED
 #define OBSTACLE_COMMON_INCLUDED
 

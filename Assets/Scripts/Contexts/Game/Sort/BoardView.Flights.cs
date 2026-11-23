@@ -35,7 +35,7 @@ namespace Project.Contexts.Game.Sort
 
             _animation.EntryTiming(count, out _, out var stagger);
             var lastStart = (count - 1) * stagger;
-            // Both portals share one shape so in matches out; the target closes PortalCloseLag later so the eye ends on it.
+            // Both portals share one shape; the target closes PortalCloseLag later so the eye ends on it.
             var sourcePortal = PortalOver(source, facesDown: true);
             var targetPortal = PortalOver(target, facesDown: false);
             var allThrough = lastStart + _animation.WarpCross;
@@ -91,7 +91,7 @@ namespace Project.Contexts.Game.Sort
             config.EntryTiming(count, out var entry, out _);
             // Shape with the center on the portal planes; area kept.
             var deep = new Vector3(1f / config.VanishStretch, config.VanishStretch, 1f);
-            // Above a cut line is hidden: source cuts at its void, target at its lowest edge, so what goes in comes out.
+            // Hidden above the cut: the source cuts at its void, the target at its lowest edge, so in matches out.
             var sourceCut = sourcePortal.y - PortalView.Cut(config, facesDown: true);
             var targetCut = targetPortal.y - PortalView.Cut(config, facesDown: false);
             var path = new WarpPath(start.y - sourceCut, radius, targetCut - radius - end.y, entry, config);

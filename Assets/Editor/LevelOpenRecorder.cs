@@ -9,7 +9,7 @@ using UnityEngine;
 
 namespace Project.Editor
 {
-    // In Play on Home: presses Play and saves one game-view frame every 50 ms of the level-open to Recordings/LevelOpen.
+    // In Play on Home, presses Play and saves a frame every 50 ms of the level open to Recordings/LevelOpen.
     public static class LevelOpenRecorder
     {
         private const string Folder = "Recordings/LevelOpen/v3";
@@ -36,7 +36,7 @@ namespace Project.Editor
         [MenuItem("Tools/Project/Record Level Restart (1170x2532)")]
         private static void RecordRestartPhone() => Record(1170, 2532, false, restart: true);
 
-        // Open records Home to board from a Play press; close records board to Home; restart records the board rebuilding.
+        // Open records Home to board, close records board to Home, restart records the board rebuilding.
         private static void Record(int width, int height, bool open, bool restart = false)
         {
             MainFlow flow = null;

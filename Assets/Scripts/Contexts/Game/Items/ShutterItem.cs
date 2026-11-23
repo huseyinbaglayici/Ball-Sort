@@ -5,7 +5,7 @@ using UnityEngine.Rendering;
 
 namespace Project.Contexts.Game.Items
 {
-    // One shutter over a row of adjacent tubes; parented to the board, it follows the end tubes in its own sorting group.
+    // Shutter over adjacent tubes in a row; board child that tracks the end tubes in its own sorting group.
     [RequireComponent(typeof(SortingGroup))]
     public sealed class ShutterItem : Item
     {
@@ -37,7 +37,7 @@ namespace Project.Contexts.Game.Items
         [SerializeField] private SpriteRenderer _spill;
         [SerializeField] private SpriteRenderer _rimGlow;
         [SerializeField] private ParticleSystem _sparks;
-        // Charge and hit at the lock: soft core glow, hot core, photon ring and two orbiting beads; a glow under the seam.
+        // Charge and hit at the lock: core glows, photon ring and two orbiting beads; plus a glow under the seam.
         [SerializeField] private SpriteRenderer _coreGlow;
         [SerializeField] private SpriteRenderer _coreHot;
         [SerializeField] private SpriteRenderer _photon;

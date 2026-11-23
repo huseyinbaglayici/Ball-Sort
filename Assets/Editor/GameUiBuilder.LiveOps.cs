@@ -103,7 +103,7 @@ namespace Project.Editor
             var root = PopupRoot("OrbitRushScreen", RushBackdrop, coins: false);
             try
             {
-                // The safe area; the map fills its width, overflowing mostly downwards so the treasure clears the header.
+                // The map fills the safe area's width, overflowing mostly downwards so the treasure clears the header.
                 var content = Span("Content", root.transform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
                 content.offsetMin = new Vector2(0, 400);
                 content.offsetMax = new Vector2(0, -400);
@@ -158,7 +158,7 @@ namespace Project.Editor
                 Pic("Avatar", mask, Center, Vector2.zero, new Vector2(132, 132), S("UI_LiveOps_ProfileAvatar_Luno")).raycastTarget = false;
                 Pic("Frame", marker, Top, new Vector2(0, -85), new Vector2(170, 170), S("UI_LiveOps_ProfileFrame")).raycastTarget = false;
 
-                // Header from the safe top: info, title and close on one line; coins, time left and stage on one row of equal pills.
+                // Header: info, title and close on one line; coins, time left and stage in equal pills below.
                 var header = Rect("Header", root.transform, Top, new Vector2(0, DesignTop - 400f), Reference, new Vector2(0.5f, 1f));
                 var info = ButtonRect("InfoButton", header, Center, At(122, 236), new Vector2(118, 124), S("UI_InLevel_IconBase"));
                 Text("Mark", info, new Vector2(0, 4), new Vector2(80, 80), "?", 64, White);

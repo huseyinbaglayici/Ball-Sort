@@ -185,7 +185,7 @@ namespace Project.Contexts.Preview
             _boardView.Build(_level, 20, _model, _factory, _palette);
         }
 
-        // The game's own open: the ball over the key moves to the spare tube, the key reaches the mouth and opens the box.
+        // The real open: moving the ball above the key to the spare tube brings the key up to open the box.
         private void OpenShutters()
         {
             if (_model == null || _boardView.IsAnimating) return;
@@ -264,7 +264,7 @@ namespace Project.Contexts.Preview
             BuildObstacleBoard();
         }
 
-        // Hidden: three tubes with a hidden ball under a normal one and a spare. Frozen: a frozen tube that melts when tube 1 fills with its color.
+        // Hidden: a hidden ball under a plain one, plus a spare; Frozen: ice that melts when tube 1 fills.
         private void BuildObstacleBoard()
         {
             _selected = -1;

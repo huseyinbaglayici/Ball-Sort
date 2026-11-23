@@ -8,7 +8,7 @@ using UnityEngine.SceneManagement;
 
 namespace Project.Contexts.Application
 {
-    // Boot scene: shows the opening art with a "Loading..." line while Main loads, holds it a moment (a tap skips), then fades out.
+    // Boot scene: opening art with a "Loading..." line while Main loads; a tap skips the hold, then it fades out.
     public sealed class Splash : MonoBehaviour, IPointerDownHandler
     {
         private const int MaxDots = 3;
