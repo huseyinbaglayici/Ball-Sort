@@ -24,24 +24,23 @@ namespace Project.Contexts.Main
         private static readonly int RimAlphaId = Shader.PropertyToID("_RimAlpha");
         private static readonly int DimId = Shader.PropertyToID("_Dim");
         private static readonly int SnapshotId = Shader.PropertyToID("_Snapshot");
-        private static readonly int ScaleId = Shader.PropertyToID("_Scale");
-        private static readonly int AnchorId = Shader.PropertyToID("_Anchor");
-        private static readonly int TintId = Shader.PropertyToID("_Tint");
-        private static readonly int TintAmountId = Shader.PropertyToID("_TintAmount");
+        private static readonly int FlipId = Shader.PropertyToID("_FlipY");
+        private static readonly int CoreId = Shader.PropertyToID("_Core");
+        private static readonly int EdgeId = Shader.PropertyToID("_Edge");
+        private static readonly int GlowId = Shader.PropertyToID("_Glow");
 
         private RectTransform _rect;
         private CanvasGroup _group;
         private Image _image;
         private Material _material;
         private Material _closeMaterial;
-        private Texture2D _snapshot;
+        private RenderTexture _snapshot;
         private Canvas _canvas;
         private RectTransform _orb;
         private Action<float> _push;
         private Vector2 _centre;
         private float _orbRadius;
         private float _coverRadius;
-        private float _zoomScale;
         private bool _revealing;
         private bool _switched;
         private Action _onCovered;
@@ -73,7 +72,7 @@ namespace Project.Contexts.Main
             return RunAsync(_settings.OpenTotal, EvaluateOpen, onCovered);
         }
 
-        // Freezes the level's last frame, runs onCovered, dives into the given spot until tinted, then opens Home.
+        // Freezes the level's last frame, runs onCovered, grows the orb at the given spot over it, then opens Home.
         public async Awaitable CloseAsync(Vector2 screenPoint, float screenRadius, Action<float> push, Action onCovered)
         {
             Init();
@@ -83,8 +82,11 @@ namespace Project.Contexts.Main
             try
             {
                 await Awaitable.EndOfFrameAsync();
-                _snapshot = ScreenCapture.CaptureScreenshotAsTexture();
+                // Stays on the GPU, so the first frame of the close does not stall on a readback.
+                _snapshot = RenderTexture.GetTemporary(Screen.width, Screen.height, 0, RenderTextureFormat.ARGB32);
+                ScreenCapture.CaptureScreenshotIntoRenderTexture(_snapshot);
                 _closeMaterial.SetTexture(SnapshotId, _snapshot);
+                _closeMaterial.SetFloat(FlipId, SystemInfo.graphicsUVStartsAtTop ? 1f : 0f);
                 _image.material = _closeMaterial;
                 _image.color = Color.white;
                 gameObject.SetActive(true);
@@ -93,6 +95,9 @@ namespace Project.Contexts.Main
                 LocateScreen(screenPoint, screenRadius);
                 EvaluateClose(0f);
                 onCovered?.Invoke();
+                // Home is built under the still frame; the orb starts once that heavy frame is over, so it never jumps.
+                await Awaitable.NextFrameAsync();
+                await Awaitable.NextFrameAsync();
                 var total = _settings.CloseTotal;
                 await Tween.Custom(this, 0f, total, total, (view, t) => view.EvaluateClose(t), Ease.Linear, useUnscaledTime: true);
             }
@@ -101,7 +106,7 @@ namespace Project.Contexts.Main
                 Tween.StopAll(this);
                 _push?.Invoke(1f);
                 _closeMaterial.SetTexture(SnapshotId, null);
-                if (_snapshot != null) Destroy(_snapshot);
+                if (_snapshot != null) RenderTexture.ReleaseTemporary(_snapshot);
                 _snapshot = null;
                 _image.material = _material;
                 _group.alpha = 0f;
@@ -157,7 +162,7 @@ namespace Project.Contexts.Main
             Apply(Mathf.LerpUnclamped(_orbRadius, _coverRadius, grow), darken, s.Dim * darken * (1f - grow), s.Dark);
         }
 
-        // The dive drifts the spot to the middle while zooming and tinting; then Home opens through a growing hole.
+        // The frame holds still while the orb flies to the middle and grows over it; then Home opens from the middle.
         private void EvaluateClose(float t)
         {
             var s = _settings;
@@ -166,16 +171,18 @@ namespace Project.Contexts.Main
             if (t < s.ZoomTime)
             {
                 var k = t / Mathf.Max(s.ZoomTime, 0.0001f);
-                var dive = Easing.Evaluate(k, Ease.InCubic);
-                var share = Mathf.Max(s.TintShare, 0.0001f);
-                var tint = Easing.Evaluate(Mathf.Clamp01((k - (1f - share)) / share), Ease.InQuad);
+                var grow = Easing.Evaluate(k, Ease.InCubic);
+                var cover = middle.magnitude;
+                var radius = Mathf.Lerp(_orbRadius, cover * 1.15f + s.FeatherMin, grow);
                 _push?.Invoke(1f + s.ClosePush);
                 _closeMaterial.SetVector(SizeId, size);
-                _closeMaterial.SetVector(AnchorId, _centre);
                 _closeMaterial.SetVector(CenterId, Vector2.Lerp(_centre, middle, Easing.Evaluate(k, Ease.InOutSine)));
-                _closeMaterial.SetFloat(ScaleId, Mathf.Pow(_zoomScale, dive));
-                _closeMaterial.SetColor(TintId, s.ZoomTint);
-                _closeMaterial.SetFloat(TintAmountId, tint);
+                _closeMaterial.SetFloat(RadiusId, radius);
+                _closeMaterial.SetFloat(FeatherId, Mathf.Max(radius * 0.06f, 2f));
+                _closeMaterial.SetColor(CoreId, Color.Lerp(s.OrbCore, s.ZoomTint, Easing.Evaluate(Mathf.Clamp01((k - 0.5f) * 2f), Ease.InQuad)));
+                _closeMaterial.SetColor(EdgeId, s.ZoomTint);
+                _closeMaterial.SetFloat(GlowId, s.OrbGlow * (1f - grow));
+                _closeMaterial.SetFloat(DimId, s.SceneDim * k);
                 return;
             }
 
@@ -216,7 +223,6 @@ namespace Project.Contexts.Main
             RectTransformUtility.ScreenPointToLocalPointInRectangle(_rect, screenPoint + new Vector2(screenRadius, 0f), camera, out var edge);
             _centre = at + size * 0.5f;
             _orbRadius = Mathf.Max((edge - at).magnitude, 2f);
-            _zoomScale = Mathf.Max(size.magnitude * 0.5f * _settings.ZoomFill / _orbRadius, 1f);
         }
 
         // Orb centre and radius in view space (origin bottom-left, as the shader reads it) and the covering radius.

@@ -12,15 +12,16 @@ namespace Project.Contexts.Main
         public float GrowTime = 0.6f;
 
         [Header("Close")]
-        [Tooltip("The level dives into the mascot's orb until it fills the screen with the tint, then Home opens out of the middle.")]
-        public float ZoomTime = 0.55f;
+        [Tooltip("The frame holds still while the mascot's orb grows over it from the hand, then Home opens out of the middle.")]
+        public float ZoomTime = 0.65f;
         public float RevealTime = 0.6f;
-        [Tooltip("How many times the orb's radius covers the screen at the end of the dive, and the share of the dive washed in the tint.")]
-        public float ZoomFill = 1.3f;
-        public float TintShare = 0.45f;
+        [Tooltip("Orb light at its core, the flat tint it settles to, its halo and how much the frame darkens behind it.")]
+        public Color OrbCore = new(0.95f, 0.55f, 1f, 1f);
         public Color ZoomTint = new(0.16f, 0.08f, 0.38f, 1f);
+        public float OrbGlow = 0.6f;
+        public float SceneDim = 0.35f;
         [Tooltip("Home starts this much zoomed in and settles as it opens.")]
-        public float ClosePush = 0.15f;
+        public float ClosePush = 0.03f;
 
         [Header("Edge")]
         [Tooltip("Soft edge as a share of the hole's radius, never thinner than this many units.")]
