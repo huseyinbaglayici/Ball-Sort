@@ -1,0 +1,11 @@
+# Art, audio, generated data and third-party text add no structure to the graph
+*.png
+*.gif
+*.wav
+Orbit_Sort_Screenshots/
+ArtSource/
+Assets/TextMesh Pro/
+Assets/Art/
+Assets/Tests/EditMode/CampaignSolutions.json
+Packages/packages-lock.json
+ProjectSettings/
