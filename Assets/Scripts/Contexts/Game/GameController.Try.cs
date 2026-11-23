@@ -21,6 +21,7 @@ namespace Project.Contexts.Game
             if (_tryHasMoves)
             {
                 _progress.FailAttempt();
+                _ads.CountLoss(_level);
                 _audio.PlayOneShotSound("retry");
             }
             _states.ChangeState(GameState.Playing);

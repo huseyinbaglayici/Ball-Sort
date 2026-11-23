@@ -3,6 +3,16 @@ using Project.Core.Events;
 
 namespace Project.Contexts.Application.Economy
 {
+    public enum RefillResult
+    {
+        Refilled,
+        // Lives are full or unlimited; nothing to buy.
+        NotNeeded,
+        // A free life arrived; play without paying.
+        CanPlay,
+        NoCoins
+    }
+
     // Refills are computed from saved device-UTC timestamps on read, so time passes while the app is closed.
     public sealed class LivesService
     {
@@ -68,6 +78,23 @@ namespace Project.Contexts.Application.Economy
             Lives.Count = Math.Min(CampaignRules.MaxLives, Lives.Count + count);
             if (Lives.Count >= CampaignRules.MaxLives) Lives.NextRefillTicks = 0;
             Changed(LivesChangeReason.Granted);
+        }
+
+        // With no life left, pays the refill and fills every life in one save; a life that arrived meanwhile is free.
+        public RefillResult BuyRefill(WalletService wallet)
+        {
+            Refresh();
+            if (IsUnlimited || Lives.Count >= CampaignRules.MaxLives) return RefillResult.NotNeeded;
+            if (Lives.Count > 0) return RefillResult.CanPlay;
+            if (!wallet.CanAfford(CampaignRules.LifeRefillPrice)) return RefillResult.NoCoins;
+            using (_data.Batch())
+            {
+                wallet.TrySpend(CampaignRules.LifeRefillPrice);
+                Lives.Count = CampaignRules.MaxLives;
+                Lives.NextRefillTicks = 0;
+                Changed(LivesChangeReason.Granted);
+            }
+            return RefillResult.Refilled;
         }
 
         // A second grant extends the remaining time.

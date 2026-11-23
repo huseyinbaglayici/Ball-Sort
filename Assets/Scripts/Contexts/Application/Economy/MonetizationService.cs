@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Project.Contexts.Application.Economy
 {
-    // Local ads/store stand-in (no SDK): rewarded ads complete, interstitials only log, purchases are off.
+    // Local ads stand-in (no SDK): ads complete at once unless a debug failure is set; every step is logged.
     public sealed class MonetizationService
     {
         private readonly PlayerData _data;
@@ -16,8 +16,12 @@ namespace Project.Contexts.Application.Economy
             _lives = lives;
         }
 
-        // Debug: makes rewarded ads fail, to check the no-reward path.
+        // Debug: rewarded ads fail and interstitials don't load, to check the no-reward paths.
         public bool SimulateRewardedFailure { get; set; }
+        public bool SimulateInterstitialFailure { get; set; }
+
+        // No ad network in this build; logs mark every event as demo.
+        public bool IsDemo => true;
 
         public bool NoAds => _data.Model.NoAds;
 
@@ -30,18 +34,27 @@ namespace Project.Contexts.Application.Economy
             _data.Save();
         }
 
-        public void ShowRewarded(string placement, Action<bool> done)
+        // Only a completed ad earns; a repeated completion callback grants nothing.
+        public void ShowRewarded(string placement, int level, Action<bool> done)
         {
+            Log("opportunity", placement, level);
             var earned = !SimulateRewardedFailure;
-            Debug.Log($"[Ads] Rewarded '{placement}' (local stub): {(earned ? "earned" : "failed")}.");
-            done?.Invoke(earned);
+            Log(earned ? "impression" : "error", placement, level);
+            var delivered = false;
+            void Complete(bool ok)
+            {
+                if (delivered) return;
+                delivered = true;
+                if (ok) Log("reward", placement, level);
+                done?.Invoke(ok);
+            }
+            Complete(earned);
         }
-
 
         public bool CanOfferRewardedLife => !_lives.IsUnlimited && _lives.Count == 0;
 
-        // The natural refill keeps running.
-        public void ShowRewardedLife(Action<bool> done)
+        // The natural refill keeps its clock.
+        public void ShowRewardedLife(int level, Action<bool> done)
         {
             if (!CanOfferRewardedLife)
             {
@@ -49,23 +62,38 @@ namespace Project.Contexts.Application.Economy
                 return;
             }
 
-            ShowRewarded("rewarded_life", earned =>
+            ShowRewarded("rewarded_life", level, earned =>
             {
                 if (earned) _lives.Add(CampaignRules.RewardedLifeGrant);
                 done?.Invoke(earned);
             });
         }
 
-
         // The try's time counts toward the interstitial frequency.
         public void BeginActivePlay() => _activeSince = Time.realtimeSinceStartupAsDouble;
 
-        // Win, loss, restart or leaving the level.
+        // Win, loss, restart, leaving the level or the app going to the background.
         public void EndActivePlay()
         {
             if (_activeSince < 0) return;
             _data.Model.AdActiveSeconds += (float)(Time.realtimeSinceStartupAsDouble - _activeSince);
             _activeSince = -1;
+            _data.Save();
+        }
+
+        // A closed loss or a restart after a move; a level's losses add at most the cap together.
+        public void CountLoss(int level)
+        {
+            var model = _data.Model;
+            if (model.AdLossLevel != level)
+            {
+                model.AdLossLevel = level;
+                model.AdLossPoints = 0f;
+            }
+            var points = Mathf.Min(CampaignRules.LossAdPoint, CampaignRules.LossAdPointCap - model.AdLossPoints);
+            if (points <= 0f) return;
+            model.AdLossPoints += points;
+            model.AdPoints += points;
             _data.Save();
         }
 
@@ -79,22 +107,20 @@ namespace Project.Contexts.Application.Economy
                 return;
             }
 
-            model.AdPoints++;
+            model.AdPoints += CampaignRules.WinAdPoint;
             var due = !model.FirstInterstitialSeen ||
                       (model.AdPoints >= Group.Points && model.AdActiveSeconds >= Group.ActiveSeconds);
+            _data.Save();
             if (!due)
             {
-                _data.Save();
                 done?.Invoke();
                 return;
             }
-
-            model.AdPoints = 0;
-            model.AdActiveSeconds = 0f;
-            ShowInterstitial("level_end", done);
+            ShowInterstitial("level_end", level, done);
         }
 
-        public void ShowInterstitial(string placement, Action done)
+        // Only a shown interstitial resets the frequency and opens the No Ads offer.
+        public void ShowInterstitial(string placement, int level, Action done)
         {
             if (NoAds)
             {
@@ -102,8 +128,19 @@ namespace Project.Contexts.Application.Economy
                 return;
             }
 
-            Debug.Log($"[Ads] Interstitial '{placement}' (local stub, group {Group.Name}).");
-            _data.Model.FirstInterstitialSeen = true;
+            Log("opportunity", placement, level);
+            if (SimulateInterstitialFailure)
+            {
+                Log("error", placement, level);
+                done?.Invoke();
+                return;
+            }
+
+            Log("impression", placement, level);
+            var model = _data.Model;
+            model.AdPoints = 0f;
+            model.AdActiveSeconds = 0f;
+            model.FirstInterstitialSeen = true;
             _data.Save();
             done?.Invoke();
         }
@@ -114,5 +151,9 @@ namespace Project.Contexts.Application.Economy
             _data.Model.NoAds = true;
             _data.Save();
         }
+
+        private void Log(string step, string placement, int level) =>
+            Debug.Log($"[Ads] {step} placement={placement} level={level} try={_data.Model.TryId} " +
+                      $"group={Group.Name} mode={(IsDemo ? "demo" : "live")}");
     }
 }

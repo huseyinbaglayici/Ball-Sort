@@ -78,7 +78,7 @@ MonoBehaviour:
   - Key: challenge.soon_body
     Value: 'Yakında.'
   - Key: lives.ad
-    Value: '+1 can (reklam)'
+    Value: 'Reklam izle · +1 can'
   - Key: fail.bomb
     Value: 'Bomba patladı'
   - Key: fail.no_move
@@ -273,3 +273,45 @@ MonoBehaviour:
     Value: 'Nasıl yarışılır'
   - Key: rush.info_body
     Value: "• Seviye kazandıkça rotada ilerle.\n• Art arda galibiyet hızını x5'e kadar artırır; kaybedilen deneme sıfırlar.\n• 5 yarışçıdan bitişe ilk varan 3 kişi aşamayı ve hediyesini kazanır.\n• 5 aşamanın hepsini geç, hazineyi al!"
+  - Key: store.title
+    Value: 'Mağaza'
+  - Key: store.demo
+    Value: 'Demo mağaza: bu sürümde satın almalar ücretsiz.'
+  - Key: store.demo_short
+    Value: 'Demo satın alma, ücret alınmaz.'
+  - Key: store.offers
+    Value: 'Teklifler'
+  - Key: store.coins
+    Value: 'Altın'
+  - Key: store.coin_amount
+    Value: '{0} altın'
+  - Key: store.beginner
+    Value: 'Başlangıç Paketi'
+  - Key: store.bundle_small
+    Value: 'Küçük Paket'
+  - Key: store.bundle_medium
+    Value: 'Orta Paket'
+  - Key: store.bundle_large
+    Value: 'Büyük Paket'
+  - Key: store.no_ads
+    Value: 'Reklamsız'
+  - Key: store.no_ads_short
+    Value: 'Bölüm arası reklamları kalıcı kaldırır'
+  - Key: store.no_ads_body
+    Value: 'Bölüm arası reklamlar kalıcı olarak kalkar. İsteğe bağlı +1 can reklamı kalır.'
+  - Key: store.restore
+    Value: 'Geri yükle'
+  - Key: store.restored
+    Value: 'Satın almalar geri yüklendi'
+  - Key: store.nothing_restored
+    Value: 'Geri yüklenecek satın alma yok'
+  - Key: store.bought
+    Value: 'Satın alındı!'
+  - Key: store.ends_in
+    Value: '{0} içinde biter'
+  - Key: lives.refill_all
+    Value: 'Canları doldur'
+  - Key: lives.play
+    Value: 'Oyna'
+  - Key: lives.arrived
+    Value: 'Bir can hazır!'

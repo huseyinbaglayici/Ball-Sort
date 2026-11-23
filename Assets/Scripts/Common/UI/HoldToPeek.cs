@@ -5,7 +5,7 @@ using UnityEngine.UI;
 
 namespace Project.Common.UI
 {
-    // While pressed the panel and dim ease away to show the board (input stays blocked); release eases them back without snapping.
+    // Pressing the dim or caption fades the panel away to show the board; releasing that finger brings it back.
     public sealed class HoldToPeek : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
     {
         private const float HideDuration = 0.22f;
@@ -16,29 +16,53 @@ namespace Project.Common.UI
 
         [SerializeField] private CanvasGroup _panel;
         [SerializeField] private Image _dim;
-        // The caption itself breathes gently so it reads as something to press.
-        [SerializeField] private Graphic _pulse;
+        // "Hold to see the board": a press area on the panel that breathes gently so it reads as something to press.
+        [SerializeField] private Graphic _caption;
 
         private float _dimAlpha = -1f;
         private bool _held;
+        private int _pointer;
 
-        public void OnPointerDown(PointerEventData eventData) => SetHeld(true);
-        public void OnPointerUp(PointerEventData eventData) => SetHeld(false);
+        public void OnPointerDown(PointerEventData eventData)
+        {
+            // Presses on the panel body bubble up here too; only the dim and the caption peek.
+            var target = eventData.pointerPressRaycast.gameObject;
+            if (_held || target == null) return;
+            if (target != _dim.gameObject && (_caption == null || !target.transform.IsChildOf(_caption.transform))) return;
+            _pointer = eventData.pointerId;
+            SetHeld(true);
+        }
+
+        public void OnPointerUp(PointerEventData eventData)
+        {
+            if (_held && eventData.pointerId == _pointer) SetHeld(false);
+        }
+
+        // Back from the background the panel must be there.
+        private void OnApplicationPause(bool paused)
+        {
+            if (paused && _held) Restore();
+        }
 
         private void OnEnable()
         {
-            if (_pulse == null) return;
-            PrimeTween.Tween.StopAll(_pulse);
-            _pulse.color = WithAlpha(_pulse.color, 1f);
-            PrimeTween.Tween.Alpha(_pulse, 1f, PulseLow, PulsePeriod * 0.5f, Ease.InOutSine, cycles: -1,
+            if (_caption == null) return;
+            PrimeTween.Tween.StopAll(_caption);
+            _caption.color = WithAlpha(_caption.color, 1f);
+            PrimeTween.Tween.Alpha(_caption, 1f, PulseLow, PulsePeriod * 0.5f, Ease.InOutSine, cycles: -1,
                 cycleMode: CycleMode.Yoyo, useUnscaledTime: true);
         }
 
         private void OnDisable()
         {
-            _held = false;
             // StopAll(null) would stop every tween in the game, so each target is checked first.
-            if (_pulse != null) PrimeTween.Tween.StopAll(_pulse);
+            if (_caption != null) PrimeTween.Tween.StopAll(_caption);
+            Restore();
+        }
+
+        private void Restore()
+        {
+            _held = false;
             if (_panel != null)
             {
                 PrimeTween.Tween.StopAll(_panel);

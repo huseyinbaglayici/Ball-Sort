@@ -78,7 +78,7 @@ MonoBehaviour:
   - Key: challenge.soon_body
     Value: 'Coming soon.'
   - Key: lives.ad
-    Value: '+1 life (ad)'
+    Value: 'Watch ad · +1 life'
   - Key: fail.bomb
     Value: 'A bomb exploded'
   - Key: fail.no_move
@@ -273,3 +273,45 @@ MonoBehaviour:
     Value: 'How to race'
   - Key: rush.info_body
     Value: "• Win levels to move along the route.\n• Wins in a row raise your speed up to x5; a failed try resets it.\n• The first 3 of 5 racers to the finish win the stage and its gift.\n• Clear all 5 stages for the treasure!"
+  - Key: store.title
+    Value: 'Shop'
+  - Key: store.demo
+    Value: 'Demo store: purchases are free in this build.'
+  - Key: store.demo_short
+    Value: 'Demo purchase, nothing is charged.'
+  - Key: store.offers
+    Value: 'Offers'
+  - Key: store.coins
+    Value: 'Coins'
+  - Key: store.coin_amount
+    Value: '{0} coins'
+  - Key: store.beginner
+    Value: 'Beginner Pack'
+  - Key: store.bundle_small
+    Value: 'Small Bundle'
+  - Key: store.bundle_medium
+    Value: 'Medium Bundle'
+  - Key: store.bundle_large
+    Value: 'Big Bundle'
+  - Key: store.no_ads
+    Value: 'No Ads'
+  - Key: store.no_ads_short
+    Value: 'Removes ads between levels for good'
+  - Key: store.no_ads_body
+    Value: 'Ads between levels are gone for good. The optional ad for +1 life stays.'
+  - Key: store.restore
+    Value: 'Restore'
+  - Key: store.restored
+    Value: 'Purchases restored'
+  - Key: store.nothing_restored
+    Value: 'Nothing to restore'
+  - Key: store.bought
+    Value: 'Purchased!'
+  - Key: store.ends_in
+    Value: 'Ends in {0}'
+  - Key: lives.refill_all
+    Value: 'Refill lives'
+  - Key: lives.play
+    Value: 'Play'
+  - Key: lives.arrived
+    Value: 'A life is ready!'

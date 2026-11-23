@@ -20,7 +20,7 @@ namespace Project.Editor
     {
         // ---------------------------------------------------------------- Popups
 
-        // Shared popup frame of the art mock: 880 wide, panel top 760 on the design screen.
+        // Shared popup frame: 880 wide, panel top at 760 on the design screen.
         private const float FrameTop = 760f;
 
         private static MessagePopup BuildMessagePopup()
@@ -81,17 +81,18 @@ namespace Project.Editor
                 // Extra choices are purple buttons stacked under the main one.
                 var option = WideButton(frame, "OptionButton", 1680f, S("UI_Button_Wide_Purple"), null, 50f);
 
-                // Hold-to-peek caption on the fail panel: a frameless breathing line that eases the panel away while pressed.
+                // Hold-to-peek caption: a frameless breathing line that eases the fail panel away while pressed.
                 var panelGroup = frame.parent.gameObject.AddComponent<CanvasGroup>();
                 // Dark ink: white would vanish on the panel's light floor.
                 var peek = Text("HoldToPeek", frame, Vector2.zero, new Vector2(600, 64), "result.peek", 38, Ink, "result.peek");
                 peek.raycastTarget = true;
                 peek.rectTransform.pivot = new Vector2(0.5f, 0f);
                 Anchor(peek.rectTransform, Bottom, new Vector2(0, 54));
-                var hold = peek.gameObject.AddComponent<HoldToPeek>();
+                // On the root, so pressing the dim outside the panel peeks as well.
+                var hold = root.AddComponent<HoldToPeek>();
                 Set(hold, "_panel", panelGroup);
                 Set(hold, "_dim", root.GetComponent<Image>());
-                Set(hold, "_pulse", peek);
+                Set(hold, "_caption", peek);
 
                 var popup = root.AddComponent<ResultPopup>();
                 Set(popup, "_peek", peek.gameObject);

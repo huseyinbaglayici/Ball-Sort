@@ -64,7 +64,9 @@ namespace Project.Contexts.Application
             Services.Register(boosters);
             Services.Register(lives);
             Services.Register(new MonetizationService(playerData, lives));
-            Services.Register(new ProgressService(playerData, wallet, boosters, lives));
+            var progress = new ProgressService(playerData, wallet, boosters, lives);
+            Services.Register(progress);
+            Services.Register(new StoreService(playerData, wallet, boosters, () => progress.IsUnlocked(Feature.StarterPack)));
             Services.Register(new ContinueService(playerData, wallet));
             Services.Register(new TutorialService(playerData));
             Services.Register(new DailyRewardService(playerData, wallet));
@@ -97,6 +99,12 @@ namespace Project.Contexts.Application
                 var ads = Services.Get<MonetizationService>();
                 ads.SimulateRewardedFailure = !ads.SimulateRewardedFailure;
                 Debug.Log($"[Ads] Rewarded failure: {ads.SimulateRewardedFailure}");
+            });
+            DebugPanel.AddAction("Toggle interstitial load failure", () =>
+            {
+                var ads = Services.Get<MonetizationService>();
+                ads.SimulateInterstitialFailure = !ads.SimulateInterstitialFailure;
+                Debug.Log($"[Ads] Interstitial failure: {ads.SimulateInterstitialFailure}");
             });
             DebugPanel.AddAction("Grant No Ads", () => Services.Get<MonetizationService>().GrantNoAds());
             DebugPanel.AddAction("Toggle ad group A/B", () =>

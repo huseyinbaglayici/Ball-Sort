@@ -3,6 +3,7 @@ using Project.Common.UI.PopUps;
 using Project.Contexts.Application;
 using Project.Contexts.Application.Economy;
 using Project.Contexts.Main;
+using Project.Contexts.Store;
 using Project.Core.Events;
 using Project.Core.Localization;
 using Project.Core.Services;
@@ -19,12 +20,17 @@ namespace Project.Contexts.Home
         [SerializeField] private TMP_Text _levelText;
         [SerializeField] private HomePoster _poster;
         [SerializeField] private Button _playButton;
-        [SerializeField] private Button _starterPackButton;
+        [SerializeField] private Button _shopButton;
+        // Shown once the first interstitial has played, until No Ads is owned.
+        [SerializeField] private Button _noAdsButton;
         [SerializeField] private Button _settingsButton;
         // Tabs for screens not in the game yet.
         [SerializeField] private Button[] _comingSoon = System.Array.Empty<Button>();
         [SerializeField] private SettingsPopup _settingsPopup;
         [SerializeField] private MessagePopup _messagePopup;
+        [SerializeField] private ShopPopup _shopPopup;
+        [SerializeField] private NoAdsPopup _noAdsPopup;
+        [SerializeField] private LivesPopup _livesPopup;
         // The level orb the level-open zoom grows out of, and what fades away around it.
         [SerializeField] private RectTransform _orb;
         // Full-screen Home content; it pushes in about the orb while a level opens.
@@ -36,6 +42,7 @@ namespace Project.Contexts.Home
         private LivesService _lives;
         private LocalizationService _localization;
         private PopupService _popups;
+        private StoreService _store;
 
         private void Start()
         {
@@ -43,10 +50,11 @@ namespace Project.Contexts.Home
             _lives = Services.Get<LivesService>();
             _localization = Services.Get<LocalizationService>();
             _popups = Services.Get<PopupService>();
+            _store = Services.Get<StoreService>();
 
             _playButton.onClick.AddListener(Play);
-            if (_starterPackButton != null)
-                _starterPackButton.onClick.AddListener(() => ShowMessage("offer.starter_title", "offer.preview_body"));
+            if (_shopButton != null) _shopButton.onClick.AddListener(() => _popups.Show(_shopPopup, new ShopArgs(StoreSection.Offers)));
+            if (_noAdsButton != null) _noAdsButton.onClick.AddListener(() => _popups.Show(_noAdsPopup));
             if (_settingsButton != null) _settingsButton.onClick.AddListener(ShowSettings);
             foreach (var tab in _comingSoon)
                 if (tab != null) tab.onClick.AddListener(() => ShowMessage("nav.soon_title", "nav.soon_body"));
@@ -96,6 +104,7 @@ namespace Project.Contexts.Home
             EventBus<LivesChanged>.Subscribe(OnLivesChanged);
             EventBus<LevelCompleted>.Subscribe(OnLevelCompleted);
             EventBus<LanguageChanged>.Subscribe(OnLanguageChanged);
+            EventBus<StorePurchased>.Subscribe(OnPurchased);
         }
 
         private void OnDisable()
@@ -103,25 +112,27 @@ namespace Project.Contexts.Home
             EventBus<LivesChanged>.Unsubscribe(OnLivesChanged);
             EventBus<LevelCompleted>.Unsubscribe(OnLevelCompleted);
             EventBus<LanguageChanged>.Unsubscribe(OnLanguageChanged);
+            EventBus<StorePurchased>.Unsubscribe(OnPurchased);
         }
 
         private void OnLivesChanged(LivesChanged _) => Refresh();
         private void OnLevelCompleted(LevelCompleted _) => Refresh();
         private void OnLanguageChanged(LanguageChanged _) => Refresh();
+        private void OnPurchased(StorePurchased _) => Refresh();
 
-        // With no life left Play explains when the next one comes.
+        // With no life left Play offers a refill, a rewarded life and the next free life's timer.
         private void Play()
         {
             if (_progress.IsCampaignFinished) return;
             if (!_lives.CanPlay)
             {
-                _popups.Show(_messagePopup, new MessageArgs("lives.out_title",
-                    _localization.Format("lives.out_body", EconomyText.Timer(_lives.NextLifeIn)), "common.ok",
-                    closable: true, heart: true));
+                ShowLives();
                 return;
             }
             _ = Services.Get<MainFlow>().GoToGameAsync();
         }
+
+        private void ShowLives() => _popups.Show(_livesPopup, new LivesArgs(_progress.Level, Play, ShowLives));
 
         private void ShowSettings() => _popups.Show(_settingsPopup, new SettingsArgs(null, null, false));
 
@@ -137,8 +148,7 @@ namespace Project.Contexts.Home
             _levelText.text = finished ? _localization.Get("meta.final_title") : _localization.Format("home.level", level);
             if (_poster != null) _poster.Show(level);
             _playButton.interactable = !finished;
-            // Tab-bar slots stay in place; locked ones just don't respond.
-            if (_starterPackButton != null) _starterPackButton.interactable = _progress.IsUnlocked(Feature.StarterPack);
+            if (_noAdsButton != null) _noAdsButton.gameObject.SetActive(_store.NoAdsOffered);
         }
     }
 }

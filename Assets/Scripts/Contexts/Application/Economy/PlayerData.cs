@@ -89,8 +89,15 @@ namespace Project.Contexts.Application.Economy
         public bool FirstInterstitialSeen;
         // Index into CampaignRules.AdGroups.
         public int AdGroup;
-        // Eligible wins since the last interstitial.
-        public int AdPoints;
+        // Eligible wins and closed losses since the last interstitial.
+        public float AdPoints;
+        // Loss points already given for this level.
+        public int AdLossLevel;
+        public float AdLossPoints;
+        // Any store purchase; the beginner offer is for players who never bought.
+        public bool HasPurchased;
+        // When the beginner offer was first shown (UTC ticks); 0 = not yet.
+        public long BeginnerShownTicks;
         // Since the last interstitial.
         public float AdActiveSeconds;
         // Tries of the current level without a win; reset on a win.
@@ -231,7 +238,7 @@ namespace Project.Contexts.Application.Economy
                 model.AdActiveSeconds < 0f)
             {
                 model.AdGroup = Math.Clamp(model.AdGroup, 0, CampaignRules.AdGroups.Length - 1);
-                model.AdPoints = Math.Max(0, model.AdPoints);
+                model.AdPoints = Math.Max(0f, model.AdPoints);
                 model.AdActiveSeconds = Math.Max(0f, model.AdActiveSeconds);
                 changed = true;
             }

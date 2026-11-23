@@ -78,6 +78,12 @@ namespace Project.Contexts.Application.Economy
         public const int ContinuePrice = 900;
         public const int ContinueTubeCapacity = 4;
         public const int RewardedLifeGrant = 1;
+        // Fills every life at once; only offered with no life left.
+        public const int LifeRefillPrice = 500;
+        // Interstitial points: eligible first win, closed loss or restart after a move; losses per level are capped.
+        public const float WinAdPoint = 1f;
+        public const float LossAdPoint = 0.5f;
+        public const float LossAdPointCap = 1f;
         public const int MaxLives = 5;
         public const int LifeRefillMinutes = 30;
         public const int LevelsPerMetaPeriod = 20;

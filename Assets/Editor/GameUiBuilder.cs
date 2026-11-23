@@ -6,6 +6,7 @@ using Project.Contexts.Application.Economy;
 using Project.Contexts.Game;
 using Project.Contexts.Home;
 using Project.Contexts.Main;
+using Project.Contexts.Store;
 using TMPro;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -33,7 +34,7 @@ namespace Project.Editor
         private const string StarLayoutPath = "Assets/Art/Sprites/Background/BG_Space_Stars.json";
         private static readonly Vector2 Reference = new(1170f, 2532f);
 
-        // 9-slice borders (left, bottom, right, top) from the art notes.
+        // 9-slice borders (left, bottom, right, top).
         private static readonly Dictionary<string, Vector4> Borders = new()
         {
             ["UI_Pill_Well_60"] = new Vector4(32, 0, 32, 0),
@@ -79,6 +80,9 @@ namespace Project.Editor
             var daily = BuildDailyRewardPopup();
             var orbitRush = BuildOrbitRushScreen();
             var intro = BuildIntroPopup();
+            var shop = BuildShopPopup();
+            var noAds = BuildNoAdsPopup();
+            var lives = BuildLivesPopup(shop);
 
             var scene = SceneManager.GetSceneByPath(MainScenePath);
             var openedHere = !scene.isLoaded;
@@ -100,9 +104,9 @@ namespace Project.Editor
                 var popupArea = Root(scene, "UI Canvas").GetComponentInChildren<SafeArea>(true);
                 if (popupArea != null) SetMinimumInsets(popupArea);
                 BuildBackground(scene);
-                BuildHome(scene, message, settings);
+                BuildHome(scene, message, settings, shop, noAds, lives);
                 BuildLiveOpsHome(scene, daily, orbitRush, message);
-                BuildHud(scene, message, result);
+                BuildHud(scene, message, result, shop);
                 BuildTutorial(scene, intro);
                 BuildLevelOpen(scene);
                 EditorSceneManager.MarkSceneDirty(scene);
@@ -241,7 +245,8 @@ namespace Project.Editor
 
         // ---------------------------------------------------------------- Home
 
-        private static void BuildHome(Scene scene, MessagePopup message, SettingsPopup settingsPopup)
+        private static void BuildHome(Scene scene, MessagePopup message, SettingsPopup settingsPopup, ShopPopup shopPopup,
+            NoAdsPopup noAdsPopup, LivesPopup livesPopup)
         {
             var canvas = Root(scene, "Home Canvas").transform;
             Clear(canvas);
@@ -312,10 +317,14 @@ namespace Project.Editor
             Set(screen, "_levelText", playLabel);
             Set(screen, "_poster", poster);
             Set(screen, "_playButton", play.GetComponent<Button>());
-            Set(screen, "_starterPackButton", shop);
+            Set(screen, "_shopButton", shop);
+            Set(screen, "_noAdsButton", noAds);
+            Set(screen, "_shopPopup", shopPopup);
+            Set(screen, "_noAdsPopup", noAdsPopup);
+            Set(screen, "_livesPopup", livesPopup);
             Set(screen, "_settingsButton", settings.GetComponent<Button>());
             // Daily, both event buttons and the Orbit Rush tab are wired by the live-ops builder.
-            SetArray(screen, "_comingSoon", new Object[] { noAds, puzzle });
+            SetArray(screen, "_comingSoon", new Object[] { puzzle });
             Set(screen, "_settingsPopup", settingsPopup);
             Set(screen, "_messagePopup", message);
             // The level opens out of the orb in the poster Luno's hand; bars and buttons fade, the poster stays.
@@ -367,7 +376,7 @@ namespace Project.Editor
         {
             var asset = AssetDatabase.LoadAssetAtPath<ChapterArt>(ChapterArtPath);
             if (asset != null) return asset;
-            // Poster file, hand-orb centre (share of the poster from its top-left) and orb width (share of the poster width).
+            // Poster file, hand-orb centre (poster share from top-left) and orb width (share of poster width).
             var defaults = new (string File, Vector2 Orb, float Size)[]
             {
                 ("Poster_1_StartTheAdventure", new Vector2(0.824f, 0.351f), 0.063f),
@@ -530,7 +539,7 @@ namespace Project.Editor
 
         // ---------------------------------------------------------------- Gameplay HUD
 
-        private static void BuildHud(Scene scene, MessagePopup message, ResultPopup result)
+        private static void BuildHud(Scene scene, MessagePopup message, ResultPopup result, ShopPopup shopPopup)
         {
             var canvas = Root(scene, "HUD Canvas").transform;
             Clear(canvas);
@@ -617,6 +626,7 @@ namespace Project.Editor
             Set(game, "_settings", settings);
             Set(game, "_messagePopup", message);
             Set(game, "_resultPopup", result);
+            Set(game, "_shopPopup", shopPopup);
             Set(game, "_coinHud", hud);
             Set(game, "_coinTarget", coinIcon.rectTransform);
             Set(game, "_coinSprite", S("UI_Icon_Coin"));

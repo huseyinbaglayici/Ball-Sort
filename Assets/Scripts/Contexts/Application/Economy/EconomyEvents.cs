@@ -60,4 +60,11 @@ namespace Project.Contexts.Application.Economy
         public readonly LevelResult Result;
         public LevelCompleted(LevelResult result) => Result = result;
     }
+
+    // Raised after a purchase is delivered and saved.
+    public readonly struct StorePurchased : IEvent
+    {
+        public readonly StoreProduct Product;
+        public StorePurchased(StoreProduct product) => Product = product;
+    }
 }

@@ -7,6 +7,7 @@ using Project.Contexts.Game.Items;
 using Project.Contexts.Game.Levels;
 using Project.Contexts.Game.Sort;
 using Project.Contexts.Main;
+using Project.Contexts.Store;
 using Project.Core.Audio;
 using Project.Core.Debugging;
 using Project.Core.Events;
@@ -36,6 +37,7 @@ namespace Project.Contexts.Game
         [SerializeField] private TMP_Text _levelText;
         [SerializeField] private ResultPopup _resultPopup;
         [SerializeField] private MessagePopup _messagePopup;
+        [SerializeField] private ShopPopup _shopPopup;
         [SerializeField] private BoosterBar _boosters;
         [SerializeField] private DifficultyTag _difficulty;
         [SerializeField] private SettingsMenu _settings;
@@ -52,6 +54,7 @@ namespace Project.Contexts.Game
         private ProgressService _progress;
         private LivesService _lives;
         private MonetizationService _ads;
+        private WalletService _wallet;
         private LocalizationService _loc;
         private AudioManager _audio;
         private HapticModule _haptics;
@@ -90,6 +93,7 @@ namespace Project.Contexts.Game
             if (_boosters != null) _boosters.Pressed += OnBoosterPressed;
             _lives = Services.Get<LivesService>();
             _ads = Services.Get<MonetizationService>();
+            _wallet = Services.Get<WalletService>();
             _loc = Services.Get<LocalizationService>();
             _continue = Services.Get<ContinueService>();
             _popups = Services.Get<PopupService>();
@@ -212,7 +216,7 @@ namespace Project.Contexts.Game
         // Screen size the board was last laid out for.
         private Vector2Int _screen;
 
-        // Free band (0-1 of screen height) from the tray top to the badge bottom, minus any entrance slide still running.
+        // Free band (0-1 of screen height) from tray top to badge bottom, measured with entrances at rest.
         private Vector2? HudBand()
         {
             var badge = _difficulty != null ? _difficulty.transform.Find("Badge") as RectTransform : null;

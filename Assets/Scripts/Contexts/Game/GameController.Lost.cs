@@ -2,6 +2,7 @@ using Project.Contexts.Application.Economy;
 using Project.Contexts.Game.Sort;
 using Project.Contexts.LiveOps;
 using Project.Contexts.Main;
+using Project.Contexts.Store;
 using Project.Core.Haptics;
 using Project.Core.Services;
 using Project.Core.StateMachine;
@@ -132,9 +133,11 @@ namespace Project.Contexts.Game
                         lifeCost: !lives.IsUnlimited));
                 else
                 {
+                    // The same offers as Home: a coin refill of every life, then a rewarded +1.
                     note.Append('\n').Append(loc.Format("lives.out_body", EconomyText.Timer(lives.NextLifeIn)));
+                    options.Add(new ResultOption(loc.Get("lives.refill_all"), Refill, price: CampaignRules.LifeRefillPrice));
                     if (_c._ads.CanOfferRewardedLife)
-                        options.Add(new ResultOption(loc.Get("lives.ad"), () => _c._ads.ShowRewardedLife(_ => Show())));
+                        options.Add(new ResultOption(loc.Get("lives.ad"), () => _c._ads.ShowRewardedLife(_c._level, _ => Show())));
                 }
 
                 // The event race warns that leaving without a win drops its streak gear.
@@ -173,7 +176,7 @@ namespace Project.Contexts.Game
                 _c._audio.PlayOneShotSound("continue");
                 _c._resumeTry = true;
                 _c._states.ChangeState(GameState.Playing);
-                // A rewound explosion flies its balls back first; then the tube is laid out, which also syncs the obstacles.
+                // A rewound explosion flies its balls back first; laying out the tube then also syncs the obstacles.
                 void AddTube() => _c._board.AddBottle(_c._model, tube, null);
                 if (offer.Rewind && last != null)
                 {
@@ -189,6 +192,17 @@ namespace Project.Contexts.Game
                 _c.RefreshHud();
             }
 
+            // With a life back the panel returns with Retry; short of coins, the coin shop opens first.
+            private void Refill()
+            {
+                if (_c._lives.BuyRefill(_c._wallet) == RefillResult.NoCoins)
+                {
+                    _c._popups.Show(_c._shopPopup, new ShopArgs(StoreSection.Coins, Show));
+                    return;
+                }
+                Show();
+            }
+
             private void Retry()
             {
                 if (!_c._lives.TrySpend())
@@ -197,6 +211,7 @@ namespace Project.Contexts.Game
                     return;
                 }
                 _c._progress.FailAttempt();
+                _c._ads.CountLoss(_c._level);
                 _c._audio.PlayOneShotSound("retry");
                 _c._states.ChangeState(GameState.Playing);
             }
@@ -208,6 +223,7 @@ namespace Project.Contexts.Game
                 _c._leaving = true;
                 if (_c._tryHasMoves) _c._lives.TrySpend();
                 _c._progress.FailAttempt();
+                _c._ads.CountLoss(_c._level);
                 _ = Services.Get<MainFlow>().GoHomeAsync();
             }
         }

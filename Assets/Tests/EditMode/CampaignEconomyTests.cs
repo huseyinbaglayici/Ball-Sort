@@ -287,7 +287,7 @@ namespace Project.Tests
             Assert.IsTrue(ads.CanOfferRewardedLife);
 
             var next = _lives.NextLifeIn;
-            ads.ShowRewardedLife(earned => Assert.IsTrue(earned));
+            ads.ShowRewardedLife(1, earned => Assert.IsTrue(earned));
             Assert.AreEqual(1, _lives.Count);
             Assert.AreEqual(next, _lives.NextLifeIn, "the natural refill keeps running");
             Assert.IsFalse(ads.CanOfferRewardedLife);
