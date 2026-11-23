@@ -4,37 +4,55 @@ A space-themed ball sort puzzle for portrait mobile. Tap a tube to lift its top 
 
 <h2>Gameplay</h2>
 
-Videos are 1080x1920 H.264 MP4s recorded in the editor. GitHub does not play repository videos inline, so each one also has a direct link.
+<h3>Level 1</h3>
 
-<table>
-  <tr>
-    <td align="center" valign="top"><b>Level 1</b><br/>Tap tutorial, win, slide into level 2<br/>
-      <video width="250" src="Orbit_Sort_Screenshots/Tutorial-Level1.mp4" controls muted loop playsinline></video><br/>
-      <a href="Orbit_Sort_Screenshots/Tutorial-Level1.mp4">Tutorial-Level1.mp4</a></td>
-    <td align="center" valign="top"><b>Level 10</b><br/>Last level of the opening chain, dive into Home<br/>
-      <video width="250" src="Orbit_Sort_Screenshots/Level10-ToHome.mp4" controls muted loop playsinline></video><br/>
-      <a href="Orbit_Sort_Screenshots/Level10-ToHome.mp4">Level10-ToHome.mp4</a></td>
-    <td align="center" valign="top"><b>Menus</b><br/>Shop, No Ads, daily reward, Orbit Rush, settings, Play<br/>
-      <video width="250" src="Orbit_Sort_Screenshots/Menus-ToGameplay.mp4" controls muted loop playsinline></video><br/>
-      <a href="Orbit_Sort_Screenshots/Menus-ToGameplay.mp4">Menus-ToGameplay.mp4</a></td>
-  </tr>
-</table>
+Tap tutorial, the first win and the slide into level 2.
+
+https://github.com/user-attachments/assets/0136c758-3e20-49b8-912a-365c603ef3dc
+
+<sub>Local copy: <a href="Orbit_Sort_Screenshots/Tutorial-Level1.mp4">Tutorial-Level1.mp4</a></sub>
+
+<h3>Level 10</h3>
+
+The last level of the opening chain, then the dive into the orb and Home.
+
+https://github.com/user-attachments/assets/d8b01a03-be3a-4581-8ba9-e1c30ae19a07
+
+<sub>Local copy: <a href="Orbit_Sort_Screenshots/Level10-ToHome.mp4">Level10-ToHome.mp4</a></sub>
 
 <h2>Boosters</h2>
 
-<table>
-  <tr>
-    <td align="center" valign="top"><b>Undo</b><br/>Takes back the last moves<br/>
-      <video width="250" src="Orbit_Sort_Screenshots/Booster-Undo.mp4" controls muted loop playsinline></video><br/>
-      <a href="Orbit_Sort_Screenshots/Booster-Undo.mp4">Booster-Undo.mp4</a></td>
-    <td align="center" valign="top"><b>Extra Tube</b><br/>Adds a temporary tube<br/>
-      <video width="250" src="Orbit_Sort_Screenshots/Booster-ExtraTube.mp4" controls muted loop playsinline></video><br/>
-      <a href="Orbit_Sort_Screenshots/Booster-ExtraTube.mp4">Booster-ExtraTube.mp4</a></td>
-    <td align="center" valign="top"><b>Free Move</b><br/>One drop onto any color<br/>
-      <video width="250" src="Orbit_Sort_Screenshots/Booster-FreeMove.mp4" controls muted loop playsinline></video><br/>
-      <a href="Orbit_Sort_Screenshots/Booster-FreeMove.mp4">Booster-FreeMove.mp4</a></td>
-  </tr>
-</table>
+<h3>Undo</h3>
+
+Takes back the last moves.
+
+https://github.com/user-attachments/assets/f079bb03-39dd-4b6c-ad9f-db5b7d0a9a02
+
+<sub>Local copy: <a href="Orbit_Sort_Screenshots/Booster-Undo.mp4">Booster-Undo.mp4</a></sub>
+
+<h3>Extra Tube</h3>
+
+Adds a temporary tube.
+
+https://github.com/user-attachments/assets/cf344495-9a84-4b26-918b-fa3586f298ac
+
+<sub>Local copy: <a href="Orbit_Sort_Screenshots/Booster-ExtraTube.mp4">Booster-ExtraTube.mp4</a></sub>
+
+<h3>Free Move</h3>
+
+One drop onto any color.
+
+https://github.com/user-attachments/assets/9ed34ae2-df3e-43b4-8d2e-f70fd1e6706c
+
+<sub>Local copy: <a href="Orbit_Sort_Screenshots/Booster-FreeMove.mp4">Booster-FreeMove.mp4</a></sub>
+
+<h2>Menus</h2>
+
+Shop, No Ads, daily reward, Orbit Rush and settings, then Play.
+
+https://github.com/user-attachments/assets/c430a756-bc46-4874-b059-1a805aa57407
+
+<sub>Local copy: <a href="Orbit_Sort_Screenshots/Menus-ToGameplay.mp4">Menus-ToGameplay.mp4</a></sub>
 
 <h2>Screens</h2>
 
