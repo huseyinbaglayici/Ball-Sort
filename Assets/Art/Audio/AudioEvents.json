@@ -100,7 +100,7 @@
     "Assets/Art/Audio/Mechanic/hidden_02.wav",
     "Assets/Art/Audio/Mechanic/hidden_03.wav"
    ],
-   "enabled": false
+   "enabled": true
   },
   {
    "id": "cover",
